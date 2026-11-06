@@ -6,17 +6,17 @@
    "Deadlock"
   ],
   [
-   "7.6",
+   "7.5",
    "room",
-   "A2RGJ9"
+   "733VHT"
   ],
   [
-   "7.6",
+   "7.5",
    "both in room",
    "[\"Alpha\"]"
   ],
   [
-   "16.3",
+   "16.2",
    "both in game",
    [
     "game",
@@ -27,7 +27,7 @@
    "16.8",
    "before",
    {
-    "time": 2.0499999999999967,
+    "time": 1.949999999999997,
     "buy": 0,
     "ability": {
      "c": 1,
@@ -58,15 +58,20 @@
    }
   ],
   [
-   "17.6",
-   "equipped",
-   "{\"pick\":\"Deadlock\",\"eq\":{\"k\":\"c\",\"code\":\"KeyC\",\"st\":\"draw\",\"t\":0.5173000000000464,\"d0\":0.8,\"alt\":false,\"buf\":0,\"h\":0,\"bn\":0},\"paused\":false,\"running\":true}"
+   "17.0",
+   "check weapon cancel retains charge and clears equip",
+   "pass"
   ],
   [
-   "17.6",
+   "17.4",
+   "equipped",
+   "{\"pick\":\"Deadlock\",\"eq\":{\"k\":\"c\",\"code\":\"KeyC\",\"st\":\"draw\",\"t\":0.5499999999999998,\"d0\":0.8,\"alt\":false,\"buf\":0,\"h\":0,\"bn\":0},\"paused\":false,\"running\":true}"
+  ],
+  [
+   "17.9",
    "after key before click",
    {
-    "time": 2.799999999999994,
+    "time": 3.049999999999993,
     "buy": 0,
     "ability": {
      "c": 1,
@@ -97,7 +102,7 @@
    }
   ],
   [
-   "17.6",
+   "17.9",
    "check key equips without spending or throwing",
    "pass"
   ],
@@ -106,7 +111,7 @@
    "natural clock states",
    [
     {
-     "time": 2.849999999999994,
+     "time": 3.049999999999993,
      "buy": 0,
      "ability": {
       "c": 1,
@@ -136,7 +141,7 @@
      "fx": []
     },
     {
-     "time": 2.9999999999999933,
+     "time": 3.2249999999999925,
      "buy": 0,
      "ability": {
       "c": 1,
@@ -166,67 +171,7 @@
      "fx": []
     },
     {
-     "time": 3.149999999999993,
-     "buy": 0,
-     "ability": {
-      "c": 1,
-      "q": 0,
-      "e": 1,
-      "ult": 0,
-      "cool": {},
-      "anchor": null,
-      "rechargeAt": 0,
-      "signatureKills": 0,
-      "regrowthPool": 100,
-      "regrowthActive": false,
-      "blades": 0,
-      "bladesActive": false,
-      "slides": 0,
-      "slideKills": 0,
-      "stars": 0,
-      "fuel": 0,
-      "globules": 0,
-      "astral": false,
-      "toxOn": false,
-      "cloudOn": false,
-      "gate": null,
-      "marker": null,
-      "decoy": null
-     },
-     "fx": []
-    },
-    {
-     "time": 3.2999999999999923,
-     "buy": 0,
-     "ability": {
-      "c": 1,
-      "q": 0,
-      "e": 1,
-      "ult": 0,
-      "cool": {},
-      "anchor": null,
-      "rechargeAt": 0,
-      "signatureKills": 0,
-      "regrowthPool": 100,
-      "regrowthActive": false,
-      "blades": 0,
-      "bladesActive": false,
-      "slides": 0,
-      "slideKills": 0,
-      "stars": 0,
-      "fuel": 0,
-      "globules": 0,
-      "astral": false,
-      "toxOn": false,
-      "cloudOn": false,
-      "gate": null,
-      "marker": null,
-      "decoy": null
-     },
-     "fx": []
-    },
-    {
-     "time": 3.4499999999999917,
+     "time": 3.374999999999992,
      "buy": 0,
      "ability": {
       "c": 0,
@@ -234,7 +179,7 @@
       "e": 1,
       "ult": 0,
       "cool": {
-       "c": 3.649999999999992
+       "c": 3.574999999999992
       },
       "anchor": null,
       "rechargeAt": 0,
@@ -259,14 +204,14 @@
       {
        "id": 1,
        "kind": "meshflight",
-       "landAt": 3.646320822894265,
-       "born": 3.349999999999992,
+       "landAt": 3.5713208228942652,
+       "born": 3.2749999999999924,
        "bm": false
       }
      ]
     },
     {
-     "time": 3.599999999999991,
+     "time": 3.5249999999999915,
      "buy": 0,
      "ability": {
       "c": 0,
@@ -274,7 +219,7 @@
       "e": 1,
       "ult": 0,
       "cool": {
-       "c": 3.649999999999992
+       "c": 3.574999999999992
       },
       "anchor": null,
       "rechargeAt": 0,
@@ -299,14 +244,14 @@
       {
        "id": 1,
        "kind": "meshflight",
-       "landAt": 3.646320822894265,
-       "born": 3.349999999999992,
+       "landAt": 3.5713208228942652,
+       "born": 3.2749999999999924,
        "bm": false
       }
      ]
     },
     {
-     "time": 3.7499999999999907,
+     "time": 3.674999999999991,
      "buy": 0,
      "ability": {
       "c": 0,
@@ -314,7 +259,7 @@
       "e": 1,
       "ult": 0,
       "cool": {
-       "c": 3.649999999999992
+       "c": 3.574999999999992
       },
       "anchor": null,
       "rechargeAt": 0,
@@ -339,8 +284,8 @@
       {
        "id": 1,
        "kind": "barrier",
-       "landAt": 3.646320822894265,
-       "born": 3.646320822894265,
+       "landAt": 3.5713208228942652,
+       "born": 3.5713208228942652,
        "bm": true
       }
      ]
@@ -353,31 +298,36 @@
    "pass"
   ],
   [
-   "19.5",
+   "19.4",
    "check client naturally deploys at least one terrain-supported arm",
    "pass"
   ],
   [
-   "19.5",
+   "19.4",
    "client state",
-   "{\"ready\":true,\"fx\":[{\"id\":1,\"flight\":false,\"mesh\":true}],\"map\":\"lotus\",\"frames\":84}"
+   "{\"ready\":true,\"fx\":[{\"id\":1,\"flight\":false,\"mesh\":true}],\"map\":\"lotus\",\"frames\":98}"
   ],
   [
-   "19.9",
+   "19.8",
    "done",
    1
   ]
  ],
  "checks": [
   [
+   "weapon cancel retains charge and clears equip",
+   "pass",
+   "{\"time\":2.1749999999999963,\"buy\":0,\"ability\":{\"c\":1,\"q\":0,\"e\":1,\"ult\":0,\"cool\":{},\"anchor\":null,\"rechargeAt\":0,\"signatureKills\":0,\"regrowthPool\":100,\"regrowthActive\":false,\"blades\":0,\"bladesActive\":false,\"slides\":0,\"slideKills\":0,\"stars\":0,\"fuel\":0,\"globules\":0,\"astral\":false,\"toxOn\":false,\"cloudOn\":false,\"gate\":null,\"marker\":null,\"decoy\":null},\"fx\":[]}"
+  ],
+  [
    "key equips without spending or throwing",
    "pass",
-   "{\"time\":2.799999999999994,\"buy\":0,\"ability\":{\"c\":1,\"q\":0,\"e\":1,\"ult\":0,\"cool\":{},\"anchor\":null,\"rechargeAt\":0,\"signatureKills\":0,\"regrowthPool\":100,\"regrowthActive\":false,\"blades\":0,\"bladesActive\":false,\"slides\":0,\"slideKills\":0,\"stars\":0,\"fuel\":0,\"globules\":0,\"astral\":false,\"toxOn\":false,\"cloudOn\":false,\"gate\":null,\"marker\":null,\"decoy\":null},\"fx\":[]}"
+   "{\"time\":3.049999999999993,\"buy\":0,\"ability\":{\"c\":1,\"q\":0,\"e\":1,\"ult\":0,\"cool\":{},\"anchor\":null,\"rechargeAt\":0,\"signatureKills\":0,\"regrowthPool\":100,\"regrowthActive\":false,\"blades\":0,\"bladesActive\":false,\"slides\":0,\"slideKills\":0,\"stars\":0,\"fuel\":0,\"globules\":0,\"astral\":false,\"toxOn\":false,\"cloudOn\":false,\"gate\":null,\"marker\":null,\"decoy\":null},\"fx\":[]}"
   ],
   [
    "FIRE releases equipped mesh through server and lands",
    "pass",
-   "{\"time\":3.7499999999999907,\"buy\":0,\"ability\":{\"c\":0,\"q\":0,\"e\":1,\"ult\":0,\"cool\":{\"c\":3.649999999999992},\"anchor\":null,\"rechargeAt\":0,\"signatureKills\":0,\"regrowthPool\":100,\"regrowthActive\":false,\"blades\":0,\"bladesActive\":false,\"slides\":0,\"slideKills\":0,\"stars\":0,\"fuel\":0,\"globules\":0,\"astral\":false,\"toxOn\":false,\"cloudOn\":false,\"gate\":null,\"marker\":null,\"decoy\":null},\"fx\":[{\"id\":1,\"kind\":\"barrier\",\"landAt\":3.646320822894265,\"born\":3.646320822894265,\"bm\":true}]}"
+   "{\"time\":3.674999999999991,\"buy\":0,\"ability\":{\"c\":0,\"q\":0,\"e\":1,\"ult\":0,\"cool\":{\"c\":3.574999999999992},\"anchor\":null,\"rechargeAt\":0,\"signatureKills\":0,\"regrowthPool\":100,\"regrowthActive\":false,\"blades\":0,\"bladesActive\":false,\"slides\":0,\"slideKills\":0,\"stars\":0,\"fuel\":0,\"globules\":0,\"astral\":false,\"toxOn\":false,\"cloudOn\":false,\"gate\":null,\"marker\":null,\"decoy\":null},\"fx\":[{\"id\":1,\"kind\":\"barrier\",\"landAt\":3.5713208228942652,\"born\":3.5713208228942652,\"bm\":true}]}"
   ],
   [
    "client naturally deploys at least one terrain-supported arm",
@@ -387,7 +337,6 @@
  ],
  "errors": [
   "A console Failed to load resource: the server responded with a status of 404 (File not found)",
-  "A console Failed to load resource: net::ERR_FAILED",
   "A console Failed to load resource: net::ERR_FAILED",
   "A console Failed to load resource: net::ERR_FAILED",
   "A console Failed to load resource: net::ERR_FAILED",
