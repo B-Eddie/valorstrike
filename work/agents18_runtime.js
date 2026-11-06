@@ -592,6 +592,9 @@ const a18Chips0 = netStatusChips; netStatusChips = function (st) {
   if (el) { el.textContent = on.join(" \u00b7 "); el.style.display = on.length ? "block" : "none"; }
   return on;
 };
+// Only triangle rays, no nav/ground fallback, matching the server terrain API.
+function a18MeshWorld(){return {ray:(o,d,max)=>{const h=xBoltRay(o,d,max);return h?h.distance:Infinity;},rayN:(o,d,max)=>xBoltRay(o,d,max)};}
+function a18MeshPlan(o,d){return BarrierMesh.flight(o,d,a18MeshWorld(),SovaBolt);}
 // Offline shared-mesh consumer. Creation stays explicit until throw/cast migration is complete.
 var a18Meshes=[];
 function a18MeshDrop(e){if(!e)return;try{e.h.end();}catch(er){}for(const m of e.hitboxes){scene.remove(m);const i=XLDH.indexOf(m);if(i>=0)XLDH.splice(i,1);m.geometry.dispose();m.material.dispose();}const i=a18Meshes.indexOf(e);if(i>=0)a18Meshes.splice(i,1);}

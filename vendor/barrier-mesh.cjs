@@ -30,6 +30,17 @@
    const y=top-h.distance;if(Math.abs(y-p[1])>probe)return null;
    return [x,y,z];};
  }
+ // Shared throw plan, using this project's existing bolt integrator. Physics are an approximation,
+ // not measured Barrier Mesh launch speed/gravity. Only actual horizontal triangle support can land it.
+ function flight(o,d,world,integrator){if(!finitePoint(o)||!finitePoint(d)||!world||typeof world.rayN!=='function'||!integrator||typeof integrator.path!=='function')throw Error('Barrier Mesh flight requires map triangle rays and integrator');
+  const P=integrator.path(o,d,0,0,(a,b,max)=>world.rayN(a,b,max),null);
+  if(!P||!finitePoint(P.end)||!Number.isFinite(P.t)||!Array.isArray(P.tr))return null;
+  // Re-probe support even on a reported floor hit: ceiling/wall hits cannot be assumed to be floor.
+  const top=P.end[1]+.1,h=world.rayN([P.end[0],top,P.end[2]],[0,-1,0],30);
+  if(!h||!Number.isFinite(h.distance)||h.distance<0||h.distance>30||!finitePoint(h.normal)||h.normal[1]<.45)return null;
+  const end=[P.end[0],top-h.distance,P.end[2]],drop=Math.max(0,P.end[1]-end[1]),fall=Math.sqrt(2*drop/integrator.BOLT.g),time=P.t+fall;
+  const tr=P.tr.map(a=>a.slice());tr.push([...end,time]);return {end,t:time,tr};
+ }
  function advance(s,age){if(!Number.isFinite(age)||age<s.age)throw Error('Barrier Mesh age must advance monotonically');if(s.dead){s.age=age;return s;}const prev=s.age;
   if(!s.fortified&&age>=C.fortify){s.nodes.forEach((n,i)=>{if(n&&n.hp>0){const max=i?C.outerFort:C.centralFort;n.hp+=max-n.max;n.max=max;}});s.fortified=true;}
   if(age>C.decay){const oldLeft=C.life-Math.max(C.decay,prev),left=Math.max(0,C.life-age),ratio=oldLeft>0?left/oldLeft:0;s.nodes.forEach(n=>{if(n)n.hp*=ratio;});}
@@ -47,5 +58,5 @@
   const nodes=r.nodes.map((n,i)=>{if(n===null&&i)return null;if(!n||!finitePoint(n.p)||![n.hp,n.max,n.r].every(Number.isFinite)||n.hp<0||n.max<=0||n.hp>n.max||n.r<=0||n.r>1)throw Error('Invalid Barrier Mesh node');return {p:n.p.slice(),hp:n.hp,max:n.max,r:n.r};});
   return {age:r.age,fortified:!!r.fortified,dead:!!r.dead,nodes};}
  function points(s){return s.dead?[]:s.nodes.flatMap(n=>n&&n.hp>0?[[n.p[0],n.p[1]+C.nodeLift,n.p[2]]]:[]);}
- return {C,create,terrainResolver,advance,damage,arms,blocked,ray,points,toRow,fromRow};
+ return {C,create,terrainResolver,flight,advance,damage,arms,blocked,ray,points,toRow,fromRow};
 });
