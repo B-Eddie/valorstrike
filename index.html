@@ -8898,7 +8898,8 @@ function xRevealShell(source,mat){const m=new THREE.Mesh(source.geometry,mat);m.
  (source.parent||scene).add(m);return m;}
 // Share the live rig skeleton/geometry, never clone bones or take ownership of their resources.
 // Each visible native skin gets one sibling overlay; detached binding retains the source's inverse.
-function xRevealUnit(b,mat){const sc=b.xm&&b.xm.valorant&&b.xm.sx&&b.xm.sx.sc,src=[];if(sc)sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible&&o.skeleton&&o.name!=='reveal-native')src.push(o);});
+function xRevealSources(b){const sc=b.xm&&b.xm.valorant&&b.xm.sx&&b.xm.sx.sc,src=[];if(sc)sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible&&o.skeleton&&o.name!=='reveal-native')src.push(o);});return src;}
+function xRevealUnit(b,mat){const src=xRevealSources(b);
  if(!src.length)return [b.body,b.head].filter(Boolean).map(o=>xRevealShell(o,mat));
  return src.map(o=>{const m=new THREE.SkinnedMesh(o.geometry,mat);m.name='reveal-native';m.bindMode='detached';m.bind(o.skeleton,o.bindMatrix);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=999;m.raycast=()=>{};
  m.onBeforeRender=function(r,sc,cam){o.updateWorldMatrix(true,false);this.matrixWorld.copy(o.matrixWorld);this.bindMatrix.copy(o.bindMatrix);this.bindMatrixInverse.copy(o.bindMatrixInverse);this.modelViewMatrix.multiplyMatrices(cam.matrixWorldInverse,this.matrixWorld);this.normalMatrix.getNormalMatrix(this.modelViewMatrix);};
@@ -16488,13 +16489,13 @@ const netWalls=new Map(),netCbs=new Map();/* Jett Cloudburst rows (fx kind 'cb')
 const netReveals=new Map();
 function netRevealDrop(id){const q=netReveals.get(id);if(!q)return;for(const m of q.meshes)if(m.parent)m.parent.remove(m);q.b.netRvUntil=0;netReveals.delete(id);}
 function netRevealClear(){for(const id of [...netReveals.keys()])netRevealDrop(id);for(const b of bots)b.netRvUntil=0;}
-function netRevealTick(){const now=performance.now();for(const [id,q]of netReveals){if(!NET.socket||!q.b.alive||!bots.includes(q.b)||now>=q.until){netRevealDrop(id);continue;}const mat=now<q.orange?svxRvMat:rvMat;for(const m of q.meshes)m.material=mat;}}
+function netRevealTick(){const now=performance.now();for(const [id,q]of netReveals){if(!NET.socket||!q.b.alive||!bots.includes(q.b)||now>=q.until){netRevealDrop(id);continue;}const mat=now<q.orange?svxRvMat:rvMat,src=xRevealSources(q.b);if(src.length!==q.src.length||src.some((o,i)=>o!==q.src[i]||o.geometry!==q.geo[i]||o.skeleton!==q.skel[i])){for(const m of q.meshes)if(m.parent)m.parent.remove(m);q.meshes=xRevealUnit(q.b,mat);q.src=src;q.geo=src.map(o=>o.geometry);q.skel=src.map(o=>o.skeleton);}for(const m of q.meshes)m.material=mat;}}
 if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(netRevealTick);
 function netRevealSync(rows){const now=performance.now(),seen=new Set();for(const r of rows){const b=bots.find(b=>b.nid===r[0]);if(!b||!b.alive)continue;seen.add(r[0]);
  if(!(r.length>=6&&r[4]>0&&r[4]<=60&&r[5]>=0&&r[5]<=r[4])){netRevealDrop(r[0]);b.netRvUntil=now+400;continue;}
  let q=netReveals.get(r[0]);if(q&&(q.b!==b||q.body!==b.body||q.head!==b.head)){netRevealDrop(r[0]);q=null;}
  const until=now+r[4]*1000,orange=now+r[5]*1000;b.netRvUntil=until;
- if(!q){if(!b.body||!b.head)continue;const meshes=xRevealUnit(b,orange>now?svxRvMat:rvMat);q={b,body:b.body,head:b.head,meshes};netReveals.set(r[0],q);}
+ if(!q){if(!b.body||!b.head)continue;const meshes=xRevealUnit(b,orange>now?svxRvMat:rvMat);const src=xRevealSources(b);q={b,body:b.body,head:b.head,meshes,src,geo:src.map(o=>o.geometry),skel:src.map(o=>o.skeleton)};netReveals.set(r[0],q);}
  q.until=until;q.orange=orange;}for(const id of [...netReveals.keys()])if(!seen.has(id))netRevealDrop(id);netRevealTick();}
 function netClearEffects(){netRevealClear();for(const c of netCbs.values())if(c.m)jRel(c.m);netCbs.clear();for(const S of J.smokes||[])if(S.netId!=null)jRel(S.m);if(J.smokes)J.smokes=J.smokes.filter(S=>S.netId==null);document.getElementById('netBlind')?.remove();for(const m of netWalls.values()){scene.remove(m);m.children.forEach(q=>{q.geometry.dispose();q.material.dispose();});}netWalls.clear();for(const id of [...netDevs.keys()])netDevDrop(id);netOwnDevs.clear();}/* a barrier is a Group of segment meshes (no geometry of its own) */
 // Others' Cloudbursts from the snapshot: the projectile while it flies (s 0), then the smoke where the server landed it (s 1,

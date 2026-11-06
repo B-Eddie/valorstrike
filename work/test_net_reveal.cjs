@@ -26,3 +26,9 @@ x('window.__over=__sc.children.find(m=>m.name===`reveal-native`);__skin.position
 assert.equal(x('__over.skeleton===__skin.skeleton&&__over.geometry===__skin.geometry'),true,'shared live pose resources');assert.equal(x('__over.bindMatrixInverse.equals(__skin.bindMatrixInverse)'),true);assert.equal(x('__over.matrixWorld.equals(__skin.matrixWorld)'),true,'exact model transform, no scaled detached skeleton');
 row(.9,.9);assert.equal(x('__sc.children.filter(m=>m.name===`reveal-native`).length'),1,'repeat no recursive overlay');x('netRevealClear();true');assert.equal(x('__sc.children.length'),1,'original native skin retained');assert.equal(x('__skin.visible'),true);assert.equal(x('__skin.skeleton.bones[0]===__bone'),true);
 console.log('online reveal/full page/noGL: Sova orange, other red, overlap expiry, remaining TTL, dedupe, empty, death, disconnect, reset, legacy, real rs wrapper');
+
+row(1,1);x('window.__oldsc=__sc;window.__newsc=__sc.clone(true);__newsc.children.filter(m=>m.name===`reveal-native`).forEach(m=>__newsc.remove(m));__rb.g.add(__newsc);__rb.xm.sx.sc=__newsc;netRevealTick();true');
+assert.equal(x('__oldsc.children.filter(m=>m.name===`reveal-native`).length'),0,'old rig overlay removed');assert.equal(x('__newsc.children.filter(m=>m.name===`reveal-native`).length'),1,'replacement rig rebuilt');
+x('__rb.xm=null;netRevealTick();true');assert.equal(x('__newsc.children.filter(m=>m.name===`reveal-native`).length'),0);assert.equal(x('__rb.g.children.filter(m=>m.name===`reveal-shell`).length'),2,'fallback if native removed');
+x('__rb.xm={valorant:1,sx:{sc:__oldsc}};netRevealTick();true');assert.equal(x('__rb.g.children.filter(m=>m.name===`reveal-shell`).length'),0);assert.equal(x('__oldsc.children.filter(m=>m.name===`reveal-native`).length'),1,'native upgrade during same reveal');
+x('netRevealClear();true');assert.equal(x('__oldsc.children.length'),1);console.log('online reveal live native-load/rig-swap/fallback upgrade: PASS');
