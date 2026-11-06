@@ -17447,7 +17447,7 @@ const XABT = { draw: 0.5, rel: XAB_REL, rec: 0.45 }; // rel: the hand release, s
 // ("Equip time" row, wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25). Not listed: Blast Pack, Cyber Cage,
 // Neural Theft -> XABT.draw (0.5 s).
 const XAB_EQT = {
-  Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
+  Deadlock: { c: 0.8 }, Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
   Omen: { c: 0.5, q: 1.1, e: 0.6 }, Killjoy: { c: 0.74, q: 0.85, e: 1.1, x: 0.8 }, Raze: { c: 1.1, e: 0.8 }, Skye: { e: 0.8, x: 0.8 },
   Breach: { c: 0.9, q: 1.1, e: 0.8, x: 1.1 }, Cypher: { c: 0.8, e: 0.8 }, Chamber: { c: 1.0, e: 0.8 } };
 function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
@@ -17463,6 +17463,7 @@ function xUneqT(k, ag = J.pick) { const t = XAB_UNEQ[ag]; return t && Number.isF
 function xReeqT(k, w, ag = J.pick) { const r = XAB_REEQ[w] || XAB_REEQ.Classic, i = (XAB_REEQI[ag] || "").includes(k); let s = 1; try { s = xStimK() || 1; } catch (e) {} return r[i ? 1 : 0] / s; }
 function xEqWeap() { try { return vfWeapon(); } catch (e) { return typeof rw !== "undefined" && rw === "knife" ? "Knife" : "Classic"; } }
 const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and nothing of it out waiting for a recast); mirrors server ABILITY_EQUIP
+  Deadlock: { c: () => J.c >= 1 && J.cd.c <= 0 },
   Phoenix: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1 && J.cd.e <= 0 },
   Sova: { c: () => J.c >= 1 && J.cd.c <= 0 && !J.dr, q: () => J.q >= 1 && J.cd.q <= 0 && !J.dr, e: () => J.e >= 1 && !J.dr, x: () => !(J.hf > 0) && J.ult >= K().u && !J.dr },
   Sage: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1, x: () => J.ult >= K().u },
@@ -17530,7 +17531,7 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
   XABT.face = xRotKind(q) ? xRotFace(q) : null; // Turret facing / Barrier angle: read by kjKey / sgKey and mpCastSelf (m.fy / m.by)
   XABT.mark = hk === "mark" && Number.isFinite(q.md) ? { d: q.md, p: xDarkPt(q.md) } : null; // Dark Cover marker: read by okKey (offline smoke) and mpCastSelf (dist / p)
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.casting = true; try { (XABT.castKey || xEqKey0)(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
@@ -29936,7 +29937,9 @@ const a18Round0 = jRound; jRound = function (match) { a18Round0(match); J.medGen
 // kill credit: signature 2-kill resets (Iso Double Tap, Waylay Refract, Yoru Gatecrash), Neon slide charges, Clove Pick-me-up window
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
-const a18KeyJ = jKey; jKey = function (code) { if (A18SET.has(J.pick)) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0 && FV.buy <= 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code === "KeyC" && !XABT.casting) return a18KeyJ(code); if (A18SET.has(J.pick)) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0 && FV.buy <= 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+// Equip release must reach this final dispatch, not the pre-A18 captured jKey. Other kits retain their prior release path.
+const a18CastKey0 = XABT.castKey; XABT.castKey = code => J.pick === "Deadlock" && code === "KeyC" ? jKey(code) : (a18CastKey0 || xEqKey0)(code);
 // USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up
 const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && FV.buy <= 0) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
 const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt); } catch (e) { xE(e); } };

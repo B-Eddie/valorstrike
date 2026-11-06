@@ -32,7 +32,7 @@ const XABT = { draw: 0.5, rel: XAB_REL, rec: 0.45 }; // rel: the hand release, s
 // ("Equip time" row, wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25). Not listed: Blast Pack, Cyber Cage,
 // Neural Theft -> XABT.draw (0.5 s).
 const XAB_EQT = {
-  Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
+  Deadlock: { c: 0.8 }, Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
   Omen: { c: 0.5, q: 1.1, e: 0.6 }, Killjoy: { c: 0.74, q: 0.85, e: 1.1, x: 0.8 }, Raze: { c: 1.1, e: 0.8 }, Skye: { e: 0.8, x: 0.8 },
   Breach: { c: 0.9, q: 1.1, e: 0.8, x: 1.1 }, Cypher: { c: 0.8, e: 0.8 }, Chamber: { c: 1.0, e: 0.8 } };
 function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
@@ -48,6 +48,7 @@ function xUneqT(k, ag = J.pick) { const t = XAB_UNEQ[ag]; return t && Number.isF
 function xReeqT(k, w, ag = J.pick) { const r = XAB_REEQ[w] || XAB_REEQ.Classic, i = (XAB_REEQI[ag] || "").includes(k); let s = 1; try { s = xStimK() || 1; } catch (e) {} return r[i ? 1 : 0] / s; }
 function xEqWeap() { try { return vfWeapon(); } catch (e) { return typeof rw !== "undefined" && rw === "knife" ? "Knife" : "Classic"; } }
 const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and nothing of it out waiting for a recast); mirrors server ABILITY_EQUIP
+  Deadlock: { c: () => J.c >= 1 && J.cd.c <= 0 },
   Phoenix: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1 && J.cd.e <= 0 },
   Sova: { c: () => J.c >= 1 && J.cd.c <= 0 && !J.dr, q: () => J.q >= 1 && J.cd.q <= 0 && !J.dr, e: () => J.e >= 1 && !J.dr, x: () => !(J.hf > 0) && J.ult >= K().u && !J.dr },
   Sage: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1, x: () => J.ult >= K().u },
@@ -115,7 +116,7 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
   XABT.face = xRotKind(q) ? xRotFace(q) : null; // Turret facing / Barrier angle: read by kjKey / sgKey and mpCastSelf (m.fy / m.by)
   XABT.mark = hk === "mark" && Number.isFinite(q.md) ? { d: q.md, p: xDarkPt(q.md) } : null; // Dark Cover marker: read by okKey (offline smoke) and mpCastSelf (dist / p)
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.casting = true; try { (XABT.castKey || xEqKey0)(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
