@@ -123,7 +123,7 @@ s=s.replace('const inSite = (p) => Object.keys(SITES).find((k) => Math.abs(p.x -
 for name in ['p','q']:
  for h in ['1.5','1.6','1.7','1.75']:
   s=s.replace('.set('+name+'.x, '+name+'.y + '+h+', '+name+'.z)', '.set('+name+'.x, ('+name+'.y || 0) + '+h+', '+name+'.z)')
-for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js','models/valorant/agents/manifest.js','vendor/hit-impact.js']:
+for src in ['vendor/barrier-mesh.cjs','models/valorant/weapon-calibration.js','vendor/valorant-feel.js','models/valorant/agents/manifest.js','vendor/hit-impact.js']:
  if '<script src="'+src+'"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>', '<script src="models/valorant/manifest.js"></script>\n<script src="'+src+'"></script>')
 s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
 # Preserve elevation when handing the visible rig and weapon to corpse animation.

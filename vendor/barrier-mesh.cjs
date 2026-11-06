@@ -41,6 +41,11 @@
  // Shooting query hits orbs only. Transparent arms never stop shots or LOS/projectiles.
  function ray(s,o,d,max=Infinity){if(s.dead||!finitePoint(o)||!finitePoint(d))return null;const A=d.reduce((n,v)=>n+v*v,0);if(!(A>0))return null;let out=null,limit=max;
   s.nodes.forEach((n,i)=>{if(!n||!(n.hp>0))return;const q=[o[0]-n.p[0],o[1]-n.p[1]-C.nodeLift,o[2]-n.p[2]],B=q.reduce((n,v,k)=>n+v*d[k],0),cc=q.reduce((n,v)=>n+v*v,0)-n.r*n.r,disc=B*B-A*cc;if(disc<0)return;const t=Math.max(0,(-B-Math.sqrt(disc))/A);if(t<limit&&(-B+Math.sqrt(disc))/A>=0){limit=t;out={index:i,distance:t};}});return out;}
+ // Explicit JSON transport: validate before rendering/prediction; never share mutable server node objects.
+ function toRow(s){return {v:1,age:s.age,fortified:!!s.fortified,dead:!!s.dead,nodes:s.nodes.map(n=>n?{p:n.p.slice(),hp:n.hp,max:n.max,r:n.r}:null)};}
+ function fromRow(r){if(!r||r.v!==1||!Number.isFinite(r.age)||r.age<0||!Array.isArray(r.nodes)||r.nodes.length!==5)throw Error('Invalid Barrier Mesh row');
+  const nodes=r.nodes.map((n,i)=>{if(n===null&&i)return null;if(!n||!finitePoint(n.p)||![n.hp,n.max,n.r].every(Number.isFinite)||n.hp<0||n.max<=0||n.hp>n.max||n.r<=0||n.r>1)throw Error('Invalid Barrier Mesh node');return {p:n.p.slice(),hp:n.hp,max:n.max,r:n.r};});
+  return {age:r.age,fortified:!!r.fortified,dead:!!r.dead,nodes};}
  function points(s){return s.dead?[]:s.nodes.flatMap(n=>n&&n.hp>0?[[n.p[0],n.p[1]+C.nodeLift,n.p[2]]]:[]);}
- return {C,create,terrainResolver,advance,damage,arms,blocked,ray,points};
+ return {C,create,terrainResolver,advance,damage,arms,blocked,ray,points,toRow,fromRow};
 });
