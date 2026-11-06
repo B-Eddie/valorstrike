@@ -15,6 +15,21 @@
    nodes.push({p:q.slice(),hp:C.outer,max:C.outer,r:C.outerRadius});}
   return {age:0,fortified:false,dead:false,nodes};
  }
+ // Collision adapter: use an actual downward triangle hit with an upward-facing normal.
+ // world.ground may silently return a nav fallback or y-10 sentinel, so it cannot prove support.
+ // Probe/drop/clearance are explicit project approximations. This is not the thrown-disc flight.
+ function terrainResolver(world,{probe=3,drop=6,clearance=.3}={}){
+  if(!world||typeof world.ray!=='function'||typeof world.rayN!=='function')throw Error('Barrier Mesh terrain requires ray and rayN');
+  if(![probe,drop,clearance].every(v=>Number.isFinite(v)&&v>0))throw Error('Invalid Barrier Mesh terrain query limits');
+  return (p,q)=>{const dx=q[0]-p[0],dz=q[2]-p[2],len=Math.hypot(dx,dz);if(!(len>clearance))return null;
+   const d=[dx/len,0,dz/len],hit=world.ray([p[0],p[1]+C.nodeLift,p[2]],d,len+clearance);
+   if(hit!==Infinity&&!(Number.isFinite(hit)&&hit>=0))return null;
+   const run=Math.min(len,hit-clearance);if(!(run>clearance))return null;
+   const x=p[0]+d[0]*run,z=p[2]+d[2]*run,top=p[1]+probe,h=world.rayN([x,top,z],[0,-1,0],drop);
+   if(!h||!Number.isFinite(h.distance)||h.distance<0||h.distance>drop||!finitePoint(h.normal)||h.normal[1]<.45)return null;
+   const y=top-h.distance;if(Math.abs(y-p[1])>probe)return null;
+   return [x,y,z];};
+ }
  function advance(s,age){if(!Number.isFinite(age)||age<s.age)throw Error('Barrier Mesh age must advance monotonically');if(s.dead){s.age=age;return s;}const prev=s.age;
   if(!s.fortified&&age>=C.fortify){s.nodes.forEach((n,i)=>{if(n&&n.hp>0){const max=i?C.outerFort:C.centralFort;n.hp+=max-n.max;n.max=max;}});s.fortified=true;}
   if(age>C.decay){const oldLeft=C.life-Math.max(C.decay,prev),left=Math.max(0,C.life-age),ratio=oldLeft>0?left/oldLeft:0;s.nodes.forEach(n=>{if(n)n.hp*=ratio;});}
@@ -27,5 +42,5 @@
  function ray(s,o,d,max=Infinity){if(s.dead||!finitePoint(o)||!finitePoint(d))return null;const A=d.reduce((n,v)=>n+v*v,0);if(!(A>0))return null;let out=null,limit=max;
   s.nodes.forEach((n,i)=>{if(!n||!(n.hp>0))return;const q=[o[0]-n.p[0],o[1]-n.p[1]-C.nodeLift,o[2]-n.p[2]],B=q.reduce((n,v,k)=>n+v*d[k],0),cc=q.reduce((n,v)=>n+v*v,0)-n.r*n.r,disc=B*B-A*cc;if(disc<0)return;const t=Math.max(0,(-B-Math.sqrt(disc))/A);if(t<limit&&(-B+Math.sqrt(disc))/A>=0){limit=t;out={index:i,distance:t};}});return out;}
  function points(s){return s.dead?[]:s.nodes.flatMap(n=>n&&n.hp>0?[[n.p[0],n.p[1]+C.nodeLift,n.p[2]]]:[]);}
- return {C,create,advance,damage,arms,blocked,ray,points};
+ return {C,create,terrainResolver,advance,damage,arms,blocked,ray,points};
 });
