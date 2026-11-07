@@ -1,0 +1,110 @@
+[
+ {
+  "script": "capture-prepared-subset.cjs",
+  "count": 247,
+  "exit": 0,
+  "seconds": 22.37,
+  "minimumMemAvailableMB": 654,
+  "stop": null,
+  "stageMinimumMB": {
+   "gltf-load": 824,
+   "optimize": 727,
+   "geometry-roundtrip": 828,
+   "early-geometry-upload": 883,
+   "texture-roundtrip": 654,
+   "reference-render": 699,
+   "reference-saved": 851
+  },
+  "stage": "reference-saved",
+  "result": {
+   "captureOnly": true,
+   "saved": {
+    "key": "447518c52a0c50f927a3e2f244bd1c4be58f0f7c4753b62e28f24efd57fee388",
+    "files": 1196
+   },
+   "optimized": {
+    "meshes": 247,
+    "chunks": 589,
+    "strips": 27,
+    "materials": 65,
+    "small": 0,
+    "arrays": {
+     "arrays": 5,
+     "layers": 118,
+     "materials": 24,
+     "meshes": 203,
+     "palette": 138
+    }
+   },
+   "referenceBytes": 1036800,
+   "glError": 0,
+   "errors": []
+  }
+ },
+ {
+  "script": "load-captured-subset-gpu.cjs",
+  "count": 247,
+  "exit": 0,
+  "seconds": 11.83,
+  "minimumMemAvailableMB": 852,
+  "stop": null,
+  "stageMinimumMB": {
+   "reference-saved": 852
+  },
+  "stage": "reference-saved",
+  "result": {
+   "nativeFreed": true,
+   "nativeHandles": 5,
+   "cancelRejected": true,
+   "cancelFetches": 1,
+   "views": [
+    {
+     "name": "A Site",
+     "diff": 0,
+     "painted": 257210
+    },
+    {
+     "name": "A Tree",
+     "diff": 0,
+     "painted": 257721
+    },
+    {
+     "name": "B Site",
+     "diff": 0,
+     "painted": 254498
+    },
+    {
+     "name": "C Site",
+     "diff": 0,
+     "painted": 259106
+    },
+    {
+     "name": "C Main",
+     "diff": 0,
+     "painted": 257582
+    },
+    {
+     "name": "Attacker Side Spawn",
+     "diff": 0,
+     "painted": 259159
+    },
+    {
+     "name": "Defender Side Spawn",
+     "diff": 0,
+     "painted": 256761
+    }
+   ],
+   "diff": 0,
+   "maxDelta": 0,
+   "changedPixels": 0,
+   "strips": 27,
+   "chunks": 589,
+   "textures": 20,
+   "released": 284,
+   "painted": 258650,
+   "glError": 0,
+   "glTFLoaderPresent": false,
+   "errors": []
+  }
+ }
+]
