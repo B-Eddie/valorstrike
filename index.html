@@ -8901,11 +8901,16 @@ function xRevealShell(source,mat){const m=new THREE.Mesh(source.geometry,mat);m.
 // Each visible native skin gets one sibling overlay; detached binding retains the source's inverse.
 function xRevealSources(b){const sc=b.xm&&b.xm.valorant&&b.xm.sx&&b.xm.sx.sc,src=[];if(sc)sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible&&o.skeleton&&o.name!=='reveal-native')src.push(o);});return src;}
 function xRevealUnit(b,mat){const src=xRevealSources(b);
- if(!src.length)return [b.body,b.head].filter(Boolean).map(o=>xRevealShell(o,mat));
- return src.map(o=>{const m=new THREE.SkinnedMesh(o.geometry,mat);m.name='reveal-native';m.bindMode='detached';m.bind(o.skeleton,o.bindMatrix);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=999;m.raycast=()=>{};
+ const meshes=!src.length?[b.body,b.head].filter(Boolean).map(o=>xRevealShell(o,mat)):src.map(o=>{const m=new THREE.SkinnedMesh(o.geometry,mat);m.name='reveal-native';m.bindMode='detached';m.bind(o.skeleton,o.bindMatrix);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=999;m.raycast=()=>{};
  m.onBeforeRender=function(r,sc,cam){o.updateWorldMatrix(true,false);this.matrixWorld.copy(o.matrixWorld);this.bindMatrix.copy(o.bindMatrix);this.bindMatrixInverse.copy(o.bindMatrixInverse);this.modelViewMatrix.multiplyMatrices(cam.matrixWorldInverse,this.matrixWorld);this.normalMatrix.getNormalMatrix(this.modelViewMatrix);};
- o.parent.add(m);return m;});}
-function jUnreveal() { J.rv.forEach((b) => (b.rvO || []).forEach((o) => o.parent && o.parent.remove(o))); J.rv = []; J.rvT = 0; }
+ o.parent.add(m);return m;});
+ meshes.rvSources=src.length?src:[b.body,b.head].filter(Boolean);meshes.rvGeometries=meshes.rvSources.map(o=>o.geometry);meshes.rvSkeletons=meshes.rvSources.map(o=>o.skeleton);return meshes;}
+// Offline reveals can begin before the native rig arrives. Rebuild only on a real resource change,
+// preserving the original material and shared timer. Never dispose live rig geometry or skeletons.
+function xRevealRefresh(b){const old=b.rvO;if(!old||!old.length)return;const native=xRevealSources(b),src=native.length?native:[b.body,b.head].filter(Boolean);
+ if(src.length===old.rvSources?.length&&src.every((o,i)=>o===old.rvSources[i]&&o.geometry===old.rvGeometries[i]&&o.skeleton===old.rvSkeletons[i]))return;
+ const mat=old[0].material;for(const m of old)if(m.parent)m.parent.remove(m);b.rvO=xRevealUnit(b,mat);}
+function jUnreveal() { J.rv.forEach((b) => { (b.rvO || []).forEach((o) => o.parent && o.parent.remove(o)); b.rvO = []; }); J.rv = []; J.rvT = 0; }
 // Sova Recon Bolt (wiki.playvalorant.com/en-us/Recon_Bolt): after the bolt lands it sends 2 sonar pulses 1.6 s apart; each
 // reveals enemies within 30 m that the bolt can see for 0.75 s. Same table as the server (DEV.reconBolt); XRCN.g changes on
 // every round clear so pulses of a bolt from an earlier round never fire.
@@ -9083,7 +9088,7 @@ function jFxTick(dt) { try { blzTick(dt); } catch (e) {}
   });
   J.fx = J.fx.filter((f) => { f.t -= dt; if (f.g) f.m.scale.setScalar(0.5 + f.g * (1 - Math.max(0, f.t / f.t0))); f.m.material.opacity = f.o * Math.max(0, f.t / f.t0); if (f.t > 0) return true; jRel(f.m); return false; });
   if (J.rib > 0) { J.rib -= dt; if (J.rib <= 0) { J.rib = 0; scene.remove(J.ribM); } }
-  if (J.rvT > 0) { J.rvT -= dt; if (J.rvT <= 0) jUnreveal(); }
+  if (J.rvT > 0) { J.rvT -= dt; if (J.rvT <= 0) jUnreveal(); else J.rv.forEach(xRevealRefresh); }
   bots.forEach((b) => { if (b.blind > 0) b.blind -= dt; });
   if (typeof allies !== "undefined") for (let i = 0; i < allies.length; i++) { const a = allies[i]; if (a && a.blind > 0) a.blind -= dt; } // teammates' blind / concuss (enemy Trailblazer, Rolling Thunder, Twin Hunters) wears off too: spectate paints #xSpvBlind from it
 }
