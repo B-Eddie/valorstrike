@@ -1,0 +1,12 @@
+<!doctype html><meta charset=utf-8><title>one</title><body style="margin:0">
+<script type="importmap">{"imports":{"three":"/server/node_modules/three/build/three.module.js","three/addons/":"/server/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';import{GLTFLoader}from'three/addons/loaders/GLTFLoader.js';
+const Q=new URLSearchParams(location.search);const SLUG=Q.get('slug')||'tejo';
+const r=new THREE.WebGLRenderer({antialias:true});r.setSize(700,760);document.body.appendChild(r.domElement);
+const s=new THREE.Scene();s.background=new THREE.Color(0x1c2330);
+const cam=new THREE.PerspectiveCamera(40,700/760,.1,100);cam.position.set(1.5,1.35,2.3);cam.lookAt(0,.9,0);
+s.add(new THREE.AmbientLight(0xffffff,1.2));const d=new THREE.DirectionalLight(0xffffff,2);d.position.set(3,6,5);s.add(d);
+new GLTFLoader().load('/models/valorant/'+SLUG+'.glb',g=>{s.add(g.scene);document.title='ONE-OK '+SLUG},undefined,e=>{document.title='LOAD-FAIL '+SLUG+' '+(e&&e.message||e)});
+(function loop(){requestAnimationFrame(loop);r.render(s,cam)})();
+</script>

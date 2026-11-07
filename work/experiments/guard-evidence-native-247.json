@@ -1,0 +1,69 @@
+[
+ {
+  "script": "capture-prepared-subset.cjs",
+  "count": 247,
+  "exit": 0,
+  "seconds": 16.86,
+  "minimumMemAvailableMB": 700,
+  "stop": null,
+  "stageMinimumMB": {
+   "gltf-load": 908,
+   "optimize": 819,
+   "geometry-roundtrip": 902,
+   "early-geometry-upload": 929,
+   "texture-roundtrip": 700,
+   "reference-render": 766,
+   "reference-saved": 832
+  },
+  "stage": "reference-saved",
+  "result": {
+   "captureOnly": true,
+   "saved": {
+    "key": "48d9f18375bf85741c82c239217a2f680b5c51e2081100944ff057790532e239",
+    "files": 1189
+   },
+   "optimized": {
+    "meshes": 247,
+    "chunks": 589,
+    "strips": 27,
+    "materials": 65,
+    "small": 0,
+    "arrays": {
+     "arrays": 5,
+     "layers": 118,
+     "materials": 24,
+     "meshes": 203,
+     "palette": 138
+    }
+   },
+   "referenceBytes": 1036800,
+   "glError": 0,
+   "errors": []
+  }
+ },
+ {
+  "script": "load-captured-subset-gpu.cjs",
+  "count": 247,
+  "exit": 0,
+  "seconds": 6.42,
+  "minimumMemAvailableMB": 861,
+  "stop": null,
+  "stageMinimumMB": {
+   "reference-saved": 861
+  },
+  "stage": "reference-saved",
+  "result": {
+   "diff": 0,
+   "maxDelta": 0,
+   "changedPixels": 0,
+   "strips": 27,
+   "chunks": 589,
+   "textures": 20,
+   "released": 284,
+   "painted": 258650,
+   "glError": 0,
+   "glTFLoaderPresent": false,
+   "errors": []
+  }
+ }
+]

@@ -8,7 +8,7 @@
 // Usage (repository root): node work/build_agent_assets.cjs        (needs ImageMagick `magick` with WebP)
 const fs=require('fs'),path=require('path'),crypto=require('crypto'),{execFileSync}=require('child_process');
 const ROOT=path.join(__dirname,'..'),SRC=path.join(ROOT,'models/valorant'),OUT=path.join(SRC,'agents');
-const AGENTS=['jett','phoenix','sova','sage','reyna','raze','killjoy','omen','skye','chamber','breach','cypher'];
+const AGENTS=['jett','phoenix','sova','sage','reyna','raze','killjoy','omen','skye','chamber','breach','cypher','astra','brimstone','clove','harbor','miks','viper','hush','iso','neon','waylay','yoru','fade','gekko','kayo','tejo','deadlock','veto','vyse'];
 const KEEP=new Set(['POSITION','NORMAL','TEXCOORD_0','JOINTS_0','WEIGHTS_0']);
 const COMP={5120:[1,Int8Array],5121:[1,Uint8Array],5122:[2,Int16Array],5123:[2,Uint16Array],5125:[4,Uint32Array],5126:[4,Float32Array]};
 const NUM={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};

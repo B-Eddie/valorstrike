@@ -30,7 +30,7 @@ function psaMeta(file){
  return {b,names,keys,fps:info.readFloatLE(152),frames:info.readInt32LE(164),first:info.readInt32LE(160)};
 }
 function integrity(){
- assert.equal(raw.length%4,0,'aligned Float32 movement binary');assert.equal(Object.keys(header.agents).length,12,'all twelve game rigs');
+ assert.equal(raw.length%4,0,'aligned Float32 movement binary');assert.equal(Object.keys(header.agents).length,30,'all thirty game rigs');
  const ledger=new Map(provenance.clips.map(c=>[c.name,c]));assert(ledger.size>=120,'complete movement ledger');
  let tracks=0,neutralSamples=0;
  for(const row of Object.values(header.agents)){
@@ -188,7 +188,7 @@ async function loader(){
   c.fetch=async url=>({ok:true,arrayBuffer:async()=>{
    const b=fs.readFileSync(path.join(OUT,url.includes('movement.json')?'movement.json':'movement.bin'));return b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength);
   }});
-  const recovered=await c.xvaLoco();assert.equal(recovered.base,true,'base readiness result retained');assert.equal(Object.keys(recovered.movement.h.agents).length,12,'retry recovers complete movement header');assert.equal(recovered.movement.f.length,floats.length,'retry recovers complete movement binary');
+  const recovered=await c.xvaLoco();assert.equal(recovered.base,true,'base readiness result retained');assert.equal(Object.keys(recovered.movement.h.agents).length,30,'retry recovers complete movement header');assert.equal(recovered.movement.f.length,floats.length,'retry recovers complete movement binary');
   return {missingFetch:true,concurrentFailure:true,httpFailure:true,retry:true};
  } finally {process.removeListener('unhandledRejection',listen);}
 }

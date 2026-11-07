@@ -1,0 +1,94 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents/hush/",
+    "Name": "hush.glb"
+  },
+  "Settings": {
+    "FOV": 45,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 3
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "A Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "CS_Paprika_S0_Intro_Cosmetic",
+      "Translatable": "Character Select Intro",
+      "Type": "Internal"
+    },
+    {
+      "Name": "CS_Paprika_S0_IdleIntro_Cosmetic",
+      "Translatable": "Character Select Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "CS_Paprika_S0_IdleLoop_Cosmetic",
+      "Translatable": "Character Select Idle 2",
+      "Type": "Internal"
+    },
+    {
+      "Name": "CS_Paprika_S0_IdleFidget_Cosmetic",
+      "Translatable": "Character Select Fidget",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "CS_Paprika_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/hush/textures/df.png",
+      "ORM": "../uploads/models/agents/hush/textures/orm.png",
+      "EM": "../uploads/models/agents/hush/textures/em.png",
+      "NM": "../uploads/models/agents/hush/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "CS_Paprika_S0_Hair_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/hush/textures/hair_df.png",
+      "ORM": "../uploads/models/agents/hush/textures/hair_orm.png",
+      "EM": "../uploads/models/agents/hush/textures/hair_em.png",
+      "NM": "../uploads/models/agents/hush/textures/hair_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "AB_Paprika_S0_1P_Beads_VFX_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/hush/textures/beads_df.png",
+      "ORM": "../uploads/models/agents/hush/textures/beads_orm.png",
+      "EM": "../uploads/models/agents/hush/textures/beads_em.png",
+      "NM": "../uploads/models/agents/hush/textures/beads_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "CS_Paprika_S0_Grenade_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/hush/textures/nade_df.png",
+      "ORM": "../uploads/models/agents/hush/textures/nade_orm.png",
+      "EM": "../uploads/models/agents/hush/textures/nade_em.png",
+      "NM": "../uploads/models/agents/hush/textures/nade_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "TP_Core_Eye_MI",
+      "Type": "Eye",
+      "DF": "../uploads/models/agents/eye_df.png"
+    }
+  ]
+}

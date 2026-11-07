@@ -24,12 +24,18 @@ if ha in s:s=s[:s.index(ha)]+s[s.index(hb)+len(hb):]
 block+='\n'+(root/'work/hit_feedback_runtime.js').read_text().rstrip('\n');qa='// ---- ABILITY EQUIP ----';qb='// ---- END ABILITY EQUIP ----'
 if qa in s:s=s[:s.index(qa)]+s[s.index(qb)+len(qb):]
 # Sova bolt flight + Jett Cloudburst flight: the shared vendor/sova-bolt.cjs and vendor/cloudburst.cjs (UMD, set window.SovaBolt / window.Cloudburst; the server imports the same files) head the block.
-block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/cloudburst.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
+block+='\n'+(root/'work/ability_equip_runtime.js').read_text().rstrip('\n').replace(qa,qa+'\n'+(root/'vendor/sova-bolt.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/meddle-decay.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/cloudburst.cjs').read_text().rstrip('\n'),1);va='// ---- BOT VARIETY ----';vb='// ---- END BOT VARIETY ----'
 if va in s:s=s[:s.index(va)]+s[s.index(vb)+len(vb):]
 # Bot variety: the shared vendor/bot-routes.cjs, vendor/bot-brain.cjs and vendor/spawn-barriers.cjs (UMD, set window.BotRoutes / window.BotBrain / window.SpawnBarriers) are inlined at the head of the block.
 fa2='// ---- ABILITY FIRST PERSON ----';fb2='// ---- END ABILITY FIRST PERSON ----'
 if fa2 in s:s=s[:s.index(fa2)]+s[s.index(fb2)+len(fb2):]
+sa='// ---- SOVA FX ----';sb='// ---- END SOVA FX ----'
+if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
+oa='// ---- OMEN FX ----';ob='// ---- END OMEN FX ----'
+if oa in s:s=s[:s.index(oa)]+s[s.index(ob)+len(ob):]
 block+='\n'+(root/'work/ability_fp_runtime.js').read_text().rstrip('\n')
+block+='\n'+(root/'work/omen_fx_runtime.js').read_text().rstrip('\n')
+block+='\n'+(root/'work/sova_fx_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/bot-brain.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/spawn-barriers.cjs').read_text().rstrip('\n'),1);ma='// ---- BOT AMMO ----';mb='// ---- END BOT AMMO ----'
 while ma in s:s=s[:s.index(ma)]+s[s.index(mb)+len(mb):]
 block+='\n'+(root/'work/bot_ammo_runtime.js').read_text().rstrip('\n');da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
@@ -90,6 +96,10 @@ block+='\n'+(root/'work/ability_target_runtime.js').read_text().rstrip('\n')
 # thrown floor guns, the first-person death camera (xDcCam, called by the frame) and the killer portrait / N toggle on the combat report.
 da2='// ---- DEATH PARITY ----';db2='// ---- END DEATH PARITY ----'
 if da2 in s:s=s[:s.index(da2)]+s[s.index(db2)+len(db2):]
+# Agents 18 (work/agents18_runtime.js), last: the outermost jKey / jTick / jRound / jKill / hurt wrappers for the 18 added agents.
+g18a='// ---- AGENTS 18 ----';g18b='// ---- END AGENTS 18 ----'
+if g18a in s:s=s[:s.index(g18a)]+s[s.index(g18b)+len(g18b):]
+block+='\n'+(root/'work/agents18_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/death_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
@@ -113,7 +123,7 @@ s=s.replace('const inSite = (p) => Object.keys(SITES).find((k) => Math.abs(p.x -
 for name in ['p','q']:
  for h in ['1.5','1.6','1.7','1.75']:
   s=s.replace('.set('+name+'.x, '+name+'.y + '+h+', '+name+'.z)', '.set('+name+'.x, ('+name+'.y || 0) + '+h+', '+name+'.z)')
-for src in ['models/valorant/weapon-calibration.js','vendor/valorant-feel.js','models/valorant/agents/manifest.js','vendor/hit-impact.js']:
+for src in ['vendor/barrier-mesh.cjs','models/valorant/weapon-calibration.js','vendor/valorant-feel.js','models/valorant/agents/manifest.js','vendor/hit-impact.js']:
  if '<script src="'+src+'"></script>' not in s:s=s.replace('<script src="models/valorant/manifest.js"></script>', '<script src="models/valorant/manifest.js"></script>\n<script src="'+src+'"></script>')
 s=re.sub(r'\n{3,}(?=// ---- VALORANT ASSET INTEGRATION ----)', '\n\n', s)
 # Preserve elevation when handing the visible rig and weapon to corpse animation.

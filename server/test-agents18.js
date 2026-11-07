@@ -1,0 +1,222 @@
+// The 18 added agents (2026-11-03): cast gates, faithful core mechanics and resource accounting.
+// Run: node test-agents18.js (part of npm test).
+import assert from 'node:assert';
+import {AG18,TYPES18,A18,init18,cast18,tick18,reward18} from './src/agents18.js';
+import {initAbilities,types,abilityDamage,tickAbilities} from './src/abilities.js';
+import {Simulation,weapons} from './src/simulation.js';
+import {arenaWrap,ARENA_X,ARENA_STRIDE} from './src/arena.js';
+import kits from './src/kits.json' with {type:'json'};
+
+const world={ray:()=>Infinity,ground:()=>0,blocked:()=>false,near:()=>0,nav:{nodes:[[0,0,0]]}};
+const mkSim=()=>({time:0,effects:[],castEvents:[],units:[],world,effectSeq:0,events:[],scores:{},mode:'spike'});
+const mk=(agent,team,id,x=0,human=false)=>({id,agent,team,alive:true,human,x,y:0,z:0,look:0,pitch:0,ch:0,hp:100,mx:100,armor:0,name:agent+id,ability:null,kills:0,deaths:0,credits:0,input:{},vx:0,vz:0});
+const run=(sim,n,dt=.05)=>{for(let i=0;i<n;i++){sim.time+=dt;tick18(sim,dt);}};
+const O=[0,1.6,0],D=[1,0,0];
+
+// every one of the 18 is registered with kit data and a type map
+for(const a of Object.keys(AG18)){assert.ok(kits[a],a+' in kits.json');assert.ok(types[a],a+' in types');assert.equal(types[a].length,3,a+' c/q/e types');}
+
+// charge gates: no charge, no cast; a cast spends exactly one
+{const s=mkSim(),u=mk('Brimstone',0,1);s.units=[u];initAbilities(u,true);u.ability.c=0;
+ assert.equal(cast18(s,u,{k:'c'},O,D),false,'no charge, no cast');
+ u.ability.c=3;assert.equal(cast18(s,u,{k:'c'},O,D),true,'cast lands');assert.equal(u.ability.c,2,'one charge spent');}
+
+// Astra: 2 stars a round; a cast with no placed star places one (bot path), the next cast activates it
+{const s=mkSim(),u=mk('Astra',0,1);s.units=[u];initAbilities(u,true);
+ assert.equal(u.ability.stars,2,'2 stars (wiki Stars)');
+ assert.equal(cast18(s,u,{k:'e'},O,D),true);assert.equal(u.ability.stars,1,'one star placed from the pool');
+ assert.ok(s.effects.some(e=>e.kind==='star'&&e.owner===u.id),'a persistent star marker exists');
+ assert.equal(cast18(s,u,{k:'e'},O,D),true);assert.equal(u.ability.stars,1,'activating consumes the placed star, not the pool');
+ assert.ok(s.effects.some(e=>e.kind==='smoke')&&!s.effects.some(e=>e.kind==='star'),'Nebula at the star, marker consumed');
+ assert.equal(cast18(s,u,{k:'c'},O,D),true,'bot places its last star');assert.equal(u.ability.stars,0);
+ assert.equal(cast18(s,u,{k:'q'},O,D),true,'that placed star still activates');
+ assert.equal(cast18(s,u,{k:'q'},O,D),false,'pool empty and nothing placed: no cast');}
+
+// Iso Kill Contract: the duel runs in the analytic pocket arena (arena.js) - both combatants are pulled to the
+// cell, the walls/floor/cover work there, duel damage lands, outsiders are locked out, both return home
+{const s=mkSim(),iso=mk('Iso',0,1),foe=mk('Jett',1,2,5);s.units=[iso,foe];initAbilities(iso,true);initAbilities(foe,true);iso.ability.ult=kits.Iso.u;
+ assert.equal(cast18(s,iso,{k:'x'},O,D),true,'contract cast');
+ assert.ok(iso.isoDuel&&foe.isoDuel,'both in the duel');
+ assert.equal(iso.x,ARENA_X-4,'Iso is pulled into the pocket cell');assert.equal(foe.x,ARENA_X+4,'the target is pulled in across the cell');
+ assert.equal(iso.y,.1)&&assert.equal(foe.z,0,'on the arena floor');
+ abilityDamage(s,iso,foe,50);assert.equal(foe.hp,50,'duel damage lands');
+ const out=mk('Sage',1,3,9);s.units.push(out);initAbilities(out,true);
+ abilityDamage(s,out,iso,50);assert.equal(iso.hp,100,'an outsider cannot shoot into the duel');
+ run(s,300);assert.ok(!iso.isoDuel&&!foe.isoDuel&&iso.x===0&&foe.x===5,'both return home when it ends');}
+{const w=arenaWrap({ray:()=>Infinity,ground:()=>0,blocked:()=>false,plantAt:()=>'A'});
+ assert.equal(w.ground(ARENA_X,0,2),0,'the arena floor carries the cell');
+ assert.ok(Math.abs(w.ground(ARENA_X+40,0,2)-(-8))<1e-9||w.ground(ARENA_X+40,0,2)<0,'off the platform is the void');
+ assert.ok(w.blocked(ARENA_X+14.8,0,.45,0),'the energy wall stops movement');
+ assert.ok(!w.blocked(ARENA_X,0,.45,0),'the cell floor is open');
+ assert.equal(w.ray([ARENA_X-10,1,0],[1,0,0]),25,'a shot across the cell hits the far wall');
+ assert.equal(w.ray([ARENA_X-10,5,0],[1,0,0]),Infinity,'above the walls the cell is open');
+ assert.ok(w.ray([ARENA_X-7.5,0.7,-5],[1,0,0])<Infinity,'a cover block stops a low shot');
+ assert.equal(w.plantAt(ARENA_X,0),'','no spike plant inside the duel');
+ assert.equal(w.ground(3,4,2),0,'map positions still reach the match world');}
+{const u=mk('Iso',0,1,ARENA_X-4);u.isoDuel={foe:2,until:9,ret:[0,0,0],slot:0};
+ const ctx={world:arenaWrap(world),time:0,events:[]};
+ assert.equal(Simulation.prototype.oobKill.call(ctx,u),false,'a duelist in the arena is not out of bounds');
+ u.isoDuel=null;ctx.time=1;Simulation.prototype.oobKill.call(ctx,u);ctx.time=4;assert.equal(Simulation.prototype.oobKill.call(ctx,u),true,'the same spot without a duel is out of bounds (warning, then the kill after 2 s)');}
+{const s=mkSim(),a=mk('Iso',0,1),b=mk('Jett',1,2,5),c=mk('Iso',0,3),d=mk('Jett',1,4,5);c.z=20;d.z=20;s.units=[a,b,c,d];
+ for(const u of s.units){initAbilities(u,true);if(u.agent==='Iso')u.ability.ult=kits.Iso.u;}
+ assert.equal(cast18(s,a,{k:'x'},O,D),true,'first contract');assert.equal(cast18(s,c,{k:'x'},O,D),true,'second contract at the same time');
+ assert.equal(a.isoDuel.slot,0,'first duel takes cell 0');assert.equal(c.isoDuel.slot,1,'the second duel takes the next cell');
+ assert.equal(c.x,ARENA_X+ARENA_STRIDE-4,'the second cell sits one stride over');
+ assert.ok(s.effects.filter(e=>e.kind==='duel').length===2,'both cells have an arena row');
+ run(s,300);assert.ok(s.units.every(u=>!u.isoDuel),'both duels end and return');}
+
+// Neon: High Gear drains fuel, ALT slides on a charge, 2 kills reset the slides
+{const s=mkSim(),u=mk('Neon',0,4);s.units=[u];initAbilities(u,true);
+ assert.equal(u.ability.fuel,A18.fuel.max,'full fuel');
+ assert.equal(cast18(s,u,{k:'e'},O,D),true);run(s,20);
+ assert.ok(u.ability.fuel<A18.fuel.max,'gear drains fuel');assert.ok(u.stimOn,'haste while geared');
+ assert.equal(cast18(s,u,{k:'e',alt:true,f:1},O,D),true,'slide');assert.equal(u.ability.slides,0,'the one slide charge spent (wiki v9.11)');assert.equal(u.gearOn,false,'the slide ends High Gear');
+ u.ability.slides=0;u.ability.slideKills=1;reward18(u,u.ability);assert.equal(u.ability.slides,1,'2 kills reset the slide');}
+
+// KAY/O NULL/cmd: downed, bled out, or revived
+{const s=mkSim(),k=mk('KAY/O',0,5),e=mk('Sage',1,6,3);s.units=[k,e];initAbilities(k,true);initAbilities(e,true);
+ k.nullCmdUntil=s.time+10;k.hp=10;abilityDamage(s,e,k,50);
+ assert.ok(k.kayoDown&&k.deaths===0,'downed, not dead (wiki NULL/cmd)');
+ const ally=mk('Sage',0,7,k.x+1);ally.input={use:true};s.units.push(ally);initAbilities(ally,true);
+ run(s,110);assert.ok(k.alive&&k.hp===100,'an ally channel revives him at 100');
+ ally.input={};const k2=mk('KAY/O',0,9,50);s.units.push(k2);initAbilities(k2,true);k2.nullCmdUntil=s.time+1;k2.hp=5;
+ abilityDamage(s,e,k2,50);run(s,310);assert.ok(!k2.alive&&k2.deaths===1,'the bleedout kills');
+ const k3=mk('KAY/O',0,11,60);s.units.push(k3);initAbilities(k3,true);k3.nullCmdUntil=s.time+20;k3.hp=5;abilityDamage(s,e,k3,50);
+ assert.equal(k3.kayoDown.hp,850,'850 HP core (wiki Downed Health)');
+ Simulation.prototype.applyHit.call(s,e,k3,'body',400,[e.x,e.y+1.6,e.z],[1,0,0],2,2,weapons.Vandal);assert.ok(k3.kayoDown&&k3.kayoDown.hp===450,'the core takes gun damage');
+ const u0=k3.kayoDown.until;const al2=mk('Sage',0,12,k3.x+1);al2.input={use:true};s.units.push(al2);initAbilities(al2,true);run(s,20);
+ assert.ok(k3.kayoDown.until>u0,'stabilizing pauses the countdown (wiki)');al2.input={};
+ Simulation.prototype.applyHit.call(s,e,k3,'body',500,[e.x,e.y+1.6,e.z],[1,0,0],2,2,weapons.Vandal);assert.ok(!k3.alive&&k3.deaths===1&&e.kills>0,'destroying the core kills with credit');}
+
+// Deadlock Annihilate: 600 HP cocoon, the pull, the rescue, the kill
+{const s=mkSim(),dl=mk('Deadlock',0,7),vic=mk('Jett',1,8,10);s.units=[dl,vic];initAbilities(dl,true);initAbilities(vic,true);dl.ability.ult=kits.Deadlock.u;
+ assert.equal(cast18(s,dl,{k:'x'},O,D),true);assert.ok(vic.anni&&vic.anni.hp===600,'600 HP cocoon (wiki Annihilate)');
+ const d0=Math.hypot(vic.x-dl.x);run(s,40);assert.ok(Math.hypot(vic.x-dl.x,vic.z-dl.z)<d0,'pulled toward Deadlock');
+ vic.anni.hp=30;const mate=mk('Sage',1,11,20);s.units.push(mate);initAbilities(mate,true);
+ abilityDamage(s,mate,vic,50);assert.ok(!vic.anni&&vic.tetheredUntil===0,'a teammate shoots the cocoon off');
+ const dl2=mk('Deadlock',0,12),vic2=mk('Jett',1,13,-20);dl2.x=-30;s.units.push(dl2,vic2);initAbilities(dl2,true);initAbilities(vic2,true);dl2.ability.ult=kits.Deadlock.u;
+ cast18(s,dl2,{k:'x'},O,D);run(s,160);assert.ok(!vic2.alive,'unrescued: the wire kills');}
+
+// suppress locks the 18 out of casting (Vyse jam locks guns in spike.fire)
+{const s=mkSim(),u=mk('Gekko',0,14);s.units=[u];initAbilities(u,true);u.ability.c=1;u.suppressUntil=s.time+5;
+ assert.equal(cast18(s,u,{k:'c'},O,D),false,'suppressed: no cast');}
+
+// Gekko globules: a used basic comes back after the reclaim window
+{const s=mkSim(),u=mk('Gekko',0,15);s.units=[u];initAbilities(u,true);u.ability.c=1;
+ cast18(s,u,{k:'c'},O,D);assert.equal(u.ability.c,0);run(s,Math.ceil((A18.mosh.life+1+A18.globule.reclaim)/.05)+10);
+ assert.equal(u.ability.c,1,'globule reclaim returns the charge');}
+
+// Miks Bassquake (wiki): 40 m 60 deg cone, 5 m knockback, 8 s deafen + slow
+{const s=mkSim(),m=mk('Miks',0,13),e=mk('Jett',1,14,0);e.z=-10;s.units=[m,e];/* look 0 faces -z: the cone covers him */initAbilities(m,true);initAbilities(e,true);m.ability.ult=kits.Miks.u;
+ assert.equal(cast18(s,m,{k:'x'},[m.x,m.y+1.6,m.z],[1,0,0]),true,'Bassquake cast');run(s,30);
+ assert.ok(e.deafenUntil>s.time,'deafened 8 s');assert.ok(e.hinderUntil>s.time,'slowed 8 s');}
+
+
+// Yoru Gatecrash: recast teleports on the wiki 1.2 s timing; USE fakes - audio cue + 30 s decal, anchor kept
+{const s=mkSim(),y=mk('Yoru',0,15);s.units=[y];initAbilities(y,true);
+ assert.equal(cast18(s,y,{k:'e'},O,D),true,'anchor out');const gp=[...y.ability.gate.p];
+ s.time+=1;/* past the 0.6 s recast cooldown */
+ assert.equal(cast18(s,y,{k:'e',fk:1},O,D),true,'USE fakes');
+ assert.ok(y.ability.gate,'the anchor survives a fake');
+ const gf=s.effects.find(e=>e.kind==='gatefake');assert.ok(gf&&gf.until-gf.at>=29.9&&gf.until-s.time<=30,'30 s fake decal (v4.04)');
+ assert.ok(Math.abs(y.x)<.01&&Math.abs(y.z)<.01,'no teleport on a fake');
+ s.time+=1;assert.equal(cast18(s,y,{k:'e'},O,D),true,'real recast');
+ assert.ok(y.pendingTeleport&&Math.abs(y.pendingTeleport.at-s.time-1.2)<.01,'1.2 s wiki teleport timing');
+ assert.ok(!y.ability.gate,'the anchor is spent by the real teleport');
+ assert.ok(Math.abs(y.pendingTeleport.p[0]-gp[0])<.01&&Math.abs(y.pendingTeleport.p[2]-gp[2])<.01,'to the anchor');}
+// Yoru Dimensional Drift: no gunfire while drifting (wiki: unable to equip any weapons)
+{const s=mkSim(),y=mk('Yoru',0,16);s.units=[y];initAbilities(y,true);y.ability.ult=kits.Yoru.u;y.weapon='Vandal';y.ammo=30;
+ assert.equal(cast18(s,y,{k:'x'},O,D),true,'drift cast');assert.ok(y.driftUntil>s.time,'drifting');y.input={fire:true};
+ assert.equal(Simulation.prototype.fire.call(s,y),false,'no gunfire in Dimensional Drift');}
+// Astra Astral Form (human): X enters the map view; stars land on the picked point and spend stars, not the aim
+// point; Cosmic Divide spans its two picked points and spends the ult; exiting without points spends nothing
+{const s=mkSim(),a2=mk('Astra',0,17,0,true);s.units=[a2];initAbilities(a2,true);a2.ability.ult=kits['Astra'].u;
+ assert.equal(cast18(s,a2,{k:'x'},O,D),true,'enters Astral Form');assert.ok(a2.astralForm&&a2.ability.astral,'in the form');
+ assert.equal(cast18(s,a2,{k:'e',p:[30,40]},O,D),false,'no placed star near the click: Nebula does not cast');
+ assert.equal(cast18(s,a2,{k:'s',p:[30,40]},O,D),true,'a map click places a persistent star');
+ const st=s.effects.find(e=>e.kind==='star');assert.ok(st&&Math.abs(st.p[0]-30)<.01&&Math.abs(st.p[2]-40)<.01,'the star sits at (30,40)');
+ assert.equal(a2.ability.stars,1,'one star spent from the pool');
+ assert.equal(cast18(s,a2,{k:'e',p:[37,44]},O,D),false,'6 m away is outside the select radius');
+ assert.equal(cast18(s,a2,{k:'e',p:[31,41]},O,D),true,'clicking near the star activates Nebula on it');
+ const sm=s.effects.find(e=>e.kind==='smoke');assert.ok(sm&&Math.abs(sm.p[0]-30)<.01&&Math.abs(sm.p[2]-40)<.01,'the smoke lands at the star, not the aim point');
+ assert.ok(!s.effects.some(e=>e.kind==='star'),'the placed star is consumed');
+ assert.equal(cast18(s,a2,{k:'s',p:[50,50]},O,D),true,'second star placed');
+ assert.equal(cast18(s,a2,{k:'s',p:[50.5,50.5]},O,D),true,'clicking the placed star dissipates it');
+ assert.ok(!s.effects.some(e=>e.kind==='star'),'dissipated marker gone');
+ assert.equal(a2.starBackAt>s.time,true,'the star reforms after a delay');
+ run(s,200);assert.equal(a2.ability.stars,1,'the dissipated star returns to the pool');
+ assert.equal(cast18(s,a2,{k:'x',p:[0,0,60,0]},O,D),true,'Cosmic Divide across two points');
+ const dv=s.effects.find(e=>e.kind==='divide');assert.ok(dv,'the wall exists');
+ assert.ok(Math.abs(dv.p[0]-30)<.01&&Math.abs(dv.p[2]-0)<.01,'midpoint between the picks');
+ assert.ok(Math.abs(dv.radius-30)<.01,'half the span');assert.ok(!a2.astralForm&&a2.ability.ult===0,'ult spent, form closed');
+ assert.equal(cast18(s,a2,{k:'x'},O,D),false,'no ult, no re-entry');}
+{const s=mkSim(),a2=mk('Astra',0,18,0,true);s.units=[a2];initAbilities(a2,true);a2.ability.ult=kits['Astra'].u;
+ cast18(s,a2,{k:'x'},O,D);Object.assign(a2,{weapon:'Vandal',ammo:30,input:{fire:true}});
+ assert.equal(Simulation.prototype.fire.call(s,a2),false,'no gunfire in Astral Form (wiki: unable to equip weapons)');
+ assert.equal(cast18(s,a2,{k:'x'},O,D),true,'X again exits');assert.ok(!a2.astralForm&&a2.ability.ult===kits['Astra'].u,'exit spends nothing');}
+// Tejo Guided Salvo: up to two map-picked strike points; Armageddon: map-picked origin, wave aimed from Tejo through it
+{const s=mkSim(),t2=mk('Tejo',0,19,0,true);s.units=[t2];initAbilities(t2,true);t2.ability.ult=kits.Tejo.u;
+ assert.equal(cast18(s,t2,{k:'e',p:[10,10,20,25]},O,D),true,'two-point salvo');
+ const sv=s.effects.filter(e=>e.kind==='salvo');assert.equal(sv.length,2,'both strikes');
+ assert.ok(sv.some(e=>Math.abs(e.p[0]-10)<.01&&Math.abs(e.p[2]-10)<.01)&&sv.some(e=>Math.abs(e.p[0]-20)<.01&&Math.abs(e.p[2]-25)<.01),'at the picked points');
+ assert.equal(t2.ability.e,0,'one charge spent for the cast');
+ assert.equal(cast18(s,t2,{k:'x',p:[0,30]},O,D),true,'Armageddon at the picked origin');
+ const ar=s.effects.find(e=>e.kind==='armag');assert.ok(ar&&Math.abs(ar.p[2]-30)<.01,'origin moved to the pick');
+ assert.ok(Math.abs(ar.yaw-Math.atan2(-(0-t2.x),-(30-t2.z)))<.001,'wave from Tejo through the pick');}
+// Guided Salvo (wiki.playvalorant.com/en-us/Guided_Salvo): 1.25 s windup after the missile lands, 3 pulses 0.8 s apart, inner 2.5 m = 65,
+// outer 4.5 m falls to 50 at the edge, outside 4.5 m nothing; affects allies/self (shared 1/3 ally rule). Missile speed is NOT sourced (30 m/s placeholder).
+{const s=mkSim(),t3=mk('Tejo',0,40,0,true),a=mk('Jett',1,41,0),b=mk('Jett',1,42,0),c=mk('Jett',1,43,0),d=mk('Jett',1,44,0);
+ for(const v of [a,b,c,d]){v.hp=1000;v.mx=1000;v.armor=0;}a.z=22;b.z=23.5;c.z=25;d.z=24.5;s.units=[t3,a,b,c,d];initAbilities(t3,true);
+ cast18(s,t3,{k:'e',p:[0,20]},O,D);const hp=v=>1000-v.hp;
+ run(s,30);assert.equal(hp(a),0,'no damage during flight + windup');
+ run(s,12);assert.equal(hp(a),65,'inner radius (2 m): 65');assert.ok(Math.abs(hp(b)-57.5)<.01,'3.5 m: halfway 57.5, got '+hp(b));assert.equal(hp(d),50,'edge (4.5 m): 50');assert.equal(hp(c),0,'5 m: outside');
+ run(s,60);assert.equal(hp(a),195,'3 pulses (65 x 3) then it stops');}
+// KAY/O FRAG/ment (wiki.playvalorant.com/en-us/FRAG/ment): 0.5 s windup, 4 ticks 1 s apart, inner 1 m = 60, outer 4 m falls to 25 at the edge, nothing beyond; allies/self reduced.
+{const s=mkSim(),k=mk('KAY/O',0,50,0,true),a=mk('Jett',1,51,0),b=mk('Jett',1,52,0),d=mk('Jett',1,53,0),c=mk('Jett',1,54,0),al=mk('Jett',0,55,0);
+ for(const v of [a,b,c,d,al,k]){v.hp=1000;v.mx=1000;v.armor=0;}a.z=20.5;b.z=22.5;d.z=24;c.z=25;al.z=20.5;k.z=0;s.units=[k,a,b,d,c,al];initAbilities(k,true);k.ability.c=1;
+ cast18(s,k,{k:'c'},O,D);const hp=v=>1000-v.hp;const fe=s.effects.find(e=>e.kind==='frag');assert.ok(fe,'frag landed');for(const [v,dz] of [[a,.5],[b,2.5],[d,4],[c,5],[al,.5]]){v.x=fe.p[0];v.z=fe.p[2]+dz;v.y=fe.p[1];}
+ run(s,8);assert.equal(hp(a),0,'no damage during the 0.5 s windup');
+ run(s,4);assert.equal(hp(a),60,'inner (0.5 m): 60');assert.ok(Math.abs(hp(b)-42.5)<.01,'2.5 m: 42.5, got '+hp(b));assert.equal(hp(d),25,'edge (4 m): 25');assert.equal(hp(c),0,'5 m: none');
+ assert.ok(hp(al)>0&&hp(al)<60,'ally takes reduced damage, got '+hp(al));
+ run(s,200);assert.equal(hp(a),240,'4 ticks x 60 then it stops');}
+// Armageddon (wiki.playvalorant.com/en-us/Armageddon): 3.08 s windup, 16 segments x 2 m (32 m) x 12 m wide, segment i starts
+// 0.25 s after segment i-1, each segment detonates 4 times 0.25 s apart for 60 - a chain, not one instant strip.
+{const s=mkSim(),t2=mk('Tejo',0,19,0,true),n=mk('Jett',1,30,0),f2=mk('Jett',1,31,0),o=mk('Jett',1,32,40),w2=mk('Jett',1,33,7),al=mk('Jett',0,34,0);
+ for(const v of [n,f2,o,w2,al,t2]){v.hp=1000;v.mx=1000;}t2.z=31;al.z=31.5;al.armor=0;t2.armor=0;
+ n.z=31;f2.z=61;o.z=20;o.x=0;w2.z=40;w2.x=7;s.units=[t2,n,f2,o,w2,al];initAbilities(t2,true);t2.ability.ult=kits.Tejo.u;t2.z=0;
+ cast18(s,t2,{k:'x',p:[0,30]},O,D);t2.z=31;const hp=v=>1000-v.hp;
+ run(s,60);assert.equal(hp(n),0,'nothing before the 3.08 s windup ends');
+ run(s,2);assert.equal(hp(n),60,'segment 0 first detonation (60) right after the windup');
+ assert.equal(hp(f2),0,'far segments have not started');
+ run(s,16);assert.equal(hp(n),240,'segment 0 detonates exactly 4 times (4 x 60)');
+ run(s,200);assert.equal(hp(f2),240,'segment 15 (31 m out) also 4 x 60 later');assert.equal(hp(o),0,'behind the origin: no damage');assert.equal(hp(w2),0,'outside 12 m width (7 m aside): no damage');
+ assert.equal(hp(t2),240,'wiki: affects self - Tejo standing in segment 0 takes 4 x 60');assert.ok(hp(al)>0&&hp(al)<240,'wiki: affects allies - reduced by the shared ally ability rule, got '+hp(al));}
+console.log('agents18: registration, charge/star gates, Iso pocket-arena duel isolation + return, Neon fuel/slide/reset, KAY/O downed/revive/bleedout, Deadlock cocoon pull/rescue/kill, suppress gate, Gekko globule reclaim, Miks Bassquake deafen/slow, Yoru Gatecrash fake + 1.2 s timing');
+
+// Regression (2026-11-04, fixed in 05efb5c): tickUlts' Skye-ult seeker handler used to hijack EVERY
+// kind:'seeker' effect, snapping Fade's Prowler and Gekko's Wingman onto their target on the first
+// live tick so they were consumed instantly and never worked online. Cast dispatch alone (tick18)
+// misses this class - drive the FULL tickAbilities loop (tickUlts + tick18, the live order).
+{const s=mkSim(),f=mk('Fade',0,1),j=mk('Jett',1,2,60);s.units=[f,j];initAbilities(f,true);initAbilities(j,true);f.ability.c=1;
+ assert.equal(cast18(s,f,{k:'c'},O,D),true,'prowler cast accepted');
+ const e0=s.effects.find(e=>e.kind==='seeker');assert.ok(e0&&e0.prowler,'prowler seeker spawned');
+ const d0=Math.hypot(j.x-e0.p[0],j.z-e0.p[2]);
+ for(let i=0;i<4;i++){s.time+=.05;tickAbilities(s,.05);}
+ const e1=s.effects.find(e=>e.kind==='seeker');
+ assert.ok(e1,'prowler survives the first ticks through the full tick loop (was: consumed on tick 1 by tickUlts)');
+ const d1=Math.hypot(j.x-e1.p[0],j.z-e1.p[2]);
+ assert.ok(d1<d0-.1&&d1>d0-2,'prowler advances from the caster toward the target instead of snapping onto it ('+d0.toFixed(1)+' -> '+d1.toFixed(1)+')');}
+{const s=mkSim(),g=mk('Gekko',0,1),j=mk('Jett',1,2,40);s.units=[g,j];initAbilities(g,true);initAbilities(j,true);g.ability.q=1;
+ assert.equal(cast18(s,g,{k:'q'},O,D),true,'wingman cast accepted');
+ for(let i=0;i<4;i++){s.time+=.05;tickAbilities(s,.05);}
+ const e1=s.effects.find(e=>e.kind==='seeker');
+ assert.ok(e1&&e1.wing,'wingman survives the first ticks through the full tick loop');
+ const d0=40,d1=Math.hypot(j.x-e1.p[0],j.z-e1.p[2]);
+ assert.ok(d1<d0-.1&&d1>d0-2,'wingman advances from the caster instead of snapping ('+d1.toFixed(1)+')');}
+{const s=mkSim(),sk=mk('Skye',0,1),j=mk('Jett',1,2,30);s.units=[sk,j];initAbilities(sk,true);initAbilities(j,true);
+ s.effects.push({id:99,kind:'seeker',owner:sk.id,ag:'Skye',team:0,p:[sk.x,sk.y+1,sk.z],until:s.time+3,radius:0,target:j.id,at:s.time+3});
+ s.time+=.05;tickAbilities(s,.05);
+ const e=s.effects.find(e=>e.kind==='seeker');
+ assert.ok(e,'Skye ult seeker still alive under the guard');
+ assert.equal(Math.hypot(j.x-e.p[0],j.z-e.p[2]),0,'Skye ult seeker still rides its target - the tickUlts path is preserved for real ult seekers');}
+console.log('test-agents18: ok (incl. tickUlts/tick18 seeker regression)');

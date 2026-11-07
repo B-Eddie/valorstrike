@@ -63,7 +63,9 @@ assert.deepEqual([0,3.5,4,5.5,7,8].map(ssDamage),[150,150,150,90,0,0],'ssDamage:
  Object.assign(a,{x:2,y:0,z:-12});Object.assign(b,{x:14,y:0,z:-6});Object.assign(c,{x:0,y:0,z:6});Object.assign(mate,{x:0,y:0,z:-12});
  Object.assign(close,{x:0,y:0,z:-5});Object.assign(edge,{x:8.5,y:0,z:-38});Object.assign(side,{x:-9.6,y:0,z:-20});Object.assign(past,{x:0,y:0,z:-41});wall=1;u.ability.ult=9;
  assert.equal(cast(s,u),true);tick(s,.5);assert.ok(!(a.concussUntil>s.time),'windup');tick(s,.6);
- assert.ok(a.concussUntil>s.time+3&&a.concussUntil<=s.time+4,'concussed through the wall for 4 s');assert.ok(edge.concussUntil>s.time+3,'38 m ahead, 8.5 m aside: inside the strip');
+ assert.ok(!(a.concussUntil>s.time),'wiki chain: the 12 m slice has not blasted yet 0.1 s after the windup');tick(s,.4);
+ assert.ok(a.concussUntil>s.time+3&&a.concussUntil<=s.time+4,'concussed through the wall for 4 s by its slice blast');assert.ok(!(edge.concussUntil>s.time),'wiki chain: the 38 m slice blasts last (8 blasts 0.255 s apart)');
+ {const tr=[];for(let i=0;i<14;i++){tick(s,.1);tr.push([+s.time.toFixed(2),+a.z.toFixed(1),+(a.vy||0).toFixed(1),s.effects.find(e=>e.kind==='quake')?.i??8]);}if(process.env.QTRACE)console.log('quake trace [t,z,vy,blasts]',JSON.stringify(tr));assert.ok(Math.abs(a.vz+14)<1e-9&&a.vy>0&&a.air,'launched along the strip (7 m over the 0.5 s Force Duration) and up (wiki: displacement 7 m, knocks up), vz='+a.vz);}tick(s,.2);assert.ok(edge.concussUntil>s.time+1,'38 m ahead, 8.5 m aside: inside the strip, hit by the last blast');
  for(const v of [b,c,mate,close,side,past])assert.ok(!(v.concussUntil>s.time),v.name+' spared');}
 
 // Seekers: the three nearest living enemies are nearsighted when their seeker arrives; a fourth is not.
@@ -145,7 +147,7 @@ import {DEV,bbDamage,tbConcuss,turretDamage} from './src/devices.js';
 {assert.deepEqual([DEV.boombot.windup,DEV.boombot.hp],[.6,60],'DEV.boombot windup / hp');
  const {s,u,list:[foe]}=setup('Raze',['foe']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:-5});assert.equal(s.command(u,{t:'ab',k:'c'}),true);const bb=s.effects.find(e=>e.kind==='boombot');assert.equal(bb.hp,60,'the bot has 60 HP');
  let n=0;while(!bb.blastAt&&n++<40)tick(s,.05);assert.ok(bb.blastAt>0,'closed within 2.5 m: windup started');const p0=[...bb.p];assert.equal(foe.hp,100,'no damage at the trigger (0.6 s windup, was instant)');
- tick(s,.5);assert.equal(foe.hp,100,'0.5 s into the windup: not yet');assert.deepEqual(bb.p,p0,'stopped during the windup');tick(s,.15);assert.ok(foe.hp<=30&&foe.hp>=20,'explodes 0.6 s after the trigger: '+foe.hp);assert.ok(!s.effects.includes(bb));}
+ tick(s,.5);assert.equal(foe.hp,100,'0.5 s into the windup: not yet');assert.deepEqual(bb.p,p0,'stopped during the windup');tick(s,.15);assert.ok(foe.hp<=30&&foe.hp>=20,'explodes 0.6 s after the trigger: '+foe.hp);assert.equal(bb.dn,1,'detonated: explicit dn');assert.equal(bb.hp,0);tick(s,.4);assert.ok(!s.effects.includes(bb),'the dn linger (.25 s) then expires');}
 {const {s,u,list:[foe,mate]}=setup('Raze',['foe'],['mate']);u.ability.c=1;Object.assign(foe,{x:0,y:0,z:30});Object.assign(mate,{x:0,y:0,z:28});assert.equal(s.command(u,{t:'ab',k:'c'}),true);tick(s,.5);const bb=s.effects.find(e=>e.kind==='boombot'),o=[bb.p[0],bb.p[1]+.2,30],d=[0,0,-1],V={damageRanges:[{rangeStartMeters:0,rangeEndMeters:999,bodyDamage:40}]};
  s.shotBy=mate;assert.equal(s.traceShot(o,d,100),Infinity,'an ally shot passes the bot');s.shotBy=foe;const t=s.traceShot(o,d,100);assert.ok(s.shotBlockedBy==='boombot'&&Math.abs(t-(30-bb.p[2]-.4))<.02,'an enemy shot stops on the bot: '+t);
  s.shotImpact(o,d,t,V);assert.equal(bb.hp,20,'40 body damage: 60 -> 20');assert.ok(s.effects.includes(bb));s.traceShot(o,d,100);s.shotImpact(o,d,t,V);assert.ok(!s.effects.includes(bb),'destroyed at 0 HP');tick(s,5);assert.equal(foe.hp,100,'a destroyed bot never explodes');
@@ -185,7 +187,7 @@ const ab=(s,u,k,m={})=>{s.time+=.5;return s.command(u,{t:'ab',k,...m});};
  assert.equal(DEV.alarmbot.deploy,1.85);tick(s,1.8);assert.ok(e.chase==null&&!e.alertAt,'1.85 s deploy: detects nothing');tick(s,.05);assert.equal(e.chase,foe.id,'deployed: detects');
  tick(s,.45);assert.ok(Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2])<1e-6,'0.5 s alert phase: not moving yet');tick(s,.1);const m=Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2]);assert.ok(m>.5&&m<=22.5*.1+1e-6,'runs at 22.5 m/s: '+m);
  tick(s,.15);assert.ok(e.blastAt>s.time,'within 2 m: 0.5 s windup');assert.ok(!(foe.vulnerableUntil>s.time),'not before the windup');tick(s,.55);
- assert.ok(foe.vulnerableUntil>s.time&&!s.effects.some(e=>e.kind==='alarmbot'),'Alarmbot pops');assert.ok(s.roundState(foe).status.vulnerable>3);const hp=foe.hp;abilityDamage(s,u,foe,10);assert.equal(hp-foe.hp,20,'vulnerable doubles damage');}
+ assert.ok(foe.vulnerableUntil>s.time&&!s.effects.some(e=>e.kind==='alarmbot'&&!e.dn),'Alarmbot pops (only the 0.25 s dn detonation row lingers)');assert.ok(e.dn===1&&e.hp===0,'explicit detonation signal');tick(s,.3);assert.ok(!s.effects.some(e=>e.kind==='alarmbot'),'the dn row expires');assert.ok(s.roundState(foe).status.vulnerable>3);const hp=foe.hp;abilityDamage(s,u,foe,10);assert.equal(hp-foe.hp,20,'vulnerable doubles damage');}
 // Alarmbot proximity (wiki 'Proximity radius to remain active 40 m', v1.11): inactive while Killjoy is dead or past 40 m (as the Turret).
 {const {s,u,list:[foe]}=setup('Killjoy',['foe']);u.ability.q=1;assert.equal(ab(s,u,'q'),true);const e=s.effects.find(e=>e.kind==='alarmbot');const p0=[...e.p];assert.equal(DEV.alarmbot.active,40);
  Object.assign(u,{x:p0[0],z:p0[2]+41});Object.assign(foe,{x:p0[0]+4.5,y:0,z:p0[2]});tick(s,3);assert.ok(e.chase==null&&Math.hypot(e.p[0]-p0[0],e.p[2]-p0[2])<1e-6,'Killjoy 41 m away: inactive');

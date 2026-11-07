@@ -23,7 +23,8 @@ function localOrigin(origin,env){if(env.ALLOW_LOCAL_ORIGIN!=='true')return false
 function qaOverrides(env){const o={};if(!env||env.QA_TEST_HOOKS!=='true')return o;
  const c=Number(env.QA_CREDITS);if(Number.isInteger(c)&&c>=0&&c<=99999)o.qaCredits=c;
  const b=Number(env.QA_BUY_SECONDS);if(Number.isFinite(b)&&b>=1&&b<=120)o.qaBuy=b;
- const n=Number(env.QA_BOTS);if(Number.isInteger(n)&&n>=0&&n<=9)o.qaBots=n;return o;}
+ const n=Number(env.QA_BOTS);if(Number.isInteger(n)&&n>=0&&n<=9)o.qaBots=n;
+ const ul=Number(env.QA_ULT);if(Number.isInteger(ul)&&ul>=0&&ul<=9)o.qaUlt=ul;return o;}
 export default {async fetch(request,env){try{const u=new URL(request.url);if(request.method==='OPTIONS')return new Response(null,{status:204,headers:CORS});if(u.pathname.startsWith('/worlds/')){const asset=await env.ASSETS.fetch(request),headers=new Headers(asset.headers);headers.set('Access-Control-Allow-Origin','*');return new Response(asset.body,{status:asset.status,headers});}if(u.pathname==='/health')return json({ok:true,version:2,authority:'input-simulation',modes:supportedModes(env),features:FEATURES});if(['/rooms','/leaderboard','/profile','/stats'].includes(u.pathname)&&request.method==='GET')return env.DIRECTORY.get(env.DIRECTORY.idFromName('global')).fetch(request);if(u.pathname==='/connect'){const code=(u.searchParams.get('code')||'').toUpperCase();if(!/^[A-HJ-NP-Z2-9]{6}$/.test(code))return json({error:'Invalid room code'},400);const origin=request.headers.get('Origin');if(origin&&origin!=='https://valorstrike.vercel.app'&&!origin.endsWith('.trycloudflare.com')&&!localOrigin(origin,env))return json({error:'Origin not permitted'},403);return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(request);}return json({error:'Not found'},404);}catch(e){return json({error:'Service temporarily unavailable'},503);}}};
 export class Directory extends DurableObject{
  constructor(ctx,env){super(ctx,env);this.rooms=new Map();}
@@ -64,7 +65,7 @@ export class GameRoom extends DurableObject{
  // leader cancelling or leaving cancels it. 'start' (immediate) is kept for older pages and tools.
  static QUEUE=5000;
  gm(){return this.sim?.gm||this.sim?.mode;}/* the room's game mode id (a Spike variant runs on a 'five' sim) */
- qa(sim){const __qa=qaOverrides(this.env);if(__qa.qaCredits!==undefined)sim.qaCredits=__qa.qaCredits;if(__qa.qaBuy!==undefined)sim.qaBuy=__qa.qaBuy;if(__qa.qaBots!==undefined)sim.qaBots=__qa.qaBots;return sim;}
+ qa(sim){const __qa=qaOverrides(this.env);if(__qa.qaCredits!==undefined)sim.qaCredits=__qa.qaCredits;if(__qa.qaBuy!==undefined)sim.qaBuy=__qa.qaBuy;if(__qa.qaBots!==undefined)sim.qaBots=__qa.qaBots;if(__qa.qaUlt!==undefined)sim.qaUlt=__qa.qaUlt;return sim;}
  loadExpired(s,n){const age=n-s.loadStarted;if(!(age>GameRoom.IDLE.loading))return false;if(age>GameRoom.LOAD.max)return true;return !(s.loadPing&&n-s.loadPing<GameRoom.LOAD.ping&&n-(s.loadMoved||s.loadStarted)<GameRoom.LOAD.stall);}
  constructor(ctx,env){super(ctx,env);this.sessions=new Map();this.detached=new Map();this.sim=null;this.world=null;this.timer=null;this.code='';this.public=false;this.host=null;this.botsEnabled=true;this.last=0;this.init=null;this.finishedParticipants=[];this.lag=env?.LAG_DIAGNOSTICS==='true'&&typeof LagMetrics==='function'?new LagMetrics():null;this.metrics={ticks:0,cpuMs:0,maxTickMs:0,incoming:0,coalesced:0,bytes:0,messages:0};this.rate(env?.TICK_HZ);}
  // The room's tick rate: hz, tickMs, step (s), and the per-tick counts that keep their time at any rate.

@@ -1,0 +1,102 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/kayo_fp/",
+    "Name": "kayo_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "FP_Grenadier_S0_4_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "flashdrive",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Grenadier_S0_4_Idle",
+      "Type": "Internal",
+      "SequenceLength": 3.3166666
+    },
+    {
+      "Name": "FP_Grenadier_S0_4_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "flashdrive",
+      "WeaponAnimName": "AB_Grenadier_S0_4_Equip",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_Grenadier_S0_4_Cast",
+      "Translatable": "Throw",
+      "HeldItem": "flashdrive",
+      "WeaponAnimName": "AB_Grenadier_S0_4_Idle",
+      "Type": "Internal",
+      "SequenceLength": 1
+    },
+    {
+      "Name": "FP_Grenadier_S0_4_Cast_UH",
+      "Translatable": "Short Throw",
+      "HeldItem": "flashdrive",
+      "WeaponAnimName": "AB_Grenadier_S0_4_Idle",
+      "Type": "Internal",
+      "SequenceLength": 1.2
+    },
+    {
+      "Name": "FP_Grenadier_S0_E_Knife_Idle",
+      "Translatable": "Idle",
+      "HeldItem": "zeropoint",
+      "IsHeldDefault": true,
+      "WeaponAnimName": "AB_Grenadier_S0_E_Knife_Idle",
+      "Type": "Internal",
+      "SequenceLength": 5.6833334
+    },
+    {
+      "Name": "FP_Grenadier_S0_E_Knife_Equip",
+      "Translatable": "Equip",
+      "HeldItem": "zeropoint",
+      "WeaponAnimName": "AB_Grenadier_S0_E_Knife_Equip",
+      "Type": "Internal",
+      "SequenceLength": 0.93333334
+    },
+    {
+      "Name": "FP_Grenadier_S0_E_Knife_Cast",
+      "Translatable": "Throw",
+      "HeldItem": "zeropoint",
+      "WeaponAnimName": "AB_Grenadier_S0_E_Knife_Cast",
+      "Type": "Internal",
+      "SequenceLength": 1.1666666
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Grenadier_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/kayo_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/kayo_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/kayo_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/kayo_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 1,
+          "B": 1
+        },
+        "Intensity": 1
+      }
+    }
+  ]
+}

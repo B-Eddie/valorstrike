@@ -4,7 +4,7 @@
 // again right after, so the page is idle, the last drawn frame is composited and the game state is unchanged.
 //   require('./pw_shot.cjs')(ctx,page)   (after ctx.newPage(), before page.goto)
 module.exports=async(ctx,page)=>{
- await ctx.addInitScript(()=>{const raf=window.requestAnimationFrame.bind(window);let q=[];window.__shotHold=0;
+ await ctx.addInitScript(()=>{if(window.__shotInstalled)return;window.__shotInstalled=1;const raf=window.requestAnimationFrame.bind(window);let q=[];window.__shotHold=0;
   window.requestAnimationFrame=f=>raf(t=>{if(window.__shotHold){q.push(f);return;}f(t);});
   window.__shotRelease=()=>{window.__shotHold=0;const L=q;q=[];for(const f of L)raf(f);};});
  const shot=page.screenshot.bind(page);

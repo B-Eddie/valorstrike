@@ -46,7 +46,7 @@ const G={map:{attacker:[-14,0,0],defender:[14,0,-28],sites:{A:[-8,0,-14],B:[8,0,
 {const assets={async fetch(r){try{return new Response(await fs.readFile('public'+new URL(r.url).pathname));}catch(e){return new Response('',{status:404});}}};
  const W={...(await loadWorld(assets,'ascent')),ray:()=>0};let seed=5;const S=new SpikeSimulation(W,'five','ascent',()=>(seed=(seed*16807)%2147483647)/2147483647);S.start(true);
  const sites=new Set(),plans=new Set(),defs=new Set(),guns=new Set(),calls=new Set(),stageSpread=[];
- for(let r=0;r<20;r++){if(r)S.newRound();for(const u of S.units)u.credits=[800,1900,2600,4200,6000][(r+u.id)%5];S.teamCall=null;S._callK=null;S.buy=30;
+ for(let r=0;r<20;r++){if(r)S.newRound();for(const u of S.units)u.credits=[800,1900,2600,4200,6000][Math.min(4,(r+(u.id>>1))%6)];/* a 6-step cycle over 5 seats: each team's total changes round to round (with 10 bots, (r+id)%5 gave every team one of each value -> the same total, the same call, every round) */S.teamCall=null;S._callK=null;S.buy=30;
   for(const u of S.units){u.purchases=[];u.primary=null;u.secondary='Classic';u.armor=0;S.autoBuy(u);if(u.primary)guns.add(u.primary);if(u.secondary!=='Classic')guns.add(u.secondary);}for(const c of Object.values(S.teamCall))calls.add(c);
   S.buy=0;const A=strategy(S,S.atk),D=strategy(S,1-S.atk);sites.add(S.spike.site);assert.equal(S.spike.site,A.plan.site,'the carrier heads for the strategy site');plans.add(A.plan.type);defs.add(D.plan.type);
   const atk=S.units.filter(u=>u.team===S.atk);for(const u of atk)plan(S,u);const ex=new Set(atk.map(u=>u.plan.stages.length?u.plan.stages[0].site+u.plan.stages[0].frac.toFixed(2):'site'));stageSpread.push(ex.size);

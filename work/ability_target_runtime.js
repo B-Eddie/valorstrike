@@ -77,6 +77,7 @@ function xTacDraw(force) {
     ctx.save(); ctx.setTransform((a[0] - o[0]) * s, (a[1] - o[1]) * s, (d[0] - o[0]) * s, (d[1] - o[1]) * s, X(o[0]), Z(o[1])); ctx.drawImage(C.image, 0, 0, 1024, 1024); ctx.restore(); }
   ctx.font = "bold 30px Arial"; ctx.textAlign = "center"; for (const [k, q] of Object.entries(C.meta.sites || {})) { ctx.fillStyle = "#18242e"; ctx.beginPath(); ctx.arc(X(q[0]), Z(q[2]), 22, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#f3efcf"; ctx.fillText(k, X(q[0]), Z(q[2]) + 10); }
   const o = XTAC.o, col = o.color || "#b9a7ff";
+  if (o.marks) { try { for (const q of o.marks() || []) { const mx = X(q[0]), my = Z(q[1]); ctx.save(); ctx.translate(mx, my); ctx.rotate(Math.PI / 4); ctx.fillStyle = "#b9a7ff"; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.rect(-11, -11, 22, 22); ctx.fill(); ctx.stroke(); ctx.restore(); } } catch (e) {} } // placed markers (Astra Stars)
   if (o.range > 0 && o.from) { ctx.beginPath(); ctx.arc(X(o.from[0]), Z(o.from[1]), o.range * s, 0, Math.PI * 2); ctx.strokeStyle = col; ctx.globalAlpha = 0.7; ctx.lineWidth = 3; ctx.setLineDash([12, 8]); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
   const ac = (typeof XAC !== "undefined" && XAC.on && XAC.hex) || "#5fe4df", agOf = (u) => (typeof xAg === "function" ? xAg(u) : u.agent), face = (u) => { const ry = u.g.rotation ? u.g.rotation.y || 0 : 0; return Math.atan2(Math.cos(ry), Math.sin(ry)); };
   try { for (const u of allies) if (u && u.alive && u.g) nmIcon(ctx, X(u.g.position.x), Z(u.g.position.z), 16, agOf(u), ac, face(u)); } catch (e) {}
@@ -171,12 +172,12 @@ window.xPlace = { aim: xAimPlace, ok: xPlaceOk, spot: xPlaceSpot, tick: xPlaceTi
 // ---- From the Shadows online: the trusted server roots Omen through the 1.5 s windup (origin) and the 2.5 s Shade (target) and sends him
 // back when the Shade is hit or X is pressed again (server tickShadows / shadeCancel; roundState channel {kind:'shadows', shade}). The page
 // holds still too, so prediction does not walk off and get snapped back; offline the same rule is okTick's J.fts (ftsPin / ftsCancel).
-const XFTS = { ph: "", p: null };
+const XFTS = { ph: "", p: null, veil: null };
 function xFtsNetTick() {
   const on = typeof NET !== "undefined" && NET.socket && J.pick === "Omen" && player && player.hp > 0, ch = on && typeof netChannel !== "undefined" && netChannel && netChannel.kind === "shadows" && netChannel.remaining > 0 ? netChannel : null;
-  if (!ch) { if (XFTS.ph) { XFTS.ph = ""; XFTS.p = null; if (typeof XABA !== "undefined") XABA.ftsT = 0; } return; } // over or cancelled: the FP channel pose ends with it
+  if (!ch) { if (XFTS.veil) { try { omxEnd(XFTS.veil); } catch(e) {} XFTS.veil=null; } if (XFTS.ph) { XFTS.ph = ""; XFTS.p = null; if (typeof XABA !== "undefined") XABA.ftsT = 0; } return; } // over or cancelled: the FP channel pose ends with it
   const ph = ch.shade ? "shade" : "wind";
-  if (XFTS.ph !== ph) { XFTS.ph = ph; XFTS.p = ph === "wind" ? [player.x, player.y, player.z] : null; }
+  if (XFTS.ph !== ph) { if(XFTS.veil) { try { omxEnd(XFTS.veil); } catch(e) {} XFTS.veil=null; } XFTS.ph = ph; XFTS.p = ph === "wind" ? [player.x, player.y, player.z] : null; if(ph === "shade") { /* persistent owner overlay from private authoritative channel, no observer burst replay */ try { XFTS.veil=omxVeil("Shade",ch.remaining); } catch(e) {} } }
   if (!XFTS.p) { const d = typeof XABA !== "undefined" && XABA.sent && Array.isArray(XABA.sent.p) ? XABA.sent.p : null; if (d && Math.hypot(player.x - d[0], player.z - d[1]) > 1.5) return; XFTS.p = [player.x, player.y, player.z]; } // Shade: hold where the server's snap put him
   player.x = XFTS.p[0]; player.y = XFTS.p[1]; player.z = XFTS.p[2]; player.vx = player.vz = 0;
 }

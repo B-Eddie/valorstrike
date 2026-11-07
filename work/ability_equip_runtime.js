@@ -32,7 +32,7 @@ const XABT = { draw: 0.5, rel: XAB_REL, rec: 0.45 }; // rel: the hand release, s
 // ("Equip time" row, wiki.playvalorant.com/en-us/<Ability>, fetched 2026-10-25). Not listed: Blast Pack, Cyber Cage,
 // Neural Theft -> XABT.draw (0.5 s).
 const XAB_EQT = {
-  Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
+  Deadlock: { c: 0.8 }, Phoenix: { c: 0.8, q: 0.8, e: 0.8 }, Sova: { c: 0.9, q: 0.8, e: 0.8, x: 0.8 }, Sage: { c: 0.8, q: 0.5, e: 0.5, x: 0.8 }, Reyna: { c: 0.77 },
   Omen: { c: 0.5, q: 1.1, e: 0.6 }, Killjoy: { c: 0.74, q: 0.85, e: 1.1, x: 0.8 }, Raze: { c: 1.1, e: 0.8 }, Skye: { e: 0.8, x: 0.8 },
   Breach: { c: 0.9, q: 1.1, e: 0.8, x: 1.1 }, Cypher: { c: 0.8, e: 0.8 }, Chamber: { c: 1.0, e: 0.8 } };
 function xEqT(k) { const t = XAB_EQT[J.pick]; return (t && t[k]) || XABT.draw; }
@@ -48,6 +48,7 @@ function xUneqT(k, ag = J.pick) { const t = XAB_UNEQ[ag]; return t && Number.isF
 function xReeqT(k, w, ag = J.pick) { const r = XAB_REEQ[w] || XAB_REEQ.Classic, i = (XAB_REEQI[ag] || "").includes(k); let s = 1; try { s = xStimK() || 1; } catch (e) {} return r[i ? 1 : 0] / s; }
 function xEqWeap() { try { return vfWeapon(); } catch (e) { return typeof rw !== "undefined" && rw === "knife" ? "Knife" : "Classic"; } }
 const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and nothing of it out waiting for a recast); mirrors server ABILITY_EQUIP
+  Deadlock: { c: () => J.c >= 1 && J.cd.c <= 0 },
   Phoenix: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1 && J.cd.e <= 0 },
   Sova: { c: () => J.c >= 1 && J.cd.c <= 0 && !J.dr, q: () => J.q >= 1 && J.cd.q <= 0 && !J.dr, e: () => J.e >= 1 && !J.dr, x: () => !(J.hf > 0) && J.ult >= K().u && !J.dr },
   Sage: { c: () => J.c >= 1 && J.cd.c <= 0, q: () => J.q >= 1 && J.cd.q <= 0, e: () => J.e >= 1, x: () => J.ult >= K().u },
@@ -67,7 +68,7 @@ const XAB_EQ = { // agent -> key -> ready-to-equip test (a charge to spend and n
 //   it closer (through walls, XDARK.min..max = server abilities.js DARK); E (the ability key again) or a quick FIRE tap casts. The marker
 //   (xDarkMesh, a 4.1 m outline seen through walls) shows where the smoke lands: on the aim line, sunk to the floor below (wiki: "the smoke
 //   will sink vertically" onto a horizontal surface). Was: E + FIRE put the smoke at the first wall within 30 m, 1.5-4 m high.
-const XAB_HOLD = { Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
+const XAB_HOLD = { Skye: { e: "hawk" }, Sova: { q: "bow", e: "bow" }, Breach: { e: "fault" }, Omen: { e: "mark" } };
 var XDARK = { max: 80, min: 1, rate: 20, tap: 0.2, def: 30, lift: 1.7 }; // = server DARK (max / min / rate); lift = server SMOKE.lift (centre above the floor)
 function xDarkInit(q) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = XDARK.max; const h = ray.intersectObjects(solids)[0]; q.md = Math.max(XDARK.min, Math.min(XDARK.max, h ? h.distance - 0.5 : XDARK.def)); } // starts at the wall under the crosshair
 function xDarkPt(md) { const o = pEye(), d = jAim(), p = o.addScaledVector(d, md); let g = NaN; try { g = groundAt(p.x, p.z, 0.2, p.y); } catch (e) {} if (!Number.isFinite(g) || g > p.y) g = Math.min(p.y, player.y || 0); return { x: p.x, y: g + XDARK.lift, z: p.z, f: g }; } // sunk to the floor below the marker
@@ -105,6 +106,7 @@ function xEqFire(alt) { // FIRE / ALT FIRE while an ability is out: true when th
   if (hk === "mark") { if (q.st === "ready" || (q.st === "mark" && q.dir !== (alt ? -1 : 1))) { if (!Number.isFinite(q.md)) xDarkInit(q); q.st = "mark"; q.dir = alt ? -1 : 1; q.h = 0; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true; } // Dark Cover: FIRE / ALT FIRE move the marker (xEqTick)
   if (hk === "fault" && alt) return true; // Fault Line has no alternate
   if (hk === "bow" && alt) { if (q.st !== "rel" && q.st !== "rec") { q.bn = ((q.bn | 0) + 1) % 3; try { blip(500 + q.bn * 180, 0.05, "triangle", 0.1); } catch (e) {} } return true; } // ALT FIRE: one more bounce
+  if (hk === "hawk" && !alt) { if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else if (q.st === "draw") q.buf = 1; return true; } // Guiding Light: FIRE launches the hawk; FIRE still down at the launch = HOLD FIRE steering (xEqTick keeps the hawk in hand while held)
   if (hk && !alt) { if (q.st === "ready") { q.st = "hold"; q.h = 0; } else if (q.st === "draw") q.buf = 1; return true; } // FIRE down: start the hold
   if (q.st === "ready") { q.st = "rel"; q.t = XABT.rel; q.alt = !!alt; } else if (q.st === "draw") q.buf = alt ? 2 : 1; return true;
 }
@@ -114,7 +116,7 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   XABT.hold = hk === "fault" ? { pw: Math.max(0, Math.min(1, q.h / XFAULT.charge)) } : null; // Fault Line charge: read by bcKey, mpCastSelf and the server intent
   XABT.face = xRotKind(q) ? xRotFace(q) : null; // Turret facing / Barrier angle: read by kjKey / sgKey and mpCastSelf (m.fy / m.by)
   XABT.mark = hk === "mark" && Number.isFinite(q.md) ? { d: q.md, p: xDarkPt(q.md) } : null; // Dark Cover marker: read by okKey (offline smoke) and mpCastSelf (dist / p)
-  XABT.casting = true; try { xEqKey0(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
+  XABT.casting = true; try { (XABT.castKey || xEqKey0)(q.code); } catch (e) { xE(e); } finally { XABT.casting = false; XABT.bolt = null; XABT.hold = null; XABT.mark = null; XABT.face = null; J.abAlt = a0; try { mpAltHeld = m0; } catch (e) {} }
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
@@ -122,6 +124,7 @@ function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0 && FV.menu)) { J.eq = null; return; }
   if (q.rot) { if (!(typeof mpAltHeld !== "undefined" && mpAltHeld) || !xRotOn(q)) q.rot = false; else { yaw = q.ry; pitch = q.rp; } } // ALT FIRE let go: the mouse turns the view again
+  if (q.st === "steer") { if (!RS.hk || RS.hk.w != null || !RS.hk.hold || !fireHeld) { if (RS.hk) RS.hk.hold = false; q.st = "rec"; q.t = q.rec = xUneqT(q.k); } return; } // Guiding Light held: stays in hand until FIRE is released, the hawk pops or its flight ends (wiki), then the unequip + gun re-equip
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
   if (q.st === "mark") { const held = q.dir > 0 ? fireHeld : typeof mpAltHeld !== "undefined" && mpAltHeld; q.h += dt; // Dark Cover: a quick FIRE tap casts; holding moves the marker
@@ -129,12 +132,14 @@ function xEqTick(dt) {
     if (!held) { if (q.dir > 0 && q.h <= XDARK.tap) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else q.st = "ready"; } return; }
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
+  else if (q.st === "rel") { if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; } }
   else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } else { q.st = "ready"; q.t = 0; } }
   else if (q.st === "rec") { J.eq = null; const w = xEqWeap(); VM.sw = VM.swT = xReeqT(q.k, w); VM.ins = 0; } // ability put away: the gun re-equips (fast / instant), no fire until it is up
 }
 const xEqKey0 = jKey;
 jKey = function (code) {
   if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))))) return xEqKey0.apply(this, arguments);
+  if (code === "KeyE" && J.pick === "Skye" && J.eq && J.eq.st === "steer" && RS.hk) { J.eq.st = "rec"; J.eq.t = J.eq.rec = xUneqT("e"); RS.hk.hold = false; return xEqKey0.apply(this, arguments); } // RE-USE while steering: pop the hawk
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away

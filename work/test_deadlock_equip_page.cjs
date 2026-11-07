@@ -1,0 +1,8 @@
+const assert=require('assert/strict'),T=require('../server/node_modules/three/build/three.cjs'),H=require('./page_harness.cjs').boot({real3:true}),xe=H.xe;
+const floor=new T.Mesh(new T.PlaneGeometry(200,200),new T.MeshBasicMaterial({side:T.DoubleSide}));floor.rotation.x=-Math.PI/2;floor.updateMatrixWorld(true);H.win.floor=floor;
+xe('player={x:0,y:0,z:0,hp:100,ch:0};NET.socket=null;running=true;paused=false;J.on=true;FV.dm=false;J.pick=`Deadlock`;a18Reset();J.c=1;J.cd.c=0;FV.buy=0;mode=`five`;solids.length=0;solids.push(window.floor);yaw=0;pitch=0;jKey(`KeyC`);true');
+assert.equal(xe('J.eq.st'),'draw');assert.equal(xe('J.c'),1);assert.equal(xe('a18MeshFlights.length'),0);xe('jKey(`KeyC`);xEqTick(2);true');assert.equal(xe('J.eq'),null);assert.equal(xe('J.c'),1,'cancel key never spends');
+xe('jKey(`KeyC`);xEqFire(false);xEqTick(.79);true');assert.equal(xe('J.c'),1);assert.equal(xe('J.eq.st'),'draw');xe('xEqTick(.02);true');assert.equal(xe('J.eq.st'),'rel');assert.equal(xe('J.c'),1);xe('xEqTick(2);true');assert.equal(xe('J.c'),0,'buffered FIRE releases exactly once');assert.equal(xe('a18MeshFlights.length'),1);xe('xEqTick(2);true');assert.equal(xe('J.eq'),null);assert.equal(xe('a18MeshFlights.length'),1);
+xe('a18Reset();J.c=1;J.cd.c=0;jKey(`KeyC`);player.hp=0;xEqTick(1);true');assert.equal(xe('J.eq'),null);assert.equal(xe('J.c'),1,'death cancels uncast equip');assert.equal(xe('a18MeshFlights.length'),0);
+xe('player.hp=100;jKey(`KeyC`);FV.buy=2;xEqTick(1);true');assert.equal(xe('J.eq'),null);assert.equal(xe('J.c'),1,'buy/reset gate cancels pending equip');
+console.log('actual full-page offline dispatch: equip/cancel/0.8s buffered FIRE/single spend/death/buy gate PASS (noGL triangle fixture)');

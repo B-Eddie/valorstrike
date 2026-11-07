@@ -1,0 +1,71 @@
+{
+  "Model": {
+    "Path": "../uploads/models/agents_fp/tejo_fp/",
+    "Name": "tejo_fp.glb"
+  },
+  "Settings": {
+    "Type": "1P",
+    "FOV": 43.383066656235656,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "CameraParent": "Camera",
+    "ShadowHeight": 0
+  },
+  "Animations": [],
+  "Materials": [
+    {
+      "Name": "FP_Cashew_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents_fp/tejo_fp/textures/DF.png",
+      "ORM": "../uploads/models/agents_fp/tejo_fp/textures/ORM.png",
+      "EM": "../uploads/models/agents_fp/tejo_fp/textures/EM.png",
+      "NM": "../uploads/models/agents_fp/tejo_fp/textures/NM.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "TP_Cashew_S0_Drone_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/tejo/textures/drone_df.png",
+      "ORM": "../uploads/models/agents/tejo/textures/drone_orm.png",
+      "EM": "../uploads/models/agents/tejo/textures/drone_em.png",
+      "NM": "../uploads/models/agents/tejo/textures/drone_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "ABTP_Cashew_S0_Semtex_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/tejo/textures/nade_df.png",
+      "ORM": "../uploads/models/agents/tejo/textures/nade_orm.png",
+      "EM": "../uploads/models/agents/tejo/textures/nade_em.png",
+      "NM": "../uploads/models/agents/tejo/textures/nade_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "AB_Cashew_S0_E_Rocket_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/agents/tejo/textures/rocket_df.png",
+      "ORM": "../uploads/models/agents/tejo/textures/rocket_orm.png",
+      "EM": "../uploads/models/agents/tejo/textures/rocket_em.png",
+      "NM": "../uploads/models/agents/tejo/textures/rocket_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Cashew_S0_Glass_MI",
+      "Type": "TejoArmGlass",
+      "Opacity": 0.4,
+      "Metallic": 0,
+      "Roughness": 0.114286,
+      "Emissive": {
+        "Intensity": 1
+      },
+      "DF": "../uploads/models/agents_fp/tejo_fp/textures/DF.png"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+ "exit": 0,
+ "minimumMemAvailableMB": 532,
+ "seconds": 35.99,
+ "stop": null,
+ "stages": {
+  "xWarmLazy": 702,
+  "frame-1": 532
+ },
+ "result": {
+  "state": {
+   "map": "lotus",
+   "collision": 1418010,
+   "playable": 8695,
+   "cached": true,
+   "meshes": 589,
+   "gl": 0,
+   "frame": 66
+  },
+  "before": {
+   "p": [
+    0,
+    6.325669765472412,
+    41.75
+   ],
+   "frame": 66
+  },
+  "after": {
+   "p": [
+    -0.7274619860835582,
+    6.284329891204834,
+    29.55029055217337
+   ],
+   "frame": 68,
+   "paused": false,
+   "running": true,
+   "mode": "five",
+   "map": "lotus",
+   "gate": false,
+   "pc": true,
+   "visibility": "visible"
+  },
+  "sourceMapFetches": 0,
+  "assetRequests": [
+   "http://127.0.0.1:8876/models/valorant/animations/FP_Vandal.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/GN_Vandal.glb",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.json?v=6422dd1f26e51ed9",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.bin?v=c352435f6ba45f22",
+   "http://127.0.0.1:8876/models/valorant/agents/reyna.glb?v=4edc44aacbdd2b36",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.json?v=6422dd1f26e51ed9",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.bin?v=c352435f6ba45f22",
+   "http://127.0.0.1:8876/models/valorant/agents/locomotion.bin?v=420122f69dd73199",
+   "http://127.0.0.1:8876/models/valorant/agents/jett.glb?v=f366ca593ec2fc35",
+   "http://127.0.0.1:8876/models/valorant/agents/harbor.glb?v=7d0a90cee9e14178",
+   "http://127.0.0.1:8876/models/valorant/agents/killjoy.glb?v=1d86ebaececcc5c4",
+   "http://127.0.0.1:8876/models/valorant/agents/skye.glb?v=f40fad1f676280fb",
+   "http://127.0.0.1:8876/models/valorant/agents/gekko.glb?v=5d09915ff9004031",
+   "http://127.0.0.1:8876/models/valorant/agents/miks.glb?v=1373270374b14764",
+   "http://127.0.0.1:8876/models/valorant/agents/tejo.glb?v=17832bb2d6acf225",
+   "http://127.0.0.1:8876/models/valorant/agents/sage.glb?v=19157e2ce42a936c",
+   "http://127.0.0.1:8876/models/valorant/agents/sova.glb?v=a8d10e2c3bcf8fd4",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.json?v=6422dd1f26e51ed9",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.bin?v=c352435f6ba45f22",
+   "http://127.0.0.1:8876/models/valorant/agents/sage.glb?v=19157e2ce42a936c",
+   "http://127.0.0.1:8876/models/valorant/agents/locomotion.bin?v=420122f69dd73199",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.json?v=6422dd1f26e51ed9",
+   "http://127.0.0.1:8876/models/valorant/movement/movement.bin?v=c352435f6ba45f22",
+   "http://127.0.0.1:8876/models/valorant/agents/sage.glb?v=19157e2ce42a936c",
+   "http://127.0.0.1:8876/models/valorant/agents/locomotion.bin?v=420122f69dd73199"
+  ],
+  "errors": []
+ }
+}

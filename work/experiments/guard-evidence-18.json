@@ -1,0 +1,18 @@
+[
+ {
+  "script": "capture-prepared-subset.cjs",
+  "count": 18,
+  "exit": 0,
+  "seconds": 10.83,
+  "minimumMemAvailableMB": 743,
+  "stop": null
+ },
+ {
+  "script": "load-captured-subset-gpu.cjs",
+  "count": 18,
+  "exit": 0,
+  "seconds": 2.31,
+  "minimumMemAvailableMB": 1283,
+  "stop": null
+ }
+]

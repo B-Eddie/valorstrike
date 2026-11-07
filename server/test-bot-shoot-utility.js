@@ -1,6 +1,6 @@
 // Bots shoot down destroyable enemy utility (qa-20): spike.js shootUtility + vendor/bot-brain.cjs shootUtility, with the
 // device HP of devices.js SHOOT (wiki 'Health': Boom Bot 60, Turret 100, Alarmbot 20, Trademark 20, Nanoswarm 20,
-// Trapwire 20) and the Sage Barrier (600). Real bullets: the bot only aims and pulls the trigger; traceShot / shotImpact
+// Trapwire 20, Chamber's Rendezvous anchor 50) and the Sage Barrier (600). Real bullets: the bot only aims and pulls the trigger; traceShot / shotImpact
 // take the HP off. A barrier is shot only when it stands across the bot's way; with an enemy in sight the fight wins.
 import assert from 'node:assert/strict';import {SpikeSimulation} from './src/spike.js';import {SHOOT,nearestDevice,damageDevice} from './src/devices.js';
 import BotBrain from '../vendor/bot-brain.cjs';
@@ -16,7 +16,7 @@ const W={map:{attacker:[0,0,0],defender:[0,0,-30],sites:{A:[0,0,-30]}},nav:{node
  assert.equal(S([{kind:'turret',d:10,los:true},{kind:'boombot',d:12,los:true}]).kind,'boombot','an incoming Boom Bot first');
  assert.equal(S([{kind:'alarmbot',d:13,los:true}]),null,'trap devices within 12 m');
  assert.equal(S([{kind:'trapwire',d:8,los:true},{kind:'trademark',d:4,los:true}]).kind,'trademark','same priority: the nearer');
- assert.deepEqual(Object.fromEntries(Object.entries(SHOOT).map(([k,v])=>[k,v.hp])),{hunter:150,boombot:60,turret:100,alarmbot:20,trademark:20,nanoswarm:20,trapwire:20,blastpack:20,spycam:1,owl:100},'wiki device HP');}
+ assert.deepEqual(Object.fromEntries(Object.entries(SHOOT).map(([k,v])=>[k,v.hp])),{rdvanchor:50,hunter:150,boombot:60,turret:100,alarmbot:20,trademark:20,nanoswarm:20,trapwire:20,blastpack:20,spycam:1,owl:100},'wiki device HP');}
 const mk=(agent='Jett')=>{const s=new SpikeSimulation(W,'five','ascent',()=>.5);const b=s.add('bot','Jett',false),kj=s.add('kj',agent);s.start(false);s.buy=0;s.roundDelay=0;
  Object.assign(b,{x:0,y:0,z:0,look:0,pitch:0,weapon:'Vandal',ammo:25,reserve:50,fireAt:0,alive:true,hp:100});if(b.team===kj.team){kj.team=1-b.team;}Object.assign(kj,{x:40,y:0,z:40,alive:true});return {s,b,kj};};
 const run=(s,b,sec,goal)=>{for(let i=0;i<sec*20;i++){s.time+=.05;if(s.shootUtility(b,goal)&&b.input.fire)s.fire(b);if(s.time>=b.reloadAt&&b.reloadAt)s.finishReload(b);}};
