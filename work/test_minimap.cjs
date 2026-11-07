@@ -6,12 +6,12 @@ console.log('Six-map projection/inverse and actual Omen minimap click agree at11
 // formula, pushed through the canvas transform nmMinimap actually sets, and compared to where the same
 // callout's world position is drawn. A mirror, rotation or offset error would put them metres apart.
 {const s2=fs.readFileSync('work/native_maps_runtime.js','utf8'),a2=s2.indexOf('function nmMapProjection('),b2=s2.indexOf('\n{const map=minimap',a2);let T=null;
- const ctx={setTransform(...m){if(!(m[0]===1&&m[1]===0&&m[2]===0&&m[3]===1))T=m;},clearRect(){},fillRect(){},beginPath(){},closePath(){},arc(){},fill(){},fillText(){},moveTo(){},lineTo(){},stroke(){},save(){},restore(){},drawImage(){}};
+ const ctx={setTransform(...m){if(!(m[0]===1&&m[1]===0&&m[2]===0&&m[3]===1))T=m;},transform(...m){T=m;},translate(){},rotate(){},scale(){},strokeText(){},clearRect(){},fillRect(){},beginPath(){},closePath(){},arc(){},fill(){},fillText(){},moveTo(){},lineTo(){},stroke(){},save(){},restore(){},drawImage(){}};
  const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}};let now=0;
- const k={Math,Object,performance:{now:()=>now+=1000},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{sp:{st:'carry'}},yaw:0,XCALL:{},window:{},J:{rvT:0},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),$(){return {classList:{toggle(){}}}},MM:{width:320,height:320,getBoundingClientRect:()=>({width:112})},mmx:ctx,allies:[],bots:[],los:()=>true,pEye:()=>new V(0,1.5,0),THREE:{Vector3:V}};
+ const k={Math,Object,performance:{now:()=>now+=1000},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{sp:{st:'carry'}},yaw:0,XCALL:{},minimap:{},window:{},J:{rvT:0},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),$(){return {classList:{toggle(){}}}},MM:{width:320,height:320,getBoundingClientRect:()=>({width:112})},mmx:ctx,allies:[],bots:[],los:()=>true,pEye:()=>new V(0,1.5,0),THREE:{Vector3:V}};
  vm.createContext(k);vm.runInContext(s2.slice(a2,b2)+';globalThis.draw=nmMinimap;globalThis.project=nmMapProjection;',k);
  for(const name of ['ascent','bind','haven','split','lotus','breeze']){const m=JSON.parse(fs.readFileSync('models/valorant/maps/'+name+'/map.json')),n=JSON.parse(fs.readFileSync('models/valorant/maps/'+name+'/navigation.json')),xs=n.nodes.map(p=>p[0]),zs=n.nodes.map(p=>p[2]);
-  const C={bounds:{x1:Math.min(...xs),x2:Math.max(...xs),z1:Math.min(...zs),z2:Math.max(...zs)},image:{complete:true,naturalWidth:1024},meta:m};T=null;k.draw(C);assert.ok(T,name+' minimap image placed');const P=k.project(C,320,320),ap=m.apiProjection;
+  const C={bounds:{x1:Math.min(...xs),x2:Math.max(...xs),z1:Math.min(...zs),z2:Math.max(...zs)},image:{complete:true,naturalWidth:1024},meta:m};T=null;k.draw(C);assert.ok(T,name+' minimap image placed');const P=k.project(C,k.MM.width,k.MM.height)/* nmMmSize sizes the backing store to the CSS box x devicePixelRatio */,ap=m.apiProjection;
   const cal=m.callouts.filter(q=>q.game);assert.ok(cal.length>=8,name+' has API callouts');let worst=0;
   for(const q of cal){const u=(q.game.y*ap.xMultiplier+ap.xScalarToAdd)*1024,v=(q.game.x*ap.yMultiplier+ap.yScalarToAdd)*1024,cx=T[0]*u+T[2]*v+T[4],cy=T[1]*u+T[3]*v+T[5];worst=Math.max(worst,Math.hypot(cx-P.X(q.position[0]),cy-P.Z(q.position[2]))/P.s);}
   assert.ok(worst<1.5,name+' image and dots agree within 1.5 m (worst '+worst.toFixed(2)+' m)');
@@ -23,5 +23,5 @@ console.log('Six-map projection/inverse and actual Omen minimap click agree at11
   // Not mirrored: image orientation determinant matches the world-to-canvas mapping (both proper).
   assert.ok(T[0]*T[3]-T[1]*T[2]>0,name+' minimap image is not mirrored');
   // Attackers and defenders land on opposite halves the way the image shows them.
-  const at=[P.X(m.attacker[0]),P.Z(m.attacker[2])],df=[P.X(m.defender[0]),P.Z(m.defender[2])];assert.ok(Math.hypot(at[0]-df[0],at[1]-df[1])>60,name+' spawns separated on the map');}
+  const at=[P.X(m.attacker[0]),P.Z(m.attacker[2])],df=[P.X(m.defender[0]),P.Z(m.defender[2])];assert.ok(Math.hypot(at[0]-df[0],at[1]-df[1])>60*k.MM.width/320,name+' spawns separated on the map');}
  console.log('Minimap orientation: API callouts through the drawn image transform land on their world dots (<1.5 m) and on walkable navmesh ground (beating mirrored/rotated fits) on all six maps; no mirroring');}

@@ -22,7 +22,7 @@ assert(!/px=W\/\(MM\.getBoundingClientRect\(\)\.width/.test(nm),'minimap width n
 // Minimap: getBoundingClientRect at most once per second of draws.
 {const a=nm.indexOf('function nmMapProjection('),b=nm.indexOf('\n{const map=minimap',a);let rects=0,now=0;
  class V{constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}}
- const ctx2=new Proxy({},{get:()=>()=>{}}),k={Math,Object,performance:{now:()=>now},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{sp:{st:'carry'}},yaw:0,XCALL:{},window:{},J:{rvT:0},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),$(){return {classList:{toggle(){}}}},
+ const ctx2=new Proxy({},{get:()=>()=>{}}),k={Math,Object,performance:{now:()=>now},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{sp:{st:'carry'}},yaw:0,XCALL:{},minimap:{},window:{},J:{rvT:0},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),$(){return {classList:{toggle(){}}}},
   MM:{width:320,height:320,getBoundingClientRect:()=>{rects++;return {width:112};}},mmx:ctx2,allies:[],bots:[],los:()=>true,pEye:()=>new V(0,1.5,0),THREE:{Vector3:V}};
  vm.createContext(k);vm.runInContext(nm.slice(a,b)+';globalThis.draw=nmMinimap;',k);
  const m=JSON.parse(fs.readFileSync(path.join(root,'models/valorant/maps/ascent/map.json'),'utf8')),C={bounds:m.bounds,image:{complete:true,naturalWidth:1024},meta:m};

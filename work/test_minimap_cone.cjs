@@ -8,17 +8,17 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),s=fs.readFileSync('work/native_maps_runtime.js','utf8'),a=s.indexOf('function nmMapProjection('),b=s.indexOf('\n{const map=minimap',a);
 assert.ok(a>0&&b>a,'minimap block found');
 let t=1000,arcs=[],texts=[],paths=[],color,blocked=()=>false;
-const ctx={setTransform(){},clearRect(){arcs=[];texts=[];paths=[]},fillRect(){},beginPath(){paths.push({arcs:[],lines:[]})},closePath(){},
+const ctx={setTransform(){},transform(){},translate(){},rotate(){},scale(){},strokeText(){},clearRect(){arcs=[];texts=[];paths=[]},fillRect(){},beginPath(){paths.push({arcs:[],lines:[]})},closePath(){},
  arc(x,z,r,a0,a1){const q={x,z,r,a0,a1};arcs.push(q);paths.at(-1)&&paths.at(-1).arcs.push(q)},fill(){const p=paths.at(-1);if(p)p.fill=color;if(arcs.length&&!arcs.at(-1).color)arcs.at(-1).color=color},
  fillText(tx,x,z){texts.push({tx,x,z,color,alpha:ctx.globalAlpha})},moveTo(x,z){paths.at(-1)&&paths.at(-1).lines.push([x,z])},lineTo(x,z){paths.at(-1)&&paths.at(-1).lines.push([x,z])},stroke(){},save(){},restore(){},drawImage(){},
  globalAlpha:1,set fillStyle(v){color=v},get fillStyle(){return color},strokeStyle:'',lineWidth:1,font:'',textAlign:''};
 const V=class{constructor(x,y,z){Object.assign(this,{x,y,z})}set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}};/* set: nmSpot reuses its eye / target points (combat lane) */
-const c={Math,performance:{now:()=>t+=200},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{atk:false,sp:{st:'carry'}},yaw:0,XCALL:{},window:{},J:{rvT:0,rv:[]},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),
+const c={Math,performance:{now:()=>t+=200},running:true,player:{x:0,y:0,z:0,hp:100},mode:'five',FV:{atk:false,sp:{st:'carry'}},yaw:0,XCALL:{},minimap:{},window:{devicePixelRatio:320/112}/* backing store 320 px for the 112 px box (nmMmSize) */,J:{rvT:0,rv:[]},mmVis:new Set(),mmPrev:new Set(),mmLost:new Map(),
  camera:{fov:70.53,aspect:16/9},$(){return {classList:{toggle(){}}}},MM:{width:320,height:320,getBoundingClientRect:()=>({width:112})},mmx:ctx,allies:[],bots:[],los:(e,p)=>!blocked(e,p),pEye:()=>new V(c.player.x,1.5,c.player.z),THREE:{Vector3:V}};
 vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.draw=nmMinimap;globalThis.spot=nmSpot;globalThis.half=typeof nmViewHalf==="function"?nmViewHalf:null;',c);
 const C={bounds:{x1:-60,x2:60,z1:-60,z2:60},image:{complete:false},meta:{sites:{}}};
 const unit=(x,z,ry,alive=true)=>({alive,g:{position:{x,y:0,z},rotation:{y:ry}}});
-const reds=()=>arcs.filter(q=>q.color==='#ff4655').length;
+const reds=()=>paths.filter(p=>p.fill==='#ff4655').length;/* unit markers are filled arrow paths */
 const deg=r=>r*180/Math.PI,wrap=r=>Math.atan2(Math.sin(r),Math.cos(r));
 // --- 1. view cone wedge ---
 assert.equal(typeof c.half,'function','nmViewHalf exported by the minimap block');

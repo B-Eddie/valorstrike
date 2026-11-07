@@ -24,14 +24,18 @@ const page=[line('const NM_NONE=[];'),line('function nmCellNum(C){'),line('funct
 const tree=k=>{const b=f=>fs.readFileSync(path.join(srv,'public/worlds',k,f)),p=b('position.bin'),ix=b('index.bin'),g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(new Float32Array(p.buffer.slice(p.byteOffset,p.byteOffset+p.byteLength)),3));g.setIndex(new T.BufferAttribute(new Uint32Array(ix.buffer.slice(ix.byteOffset,ix.byteOffset+ix.byteLength)),1));const meta=JSON.parse(b('meta.json')),roots=[];for(let n=0;n<meta.roots;n++){const r=b('bvh'+n+'.bin');roots.push(r.buffer.slice(r.byteOffset,r.byteOffset+r.byteLength));}return MeshBVH.deserialize({index:g.index.array,roots},g,{setIndex:false});};
 const FULL=!!process.env.SBL_FULL,PER=FULL?16:10,MAPS=(process.env.SBL_MAPS||'ascent,bind,breeze,haven,lotus,split').split(','),SKY_ABOVE=8;
 if(!fs.existsSync(path.join(srv,'public/worlds',MAPS[0],'bvh0.bin'))){console.log('test_spawn_barrier_tall_client: SKIP (no server/public/worlds collision: npm run build:worlds)');process.exit(0);}
-// 2. ability casts refused in the buy phase (page jKey, every agent and key)
-{const src=fnBlock('function jKey(code) {');const picks=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye','Breach','Chamber','Cypher'];let said=0,casts=0;
- const ctx={Math,mode:'five',FV:{buy:30},player:{hp:100,vy:0,y:7,x:0,z:0},J:{pick:'Jett',q:2,c:2,e:2,x:7,cd:{q:0,c:0,e:0,x:0}},jOn:()=>true,say:()=>{said++;},blip:()=>{},SFX:{ab:()=>{casts++;}}};
- for(const k of picks)ctx[{Phoenix:'phKey',Sova:'svKey',Sage:'sgKey',Reyna:'ryKey',Omen:'okKey',Killjoy:'okKey',Raze:'rsKey',Skye:'rsKey',Breach:'bcKey',Chamber:'bcKey',Cypher:'cyKey'}[k]||'_']=()=>{casts++;};
+// 2. buy phase (user 2026-11-06: abilities usable, as VALORANT): with the buy menu open every ability key is swallowed; with it closed
+//    the agent's handler casts, except the teleports past the spawn wall (Omen C / X, Chamber E), refused like the server's castAbility
+{const src=fnBlock('function jKey(code) {');const picks=['Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye','Breach','Chamber','Cypher'];let said=0,casts=0;const cast=[];
+ const ctx={Math,mode:'five',FV:{buy:30,menu:true},player:{hp:100,vy:0,y:7,x:0,z:0},J:{pick:'Jett',q:2,c:2,e:2,x:7,cd:{q:0,c:0,e:0,x:0}},jOn:()=>true,say:()=>{said++;},blip:()=>{},SFX:{ab:()=>{casts++;}}};
+ for(const k of picks)ctx[{Phoenix:'phKey',Sova:'svKey',Sage:'sgKey',Reyna:'ryKey',Omen:'okKey',Killjoy:'okKey',Raze:'rsKey',Skye:'rsKey',Breach:'bcKey',Chamber:'bcKey',Cypher:'cyKey'}[k]]=c=>{casts++;cast.push(ctx.J.pick+' '+c);};
  vm.createContext(ctx);vm.runInContext(src,ctx);
- for(const p of picks)for(const code of ['KeyC','KeyQ','KeyE','KeyX']){ctx.J.pick=p;const r=vm.runInContext('jKey('+JSON.stringify(code)+')',ctx);if(r!==true)fails.push('jKey '+p+' '+code+' in the buy phase did not take the key');}
- if(casts||ctx.player.vy!==0)fails.push('an ability cast in the buy phase ('+casts+' casts, vy '+ctx.player.vy+')');if(said<48)fails.push('buy-phase ability keys: '+said+' "Abilities unlock at round start" notes, want 48');
- out.push('buy phase: 48 ability keys refused (12 agents x C/Q/E/X)');}
+ for(const p of picks.concat('Jett'))for(const code of ['KeyC','KeyQ','KeyE','KeyX']){ctx.J.pick=p;const r=vm.runInContext('jKey('+JSON.stringify(code)+')',ctx);if(r!==true)fails.push('jKey '+p+' '+code+' with the buy menu open did not take the key');}
+ if(casts||said||ctx.player.vy!==0)fails.push('an ability cast with the buy menu open ('+casts+' casts, '+said+' notes, vy '+ctx.player.vy+')');
+ ctx.FV.menu=false;for(const p of picks)for(const code of ['KeyC','KeyQ','KeyE','KeyX']){ctx.J.pick=p;vm.runInContext('jKey('+JSON.stringify(code)+')',ctx);}
+ const tele=['Omen KeyC','Omen KeyX','Chamber KeyE'];if(tele.some(t=>cast.includes(t)))fails.push('a teleport past the spawn wall cast in the buy phase: '+cast.filter(t=>tele.includes(t)));if(said!==3)fails.push('buy-phase teleport keys: '+said+' notes, want 3');
+ if(cast.length!==picks.length*4-3)fails.push('buy-phase ability keys reaching their handler: '+cast.length+', want '+(picks.length*4-3));
+ out.push('buy phase: menu open swallows 48 ability keys; menu closed casts '+cast.length+', teleports (Omen C / X, Chamber E) refused');}
 (async()=>{const PR=await import(pathToFileURL(path.join(srv,'tools/spawn-barrier-probe.mjs')).href);
 for(const map of MAPS){const T0=Date.now();
  const dir=path.join(root,'models/valorant/maps',map),meta=JSON.parse(fs.readFileSync(path.join(dir,'map.json'),'utf8')),nav=JSON.parse(fs.readFileSync(path.join(dir,'navigation.json'),'utf8'));
