@@ -3,23 +3,23 @@
   "script": "capture-prepared-subset.cjs",
   "count": 247,
   "exit": 0,
-  "seconds": 22.26,
-  "minimumMemAvailableMB": 625,
+  "seconds": 23.17,
+  "minimumMemAvailableMB": 704,
   "stop": null,
   "stageMinimumMB": {
-   "gltf-load": 867,
-   "optimize": 790,
-   "geometry-roundtrip": 863,
-   "early-geometry-upload": 822,
-   "texture-roundtrip": 625,
-   "reference-render": 710,
-   "reference-saved": 805
+   "gltf-load": 825,
+   "optimize": 794,
+   "geometry-roundtrip": 877,
+   "early-geometry-upload": 929,
+   "texture-roundtrip": 704,
+   "reference-render": 721,
+   "reference-saved": 862
   },
   "stage": "reference-saved",
   "result": {
    "captureOnly": true,
    "saved": {
-    "key": "ff00a7ac9a712cfe2d485e1479299f17146b1674874d67f8fbb85256321ff027",
+    "key": "b08a148c9eb8d8d64598b2f3f9c4d474dbfa6e95221b5b8efe16b6e2ce76a9e9",
     "files": 1196
    },
    "optimized": {
@@ -45,7 +45,7 @@
   "script": "load-captured-subset-gpu.cjs",
   "count": 247,
   "exit": 0,
-  "seconds": 11.63,
+  "seconds": 11.74,
   "minimumMemAvailableMB": 857,
   "stop": null,
   "stageMinimumMB": {
