@@ -4,13 +4,17 @@ root=os.path.abspath(os.path.join(os.path.dirname(__file__),'../..'))
 count=int(sys.argv[1]) if len(sys.argv)>1 else 24
 env=os.environ|{'COUNT':str(count),'PRODUCTION':'1','CAPTURE_ONLY':'1','CAPTURE':'/tmp/lotus-prepared-'+str(count)}
 results=[]
+try:os.unlink(env['CAPTURE']+'/stage.json')
+except FileNotFoundError:pass
 for script in ['capture-prepared-subset.cjs','load-captured-subset-gpu.cjs']:
  log='/tmp/'+script+'.log'
  with open(log,'w') as out:
   p=subprocess.Popen(['node','--max-old-space-size=256','work/experiments/'+script],cwd=root,env=env,stdout=out,stderr=subprocess.STDOUT,start_new_session=True)
-  start=time.time();low=100000;reason=None
+  start=time.time();low=100000;reason=None;stages={}
   while p.poll() is None:
    available=int(next(x.split()[1] for x in open('/proc/meminfo') if x.startswith('MemAvailable:')))//1024;low=min(low,available)
+   try:stage=json.load(open(env['CAPTURE']+'/stage.json'))['stage'];stages[stage]=min(stages.get(stage,100000),available)
+   except (FileNotFoundError,KeyError,json.JSONDecodeError):pass
    if available<450:reason='reserve guard';break
    if time.time()-start>60:reason='foreground timeout';break
    time.sleep(.1)
@@ -18,9 +22,14 @@ for script in ['capture-prepared-subset.cjs','load-captured-subset-gpu.cjs']:
    os.killpg(p.pid,signal.SIGTERM)
    try:p.wait(timeout=3)
    except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
-  row={'script':script,'count':count,'exit':p.returncode,'seconds':round(time.time()-start,2),'minimumMemAvailableMB':low,'stop':reason}
+  row={'script':script,'count':count,'exit':p.returncode,'seconds':round(time.time()-start,2),'minimumMemAvailableMB':low,'stop':reason,'stageMinimumMB':stages}
   try:row['stage']=json.load(open(env['CAPTURE']+'/stage.json'))['stage']
   except (FileNotFoundError,KeyError):pass
+  for line in open(log):
+   try:
+    result=json.loads(line)
+    if isinstance(result,dict):row['result']=result
+   except json.JSONDecodeError:pass
   results.append(row);print(json.dumps(row),flush=True)
  print(open(log).read()[-2500:],flush=True)
  if p.returncode or reason:break
