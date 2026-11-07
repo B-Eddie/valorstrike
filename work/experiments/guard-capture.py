@@ -2,7 +2,7 @@
 import os,sys,subprocess,time,signal,json
 root=os.path.abspath(os.path.join(os.path.dirname(__file__),'../..'))
 count=int(sys.argv[1]) if len(sys.argv)>1 else 24
-env=os.environ|{'COUNT':str(count),'PRODUCTION':'1','CAPTURE':'/tmp/lotus-prepared-'+str(count)}
+env=os.environ|{'COUNT':str(count),'PRODUCTION':'1','CAPTURE_ONLY':'1','CAPTURE':'/tmp/lotus-prepared-'+str(count)}
 results=[]
 for script in ['capture-prepared-subset.cjs','load-captured-subset-gpu.cjs']:
  log='/tmp/'+script+'.log'
