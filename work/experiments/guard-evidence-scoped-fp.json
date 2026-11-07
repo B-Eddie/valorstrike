@@ -1,0 +1,103 @@
+{
+ "exit": 0,
+ "minimumMemAvailableMB": 525,
+ "seconds": 44.83,
+ "stop": null,
+ "stages": {
+  "xWarmLazy": 688,
+  "frame-1": 525
+ },
+ "result": {
+  "state": {
+   "map": "lotus",
+   "collision": 1418010,
+   "playable": 8695,
+   "cached": true,
+   "meshes": 589,
+   "gl": 0,
+   "frame": 66
+  },
+  "before": {
+   "p": [
+    0,
+    6.325669765472412,
+    41.75
+   ],
+   "frame": 68
+  },
+  "after": {
+   "p": [
+    -0.7274619860835582,
+    6.284329891204834,
+    29.55029055217337
+   ],
+   "frame": 70,
+   "paused": false,
+   "running": true,
+   "mode": "five",
+   "map": "lotus",
+   "gate": false,
+   "pc": true,
+   "visibility": "visible"
+  },
+  "scopedKit": {
+   "loaded": true,
+   "nativeFP": "Deadlock",
+   "nativeAgents": 0,
+   "shadow": "off",
+   "render": {
+    "memory": {
+     "geometries": 117,
+     "textures": 74
+    },
+    "render": {
+     "frame": 76,
+     "calls": 153,
+     "triangles": 1874253,
+     "points": 0,
+     "lines": 0
+    },
+    "programs": 48
+   },
+   "heap": 157740652
+  },
+  "sourceMapFetches": 0,
+  "assetRequests": [
+   "http://127.0.0.1:8876/models/valorant/surfaces/wood.jpg",
+   "http://127.0.0.1:8876/models/valorant/surfaces/metal.jpg",
+   "http://127.0.0.1:8876/models/valorant/surfaces/roof.jpg",
+   "http://127.0.0.1:8876/models/valorant/spike.glb",
+   "http://127.0.0.1:8876/models/valorant/trailblazer.glb",
+   "http://127.0.0.1:8876/models/valorant/deadlock-fp.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/FP_Abilities.glb",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/breach.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/harbor.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/waylay.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/brimstone.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/deadlock.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/jett.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/tejo.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/killjoy.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/sage.png",
+   "http://127.0.0.1:8876/models/valorant/agents/portraits/sova.png",
+   "http://127.0.0.1:8876/models/valorant/classic.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/FP_Classic.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/GN_Classic.glb",
+   "http://127.0.0.1:8876/models/valorant/melee.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/FP_Melee.glb",
+   "http://127.0.0.1:8876/models/valorant/vandal.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/FP_Vandal.glb",
+   "http://127.0.0.1:8876/models/valorant/animations/GN_Vandal.glb"
+  ],
+  "errors": []
+ },
+ "scope": {
+  "bulkWeapons": false,
+  "agentKits": [
+   "Deadlock"
+  ],
+  "nativeAgentBodies": 0,
+  "shadow": "off",
+  "allRosterReadiness": false
+ }
+}
