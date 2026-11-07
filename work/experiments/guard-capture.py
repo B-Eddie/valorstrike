@@ -19,6 +19,8 @@ for script in ['capture-prepared-subset.cjs','load-captured-subset-gpu.cjs']:
    try:p.wait(timeout=3)
    except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
   row={'script':script,'count':count,'exit':p.returncode,'seconds':round(time.time()-start,2),'minimumMemAvailableMB':low,'stop':reason}
+  try:row['stage']=json.load(open(env['CAPTURE']+'/stage.json'))['stage']
+  except (FileNotFoundError,KeyError):pass
   results.append(row);print(json.dumps(row),flush=True)
  print(open(log).read()[-2500:],flush=True)
  if p.returncode or reason:break
