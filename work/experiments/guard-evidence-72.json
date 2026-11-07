@@ -3,8 +3,8 @@
   "script": "capture-prepared-subset.cjs",
   "count": 72,
   "exit": 0,
-  "seconds": 17.87,
-  "minimumMemAvailableMB": 516,
+  "seconds": 13.15,
+  "minimumMemAvailableMB": 739,
   "stop": null,
   "stage": "reference-saved"
  },
@@ -12,8 +12,8 @@
   "script": "load-captured-subset-gpu.cjs",
   "count": 72,
   "exit": 0,
-  "seconds": 6.23,
-  "minimumMemAvailableMB": 905,
+  "seconds": 6.22,
+  "minimumMemAvailableMB": 902,
   "stop": null,
   "stage": "reference-saved"
  }
