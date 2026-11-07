@@ -17,7 +17,7 @@ assert(!/gl\.scene\.traverse\(o=>\{if\(!o\.isMesh\)return;o\.geometry\.userData\
 // Render meshes are never ray-cast: the native map's solids are the BVH collision mesh alone (dropped arrays are safe).
 assert(src.includes("const M={g:root,solids:[collision],boxes:[],built:1,native:true};"));
 const env={THREE,renderer:{initTexture(t){env.uploads.push(t);if(t.onUpdate)t.onUpdate(t);},capabilities:{getMaxAnisotropy:()=>8}},uploads:[],created:[],closed:0,NM:{current:null},
- createImageBitmap:async(img,o)=>{const b={width:o.resizeWidth,height:o.resizeHeight,close(){env.closed++;},resized:o};env.created.push(b);return b;},document:{createElement:()=>({getContext:()=>({drawImage(){}})})},
+ createImageBitmap:async(img,o)=>{const b={width:o.resizeWidth,height:o.resizeHeight,close(){env.closed++;},resized:o};env.created.push(b);return b;},document:{notices:[],getElementById(){return null;},createElement:()=>({getContext:()=>({drawImage(){}}),style:{}}),body:{append(n){env.document.notices.push(n);}}},
  nmFree:r=>env.freed.push(r.M.g),freed:[],nmTexStats:()=>null,nmDecalApply:m=>m,nmDecalStyle:()=>null,nmFoliageApply:m=>m,console:{error(){},warn(){}},localStorage:{getItem:k=>k==='vs.gq'?env.quality:(env.ls[k]??null)},ls:{},quality:null,xLowDev:false,navigator:{}};
 const names=['nmNow','nmQuality','nmTexCap','nmBytes','nmTexBytes','nmDropArray','nmTexUploaded','nmWatchContext','nmDrawable'],blocks=['nmPackGeometry','nmShrink','nmBudget','nmUpload','nmRehydrate'];
 const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks.map(block).join('\n')+';return {'+names.concat(blocks).join(',')+'};}')(env);
@@ -81,7 +81,10 @@ const api=new Function('env','with(env){'+names.map(pick).join('\n')+'\n'+blocks
  env.NM.current=C0;env.nmLoadScene=async()=>{throw new Error('offline');};const kept=C0.scene;assert.equal(await api.nmRehydrate(),false);assert.equal(kept.visible,true,'failed reload must restore the old scene');
  kept.traverse(o=>{if(o.isMesh)o.geometry.attributes.position.array=null;});assert.equal(await api.nmRehydrate(),false);assert.equal(kept.visible,false,'a failed reload must not show a scene the new context cannot upload');
  // Restored context on the current renderer triggers a reload; listeners attach once per canvas.
- const listeners=[],canvas={addEventListener:(n,f)=>listeners.push([n,f])},r={domElement:canvas};env.renderer=r;api.nmWatchContext(r);api.nmWatchContext(r);assert.equal(listeners.length,1);assert.equal(listeners[0][0],'webglcontextrestored');
- env.NM.current=null;listeners[0][1]();await new Promise(r=>setTimeout(r,1));
+ const listeners=[],canvas={addEventListener:(n,f)=>listeners.push([n,f])},r={domElement:canvas};env.renderer=r;api.nmWatchContext(r);api.nmWatchContext(r);assert.deepEqual(listeners.map(x=>x[0]),['webglcontextlost','webglcontextrestored']);
+  assert(src.includes("addEventListener('webglcontextlost',e=>{e.preventDefault()"),'lost context must call preventDefault so restoration can proceed');
+  assert(src.includes("if(!ok)notice('The map could not be restored. Return to the lobby and try again.')"),'failed context restore gives no recovery path');
+ env.NM.current=null;listeners[1][1]();await new Promise(r=>setTimeout(r,1));assert.equal(env.document.notices.at(-1).textContent,'The map could not be restored. Return to the lobby and try again.','failed restore shows the recovery notice');
+ {let pd=0;listeners[0][1]({preventDefault(){pd++;}});assert.equal(pd,1,'context loss is preventDefault-ed so the browser restores it');}
  console.log('Map memory budget: '+meshes+' Lotus meshes packed '+(before/1e6).toFixed(1)+' -> '+(after/1e6).toFixed(1)+' MB (worst normal '+(Math.acos(Math.min(1,worst))*180/Math.PI).toFixed(2)+' deg, '+u16+' Uint16 / '+big+' Uint32 indices), arrays dropped on upload with bounds kept; LOW/<=4 GB cap 256 px, shared sources released after the last upload; eager upload stops on cancel; new context reloads the scene, hides the old one, a newer context change supersedes a reload in flight, discards stale/failed reloads');
 })().catch(e=>{console.error(e);process.exit(1);});

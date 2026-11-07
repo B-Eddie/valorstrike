@@ -75,6 +75,7 @@ const camCheck=(tag,ry)=>JSON.parse(xe(`(()=>{const a=xKL.cur,C=nmActive(),cy=ca
   assert.equal(xe('typeof xTPToggle'),'undefined',tag+': no 3rd-person toggle');
   // a target below its floor (bad snapshot height): the floor face just above it lifts the camera to the floor + 1.2
   xe(`allies[0].sunkY=${FY-1.5}`);await adv(400);r=camCheck(tag+' sunk target',FY);out.push(JSON.stringify(r));assert.ok(r.cy>=FY+1.2-1e-6,tag+': guard keeps the camera over the floor '+JSON.stringify(r));
+  xe(`allies[0].sunkY=${FY-6}`);await adv(400);r=camCheck(tag+' deeply sunk target',FY);out.push(JSON.stringify(r));assert.ok(r.cy>=FY+1.2-1e-6,tag+': guard keeps the camera over a floor more than 4.5 m above a bad-height target '+JSON.stringify(r));
   xe('allies[0].sunkY=null');await adv(300);pin();await adv(100);
   const eye=JSON.parse(xe('JSON.stringify([camera.position.x,camera.position.y,camera.position.z,camera.rotation.y])'));
   // the last teammate dies: the camera holds that last view - no enemy, no orbit, no 3rd person
