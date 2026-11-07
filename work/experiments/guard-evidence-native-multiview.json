@@ -3,23 +3,23 @@
   "script": "capture-prepared-subset.cjs",
   "count": 247,
   "exit": 0,
-  "seconds": 22.37,
-  "minimumMemAvailableMB": 654,
+  "seconds": 22.26,
+  "minimumMemAvailableMB": 625,
   "stop": null,
   "stageMinimumMB": {
-   "gltf-load": 824,
-   "optimize": 727,
-   "geometry-roundtrip": 828,
-   "early-geometry-upload": 883,
-   "texture-roundtrip": 654,
-   "reference-render": 699,
-   "reference-saved": 851
+   "gltf-load": 867,
+   "optimize": 790,
+   "geometry-roundtrip": 863,
+   "early-geometry-upload": 822,
+   "texture-roundtrip": 625,
+   "reference-render": 710,
+   "reference-saved": 805
   },
   "stage": "reference-saved",
   "result": {
    "captureOnly": true,
    "saved": {
-    "key": "447518c52a0c50f927a3e2f244bd1c4be58f0f7c4753b62e28f24efd57fee388",
+    "key": "ff00a7ac9a712cfe2d485e1479299f17146b1674874d67f8fbb85256321ff027",
     "files": 1196
    },
    "optimized": {
@@ -45,14 +45,15 @@
   "script": "load-captured-subset-gpu.cjs",
   "count": 247,
   "exit": 0,
-  "seconds": 11.83,
-  "minimumMemAvailableMB": 852,
+  "seconds": 11.63,
+  "minimumMemAvailableMB": 857,
   "stop": null,
   "stageMinimumMB": {
-   "reference-saved": 852
+   "reference-saved": 857
   },
   "stage": "reference-saved",
   "result": {
+   "midUploadFreed": true,
    "nativeFreed": true,
    "nativeHandles": 5,
    "cancelRejected": true,
