@@ -4,7 +4,7 @@ import {path,prepare} from './path.js';
 import {rayHit} from './hitboxes.js';
 import {recordHistory,rewindHit,REWIND} from './rewind.js';
 import {recTick,recRows,recZoneRows} from './tdmorbs.js';
-import {persona,aimError,strafe,flankNode,variedPath,spaceLook,engage,trigger,hearTick,botView} from './bots.js';
+import {persona,aimError,strafe,flankNode,variedPath,routeAhead,spaceLook,engage,trigger,hearTick,botView} from './bots.js';
 const XE=[0,0];
 import calibration from './weapons.json' with {type:'json'};
 import BotBrain from '../../vendor/bot-brain.cjs';
@@ -239,7 +239,7 @@ export class Simulation{
   // Holders pause in place between pushes; the pause length and spacing come from the bot's own stream.
   if(P.hold>0&&!(this.time<u.nextHoldAt)){u.nextHoldAt=this.time+2+P.r()*3.5;if(P.r()<P.hold)u.holdUntil=this.time+1+P.r()*1.8;}if(u.holdUntil>this.time)return;
   if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path);u.routeAt=this.time+P.repath;}
-  while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<P.accept)u.route.shift();else break;}
+  while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<P.accept)u.route.shift();else break;}routeAhead(W.nav.nodes,u.route,u.x,u.y,u.z);/* bug 7: no walking back to a node already passed */
   if(u.via>=0&&u.route.length<=1){const n=W.nav.nodes[u.via];if(n&&Math.hypot(n[0]-u.x,n[2]-u.z)<1.2){u.via=-1;u.route=null;}}
   const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.min(1,l/1.5)*Math.sin((u.route[0]||0)*1.7+P.jitterPhase)/* faded near the waypoint: a jitter wider than accept orbited it */,gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);spaceLook(this,u);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}this.peekMove(u,P);/* a remembered enemy within PEEK.range: jiggle / wide / tight / hold */
   if(u.lastPos&&Math.hypot(u.x-u.lastPos[0],u.z-u.lastPos[1])<.01&&u.input.forward)u.stuck=(u.stuck||0)+.05;else u.stuck=0;if(u.stuck>1||u.escapeUntil>this.time){if(u.stuck>1){u.route=null;u.via=-1;}this.botEscape(u,u.stuck);}this.botProgress(u);u.lastPos=[u.x,u.z];}
@@ -256,8 +256,12 @@ export class Simulation{
   if(!best){u.input.jump=true;return false;}u.escapeLook=best.a;u.escapeUntil=this.time+.6;u.look=best.a;u.input.forward=1;u.input.side=0;u.input.jump=false;u.route=null;u.escapes=(u.escapes||0)+1;return true;}
  // Escapes can oscillate in place (a step the motor will not climb, a ledge lip): under 1.5 m of progress in 5 s while
  // walking (not fighting) puts the bot on the route node it is trying to reach (else the nearest free node).
+ // Never through geometry (user, Split: bots passed through the wall at the ropes): the route node must be on the bot's own
+ // level (|dy| < 1.2) with a clear line to it at knee and chest height. A bot at the foot of a Split rope whose next route
+ // node is the rope link's upper node (Vent - A Tower side: 4 m up, 1.5 m across, behind the ledge face) was put there
+ // straight through the wall; now it goes to a free node on its own side instead (freeNode prefers visible nodes too).
  botProgress(u){const g=u.progress;if(u.sawTarget||!g||Math.hypot(u.x-g[0],u.z-g[1])>1.5){u.progress=[u.x,u.z,this.time,0,0];return false;}g[4]=(g[4]||0)+1;if(u.input?.forward)g[3]=(g[3]||0)+1;else return false;if(this.time-g[2]<5||g[3]<g[4]*.6)return false;
-  const W=this.world,n=u.route?.[0]!=null?W.nav.nodes[u.route[0]]:null,p=n&&Math.hypot(n[0]-u.x,n[2]-u.z)<3&&!W.blocked(n[0],n[2],.43,n[1],1.92)?n:this.freeNode(u,.5);u.progress=[u.x,u.z,this.time,0,0];if(!p)return false;
+  const W=this.world,n=u.route?.[0]!=null?W.nav.nodes[u.route[0]]:null,p=n&&Math.hypot(n[0]-u.x,n[2]-u.z)<3&&Math.abs(n[1]-u.y)<1.2&&!W.blocked(n[0],n[2],.43,n[1],1.92)&&this.clearTo(u,n)?n:this.freeNode(u,.5);u.progress=[u.x,u.z,this.time,0,0];if(!p)return false;
   [u.x,u.y,u.z]=p;u.vx=u.vz=u.vy=0;u.seq++;u.stuck=u.goalStuck=0;u.escapeUntil=0;if(u.route&&n===p)u.route.shift();u.unstuck=(u.unstuck||0)+1;u.progress=[u.x,u.z,this.time,0,0];return true;}
  // Nearest nav node (breadth-first from the closest one) where a standing capsule fits, at least minDist away.
  freeNode(u,minDist=0){const W=this.world;if(!W.nav||!W.near)return null;const N=W.nav.nodes,start=W.near(u.x,u.z,u.y);if(start<0)return null;const seen=new Set([start]),queue=[start],free=[];
@@ -265,7 +269,10 @@ export class Simulation{
   /* Wedged up on a prop (Ascent -56, 6.5, -22.4: 2.5 m above the floor nodes) no node is within 1.5 m of its height;
      then take the nearest free node below it (up to 4 m down), never one above. */
   if(!free.length){for(const i of queue){const p=N[i],dy=p[1]-u.y;if(dy<1.5&&dy>-4&&Math.hypot(p[0]-u.x,p[2]-u.z)>=minDist&&!W.blocked(p[0],p[2],.43,p[1],1.92))free.push(p);}if(!free.length)return null;free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z,a[1]-u.y)-Math.hypot(b[0]-u.x,b[2]-u.z,b[1]-u.y));return free[0];}
-  free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z)-Math.hypot(b[0]-u.x,b[2]-u.z));return free[0];}
+  free.sort((a,b)=>Math.hypot(a[0]-u.x,a[2]-u.z)-Math.hypot(b[0]-u.x,b[2]-u.z));for(let k=0;k<Math.min(free.length,24);k++)if(this.clearTo(u,free[k]))return free[k];return free[0];}
+ // A clear straight line from the unit to nav node p (knee 0.6 m and chest 1.2 m above each floor): a teleport there does not
+ // cross a wall. Worlds without ray (test stubs) pass.
+ clearTo(u,p){const W=this.world;if(!W.ray)return true;for(const h of [.6,1.2]){const ox=u.x,oy=u.y+h,oz=u.z,dx=p[0]-ox,dy=p[1]+h-oy,dz=p[2]-oz,L=Math.hypot(dx,dy,dz);if(L<.05)continue;if(W.ray([ox,oy,oz],[dx/L,dy/L,dz/L],L)<L)return false;}return true;}
  // Utility hook; SpikeSimulation casts abilities on each bot's own timing.
  botUtility(){}
  rows(){return this.units.map(u=>{const A=u.human?null:this.wireAim(u);return [u.id,u.team,u.name,u.agent,+u.x.toFixed(3),+u.y.toFixed(3),+u.z.toFixed(3),+((A?A[0]:u.look)+Math.PI).toFixed(3),Math.ceil(u.hp),Math.ceil(u.armor),u.alive?1:0,u.weapon,u.human?1:0,u.human?(u.ping??null):0,u.seq,u.ammo,u.reserve,+Math.min(1,(u.ch||0)/Motor.C.crouchEye).toFixed(2),+((A?A[1]:u.pitch)||0).toFixed(3),u.human?Math.max(0,u.lastSeq|0):0,u.human?+Math.max(0,Math.min(1,this.time-(u.inputAt||0))).toFixed(3):0,u.rgn!=null?Math.ceil(u.rgn):-1,0,this.loud(u)?1:0,u.ability?.bladesActive&&u.ability.blades>0?Math.min(5,u.ability.blades|0):0,u.rope?u.rope:0,this.spikeAct?this.spikeAct(u):0];});} // [24] Jett Blade Storm knives out (0 none, else knives left 1-5): remote clients draw the knife-hands pose + floating daggers instead of the gun (u.weapon stays the gun on the server); [25] rope ascender the unit is on (1-based index into the motor's ROPES[map], 0: none); [26] Spike action (spike.js spikeAct: 1 planting, 2 defusing, 0 none): every client kneels the unit and puts the Spike in its hands (work/spike_anim_runtime.js); [22] fog of war: 1 = hidden row (fog.js fogRow); [23] running footsteps (loud); [19] last applied input seq, [20] seconds that input has been applied: the client reconciles against its own predicted path at that moment; [21] Regen Shield pool (-1: no Regen Shield)

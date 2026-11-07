@@ -9,6 +9,11 @@
 //  2b. outside the footprint the void pockets are 3 m invisible walls (C Bend west edge);
 //  3. walking off the C Main moss patch westward into the water stays on the map (no fall below the C floor);
 //  4. the tool is idempotent (re-running it adds nothing) and the patch file is what it would write.
+//  5. Lotus A Door / A Rubble east wall slot (work/NEXT_STEPS.md "Lotus right-wall gap below A", the user's minimap screenshot):
+//     a 1.35 x 2.9 m opening between two stone pillars of the outer east wall (x 42.7, z -2.5..-1.1, sill = A floor 6.28)
+//     with no source geometry at all behind it (render and collision open, 18 m drop beyond x 43.3). Units walked into it
+//     (leash) or out of the map (dash / satchel without the leash); bullets left the map. map-void-fill.json lotus.boxes
+//     closes it: rays through the slot stop at the wall plane, an unleashed walk or a 12 m/s dash east stays on the A floor.
 import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {createRequire} from 'node:module';
 import {loadWorld} from './src/world.js';import {renderFloors,mergePatch} from './tools/map-render-floors.mjs';
 const here=path.dirname(new URL(import.meta.url).pathname),require=createRequire(import.meta.url),Motor=require('./src/motor.cjs');
@@ -28,4 +33,11 @@ for(const [x,z] of [[-68.125,5.75],[-68,6.375]])assert.equal(W.blocked(x,z,.38,4
 // 3. walk west off the C Main moss patch edge into the water: stays on the map
 {const s=W.nav.nodes[W.near(-41.25,-1.75,4.33)],u={x:s[0],y:s[1],z:s[2]};let low=u.y;for(let i=0;i<128*1.5;i++){Motor.step(u,{x:-1,z:0,speed:6.75},1/128,W);low=Math.min(low,u.y);}
  assert.ok(low>4,'walking west off C Main moss never drops below the C floor (lowest y '+low.toFixed(2)+')');}
+// 5. A Door east wall slot
+{let k=0;for(let z=-2.4;z<=-1.2;z+=.2)for(let y=6.45;y<=9.1;y+=.4){const d=W.ray([40,y,z],[1,0,0],60);assert.ok(d<3.2,'Lotus A Door east wall slot open at z '+z.toFixed(2)+' y '+y.toFixed(2)+' (collision '+d+')');k++;}
+ const noLeash={...W,leash:null};
+ for(const [dx,dz,speed] of [[1,0,6.75],[.96,.28,6.75],[.96,-.28,6.75],[1,0,12]]){const u={x:40.5,y:6.28,z:-1.75,vx:0,vy:0,vz:0,air:false,ch:0};let low=u.y;
+  for(let i=0;i<128*2;i++){Motor.step(u,{x:dx,z:dz,speed},1/128,noLeash);low=Math.min(low,u.y);}
+  assert.ok(low>6&&!(u.x>42.6&&u.z>-2.55&&u.z<-1.05),'A Door slot: walking east ('+[dx,dz,speed]+', no leash) stays inside the east wall (at '+[u.x,u.z].map(v=>v.toFixed(2))+', lowest y '+low.toFixed(2)+')');}
+ console.log('Lotus A Door east wall slot: '+k+' rays through it stop at the wall, unleashed walks / dash stay on the A floor');}
 console.log('Lotus C water floor: '+n+' render floor triangles have collision; '+VOID.length+' former void points hold a unit; C Main walk-off stays on the map; tool idempotent');

@@ -13,7 +13,8 @@
 // 0.25 m-cell rectangles (scan: within 2.5 m of a playable node at the C water level, no collision within 9 m below,
 // a 0.3 m capsule fits). Inside the official minimap footprint a rectangle becomes floor at the water level (VALORANT's
 // C water is walkable); outside it becomes a 3 m invisible wall box (the map boundary), so nothing there drops a unit
-// out of the map.
+// out of the map. Boxes (map-void-fill.json <map>.boxes): a hole in a drawn wall at any height with no source geometry
+// behind it (Lotus' A Door east wall slot, the gap in the minimap's right wall below A) -> a closed invisible wall box.
 // Usage: node tools/map-render-floors.mjs [maps...]   (WRITE=0 dry run)
 import fs from 'node:fs';import {loadRender,root} from './map-render.mjs';
 process.chdir(new URL('..',import.meta.url).pathname);
@@ -27,7 +28,11 @@ export function renderFloors(key){const re=RENDER_FLOORS[key];if(!re)return null
  const F=VOID_FILL[key];if(F){const y=F.y,H=3;
   for(const [x0,x1,z0,z1] of F.floor)out.push([[x0,y,z0],[x0,y,z1],[x1,y,z1]],[[x0,y,z0],[x1,y,z1],[x1,y,z0]]);
   for(const [x0,x1,z0,z1] of F.wall){const a=y-.5,b=y+H,q=(p,q2,r,t)=>out.push([p,q2,r],[p,r,t]);
-   q([x0,a,z0],[x1,a,z0],[x1,b,z0],[x0,b,z0]);q([x1,a,z0],[x1,a,z1],[x1,b,z1],[x1,b,z0]);q([x1,a,z1],[x0,a,z1],[x0,b,z1],[x1,b,z1]);q([x0,a,z1],[x0,a,z0],[x0,b,z0],[x0,b,z1]);q([x0,b,z0],[x1,b,z0],[x1,b,z1],[x0,b,z1]);}}
+   q([x0,a,z0],[x1,a,z0],[x1,b,z0],[x0,b,z0]);q([x1,a,z0],[x1,a,z1],[x1,b,z1],[x1,b,z0]);q([x1,a,z1],[x0,a,z1],[x0,b,z1],[x1,b,z1]);q([x0,a,z1],[x0,a,z0],[x0,b,z0],[x0,b,z1]);q([x0,b,z0],[x1,b,z0],[x1,b,z1],[x0,b,z1]);}
+  /* boxes: holes in a drawn wall at any height (no source geometry at all, render or collision) -> a closed invisible wall box
+     [x0, x1, z0, z1, y0, y1] (Lotus A Door east wall slot) */
+  for(const {box:[x0,x1,z0,z1,a,b]} of F.boxes||[]){const q=(p,q2,r,t)=>out.push([p,q2,r],[p,r,t]);
+   q([x0,a,z0],[x1,a,z0],[x1,b,z0],[x0,b,z0]);q([x1,a,z0],[x1,a,z1],[x1,b,z1],[x1,b,z0]);q([x1,a,z1],[x0,a,z1],[x0,b,z1],[x1,b,z1]);q([x0,a,z1],[x0,a,z0],[x0,b,z0],[x0,b,z1]);q([x0,b,z0],[x1,b,z0],[x1,b,z1],[x0,b,z1]);q([x0,a,z0],[x0,a,z1],[x1,a,z1],[x1,a,z0]);}}
  return out;}
 export function mergePatch(key,tris){const f=root(key)+'collision-patch.bin',V=[],X=[],vm=new Map(),seen=new Set();
  const add=tri=>{const k=tri.map(v=>v.map(x=>Math.round(x*1000)).join(',')).sort().join('|');if(seen.has(k))return false;seen.add(k);for(const v of tri){const s=v.map(x=>Math.round(x*1e5)).join(',');let i=vm.get(s);if(i===undefined){i=V.length/3;vm.set(s,i);V.push(...v);}X.push(i);}return true;};

@@ -153,7 +153,7 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 .card p{font-size:13px;opacity:.75;text-transform:none;letter-spacing:.02em}
 .card .new{position:absolute;top:12px;right:12px;background:var(--red);color:var(--ink);font-size:12px;font-weight:700;padding:3px 8px}
 .foot{font-size:12px;opacity:.75;text-transform:none;letter-spacing:.02em}
-#toast{position:fixed;left:50%;bottom:172px;max-width:min(92vw,720px);text-align:center;transform:translateX(-50%);background:var(--bone);color:var(--ink);padding:12px 24px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
+#toast{position:fixed;left:50%;bottom:172px;max-width:min(92vw,720px);text-align:center;transform:translateX(-50%);background:var(--bone);color:var(--ink);padding:12px 24px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50;will-change:opacity;contain:layout paint} /* bug 11: own compositor layer, so its fade never repaints the page over the WebGL canvas */
 #toast.on{opacity:1}
 #xErr{position:fixed;left:16px;top:184px;bottom:auto;max-width:min(520px,calc(100vw - 32px));background:rgba(15,25,35,.94);color:var(--bone);border-left:4px solid var(--red);padding:10px 16px;font-size:13px;font-weight:700;text-transform:none;letter-spacing:.02em;line-height:1.4;overflow-wrap:anywhere;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999}
 #xErr.on{opacity:1}
@@ -556,8 +556,7 @@ body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the s
 #game #xDr{position:fixed;inset:0;background:rgba(69,208,255,.16);box-shadow:inset 0 0 160px rgba(69,208,255,.6);opacity:0;pointer-events:none;z-index:5;transition:opacity .2s}
 #game #xDr.on{opacity:1}
 #game #xDr.tb{background:rgba(127,216,74,.14);box-shadow:inset 0 0 160px rgba(127,216,74,.6)}
-#game #xNs{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;visibility:hidden;transition:opacity .35s,visibility 0s linear .35s;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 8%,rgba(8,4,16,.78) 30%,rgba(4,2,10,.97) 60%);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);-webkit-mask-image:radial-gradient(circle,transparent 6%,#000 24%);mask-image:radial-gradient(circle,transparent 6%,#000 24%)}
-#game #xNs:not(.on){-webkit-backdrop-filter:none;backdrop-filter:none;transition:opacity .35s,visibility 0s linear .35s,-webkit-backdrop-filter 0s linear .35s,backdrop-filter 0s linear .35s}
+#game #xNs{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;visibility:hidden;transition:opacity .35s,visibility 0s linear .35s;background:radial-gradient(circle at 50% 50%,rgba(8,4,16,0) 8%,rgba(8,4,16,.16) 16%,rgba(8,4,16,.57) 24%,rgba(8,4,16,.78) 30%,rgba(4,2,10,.97) 60%)} /* bug 5 (Leer lag): was a full-screen backdrop-filter blur(7px) + mask-image over the WebGL canvas, re-blurred every frame while nearsighted (headless: frame interval 17 -> 83 ms); the blur sat under 78-97 % black, so the mask is folded into the gradient stops (same alpha curve) and the blur dropped */
 #game #xNs.on{opacity:1;visibility:visible;transition:opacity .35s,visibility 0s}
 #feed .kf__w.x-abn b{display:inline!important;position:static!important;width:auto!important;height:auto!important;clip:auto!important;overflow:visible!important;margin-left:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 #game #xEmp{position:fixed;inset:0;background:rgba(255,40,60,.14);box-shadow:inset 0 0 180px rgba(255,30,60,.55);opacity:0;pointer-events:none;z-index:5;transition:opacity .3s}
@@ -1159,7 +1158,7 @@ body:has(#game .x-top.x-bpo) #xAnn.buy{display:none!important}
 #game #feed .kf--k .kf__w>b{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #game #feed .kf--k.kf--mine{box-shadow:inset 0 0 0 1px #b7f5df}
 #game #feed .kf--k.kf--died{box-shadow:inset 0 0 0 1px #fda3aa}
-#game #xMap{background:rgba(15,23,27,.22);border:0;box-shadow:none}
+#game #xMap{background:rgba(12,18,24,.35);border:0;box-shadow:none;outline:1px solid rgba(236,232,225,.16);outline-offset:0} /* bug 3: a thin, quiet frame (outline: the canvas backing store follows the content box, nmMmSize) */
 #game #hint{font:10px Arial,sans-serif;letter-spacing:.03em;text-transform:none}
 #game #xCr{font-family:Arial,sans-serif;font-size:14px}
 #game #defuse{background:rgba(14,25,29,.55);font:12px Arial,sans-serif;border-top:1px solid #ffffff70}
@@ -3417,7 +3416,8 @@ function xRgnTick(t, dt) { if (!t || !(t.rgn > 0) || t.alive === false || !(t.hp
 function xRgHud() { const el = $("xArm"); if (!el) return; const r = player && player.rgn != null ? String(Math.ceil(player.rgn)) : ""; if (xRgHud.k === r) return; xRgHud.k = r;
   if (r) el.setAttribute("data-rg", r); else el.removeAttribute("data-rg"); if (el.parentNode && el.parentNode.classList) el.parentNode.classList.toggle("x-rg", !!r); }
 function armAbs(t, n) { const rg = t.rgn != null, a = Math.min(t.armor || 0, n * (rg ? 1 : 0.66)); t.armor = Math.round(((t.armor || 0) - a) * 1e6) / 1e6; if (rg && a > 0) t.rgnT = XRGN.delay; return a; } // 1e-6 snap, as the server: no 54.00000000000001 hp read as 55
-function hurt(t, n, by) { const h0 = Math.max(0, t.hp), a = armAbs(t, n); t.hp = Math.round((t.hp - (n - a)) * 1e6) / 1e6; try { sbDmg(by === undefined ? "You" : by, t === player ? "You" : t.name, Math.min(h0, n - a)); } catch (e) {} try { xKLog(t, by, Math.min(h0, n - a)); } catch (e) {} }
+function xBuySafe() { try { return mode === "five" && !FV.dm && FV.buy > 0 && running; } catch (e) { return false; } } // buy phase: shooting / abilities are allowed (VALORANT; user 2026-11-06) but nothing hurts anyone before the round starts (= server SpikeSimulation.buySafe)
+function hurt(t, n, by) { if (xBuySafe()) return; const h0 = Math.max(0, t.hp), a = armAbs(t, n); t.hp = Math.round((t.hp - (n - a)) * 1e6) / 1e6; try { sbDmg(by === undefined ? "You" : by, t === player ? "You" : t.name, Math.min(h0, n - a)); } catch (e) {} try { xKLog(t, by, Math.min(h0, n - a)); } catch (e) {} }
 // death flow (5v5 / Retake / Rifle): per-life hit log (pooled entries), KILLED BY card, 2 s then spectate living teammates
 let xHS = false; const xKL = { p: null, log: [], n: 0, st: 0, on: false, sp: false, si: 0, cur: null, el: null, sl: null };
 for (let i = 0; i < 10; i++) xKL.log.push({ nm: "", dd: 0, dh: 0, dhs: 0, td: 0, th: 0, ths: 0 });
@@ -3816,7 +3816,7 @@ function xShotTgts(base) { // base + live dropped-gun hitboxes, pooled scratch; 
   const t = xTgtB; t.length = 0; for (let i = 0; i < base.length; i++) t.push(base[i]); for (let i = 0; i < ldh.length; i++) t.push(ldh[i]); return t;
 }
 function shoot(hv) {
-  if (player.hp <= 0 || fcd > 0 || (mode === "five" && FV.buy > 0) || VM.sw > 0) return; // can't fire until equipped
+  if (player.hp <= 0 || fcd > 0 || (mode === "five" && FV.buy > 0 && FV.menu) || VM.sw > 0) return; // can't fire until equipped; the buy phase allows firing (VALORANT; user 2026-11-06), not while the buy menu is open (its clicks buy)
   ray.setFromCamera(XC0, camera);
   const targets = xTgtA; targets.length = 0;
   for (let i = 0; i < solids.length; i++) targets.push(solids[i]);
@@ -5109,7 +5109,7 @@ function tick(dt) {
     if (see && typeof xbSeen === "function") xbSeen(b, tg.t, tg.x, (tg.eye && tg.eye.y) - 1.6, tg.z);
     const kn = !see && typeof xbKnown === "function" ? xbKnown(b, p) : null, kd = kn ? kn[2] : d, kx = kn ? kn[0] : dx, kz = kn ? kn[1] : dz; // unsighted: peek / creep toward what it knows, not the enemy's real spot
     if (b.blind > 0) b.xbFl = performance.now(); // a flash ends the fight: the next one starts with a slower reaction
-    if (see && !b.see) { const oy = xAng(b.g.rotation.y - Math.atan2(dx, dz)); b.pre = Math.abs(oy) < 0.6; if (typeof xbEngage === "function") xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed: performance.now() - (b.xbFl || -1e9) < 1200 }); } // was the crosshair already pre-placed on this angle? new fight: own reaction / crosshair error / stand time (BOT VARIETY)
+    if (see && !b.see) { const oy = xAng(b.g.rotation.y - Math.atan2(dx, dz)); b.pre = Math.abs(oy) < 0.6; if (typeof xbEngage === "function") xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, dy: tg.eye ? tg.eye.y - 1.6 - (p.y || 0) : 0, flashed: performance.now() - (b.xbFl || -1e9) < 1200 }); } // was the crosshair already pre-placed on this angle? new fight: own reaction / crosshair error / stand time (BOT VARIETY)
     if (see && !(typeof xbView === "function" && xbView(b, tg.t, tg.x, tg.t === player ? player.y || 0 : tg.t.g.position.y || 0, tg.z, tg.t === player ? player.ch || 0 : tg.t.cr ? 0.28 : 0, dt))) { b.g.rotation.y = typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt) : Math.atan2(dx, dz); const pt = XTK.pt.copy(eye); if (b.hd === false) pt.y -= 0.45; xBotAim(b, pt, from); } // the crosshair (BOT VARIETY xbView): yaw + pitch = flick plan on the fight's body spot, what the shot, the gun and the spectator use // human flick at its own turn rate (BOT VARIETY), not a snap; gun follows the aim point (reference alignment)
     { const tm = allies.indexOf(b) >= 0 ? allies : bots; xPeekThink(b, dt, see, see && !b.see, kd, tg.t === player ? FV.pri || "" : tg.t.w || "", tm, tm === allies); } // shared with ally bots
     botAb(b, dt, see, see || typeof xbAbKnown !== "function" ? tg : xbAbKnown(b), from); if (!running) return; // unsighted: the ability logic gets what the bot knows (BOT VARIETY perception), never the nearest real enemy
@@ -5181,7 +5181,7 @@ function tick(dt) {
     const pe = tg || a.xNb, pdx = pe ? pe.g.position.x - p.x : 0, pdz = pe ? pe.g.position.z - p.z : 0, pd = Math.hypot(pdx, pdz) || 0.01;
     const akn = !tg && typeof xbKnown === "function" ? xbKnown(a, p) : null, apd = akn ? akn[2] : pd, apx = akn ? akn[0] : pdx, apz = akn ? akn[1] : pdz; // unsighted: what it knows, not the enemy's real spot (BOT VARIETY perception)
     if (pe) xPeekThink(a, dt, !!tg, !!tg && !a.see, apd, pe.w || "", allies, true); // same peek / crouch-spray logic as enemy bots
-    if (tg && !a.see && typeof xbEngage === "function") { const oy = xAng(a.g.rotation.y - Math.atan2(tg.g.position.x - p.x, tg.g.position.z - p.z)); a.pre = Math.abs(oy) < 0.6; xbEngage(a, a.pre, { off: Math.abs(oy), e0y: oy, d: td, flashed: performance.now() - (a.xbFl || -1e9) < 1200 }); } // new fight: own reaction, crosshair start error and planned flick from where it was looking (BOT VARIETY human aim model, as enemy bots)
+    if (tg && !a.see && typeof xbEngage === "function") { const oy = xAng(a.g.rotation.y - Math.atan2(tg.g.position.x - p.x, tg.g.position.z - p.z)); a.pre = Math.abs(oy) < 0.6; xbEngage(a, a.pre, { off: Math.abs(oy), e0y: oy, d: td, dy: (tg.g.position.y || 0) - (p.y || 0), flashed: performance.now() - (a.xbFl || -1e9) < 1200 }); } // new fight: own reaction, crosshair start error and planned flick from where it was looking (BOT VARIETY human aim model, as enemy bots)
     a.xTt = tg; a.xSe = !!tg; a.see = tg ? (a.see || 0) + dt : 0; // same LOS/target fields as the enemy bot AI (orb-run cancel reads xSe / see)
     if (tg) { const tp = a.xTp || (a.xTp = { x: 0, z: 0 }); tp.x = tg.g.position.x; tp.z = tg.g.position.z; botAb(a, dt, true, tp, from); } else botAb(a, dt, false, typeof xbAbKnown === "function" ? xbAbKnown(a) : null, from); // allies share the enemy ability logic; unsighted: what it knows (as enemy bots)
     if (!running) return;
@@ -8803,6 +8803,9 @@ function blazeWall(x, y, z, fx, fz, o) { // o: extra fields (own, en, nd, loc); 
   w.m = jM(blazeGeo, fireMat(0xff7a1a, 0.7)); w.m.position.copy(w.p); w.m.rotation.y = Math.atan2(fx, fz); w.m.scale.z = Math.max(0.05, 2 * h); scene.add(w.m); J.walls.push(w); return w; }
 const ringGeo = new THREE.RingGeometry(0.5, 0.85, 24), arrowGeo = new THREE.BoxGeometry(0.07, 0.07, 0.7), beamGeo = new THREE.BoxGeometry(0.12, 0.12, 1);
 const rvMat = new THREE.MeshBasicMaterial({ color: 0xff2030, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: THREE.BackSide });
+// bug 11 ("lags when it says revealed"): one pooled outline per body / head mesh, reused by every reveal (was: two new Meshes per enemy per
+// reveal, dropped again on expiry), and rvMat's program is prewarmed in xWarmLazy instead of compiling on the first reveal mid-round.
+function rvAdd(s) { let o = s.userData.rvO; if (!o || o.geometry !== s.geometry) { o = s.userData.rvO = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; } s.add(o); return o; }
 // perf pass 11: ability fx reuse pooled meshes + materials (shared geometry), returned to the pool when the effect ends
 const JPOOL = { mat: {}, mesh: [] };
 // perf pass 12: each live effect owns its material slot (userData.own) — never shared by two live effects; freed only when its owner mesh ends
@@ -8838,7 +8841,7 @@ function jReveal(p) { const g = XRCN.g; p = p.clone(); XRCN.pulses.forEach((t) =
 function jRcnPulse(p) {
   jUnreveal(); J.rvT = XRCN.reveal;
   J.rv = bots.filter((b) => b.alive && b.g && xRcnSees(p, b.g.position.x, b.g.position.y + 1.2, b.g.position.z));
-  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); });
+  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map(rvAdd); });
   xRcnRings(p, false);
   say(J.rv.length + " enem" + (J.rv.length === 1 ? "y" : "ies") + " revealed", 900);
 }
@@ -8905,7 +8908,7 @@ function xBoltMove(a) { if (!a.tr) return void a.m.position.lerpVectors(a.a, a.b
 const XHFU = { n: 3, cyc: 2.125, win: 6, len: 66, r: 1.76, dmg: 80, rv: 1, g: 0 };
 function xHfRv(list, t) { // reveal bots hit by a Hunter's Fury blast for XHFU.rv s (or t s: dart pings; adds to a running Recon / Neural Theft reveal)
   list = list.filter((b) => b && b.alive && b.body && b.head && J.rv.indexOf(b) < 0); if (!list.length && !J.rv.length) return;
-  list.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); J.rv.push(b); });
+  list.forEach((b) => { b.rvO = [b.body, b.head].map(rvAdd); J.rv.push(b); });
   J.rvT = Math.max(J.rvT || 0, t || XHFU.rv);
 }
 function jBeam() {
@@ -9093,7 +9096,7 @@ function ryLeerGet() {
   g.userData.mats.forEach(([m, o]) => (m.opacity = o)); g.scale.setScalar(0.01); return g;
 }
 function ryLeerLook(l) { const g = l.m, k = Math.min(1, l.t / 0.25), f = l.t > 1.7 ? Math.max(0, (2 - l.t) / 0.3) : 1;
-  g.scale.setScalar(k * (1 + 0.06 * Math.sin(l.t * 14))); g.lookAt(pEye()); g.userData.mats.forEach(([m, o]) => (m.opacity = o * f)); }
+  g.scale.setScalar(k * (1 + 0.06 * Math.sin(l.t * 14))); g.lookAt(pEyeTo(PE_V)); g.userData.mats.forEach(([m, o]) => (m.opacity = o * f)); }
 // Reyna Leer (wiki Leer: "cast a fixed distance from Reyna's casting position and can travel through terrain. This distance can be reduced if cast
 // into terrain, causing the eye to deploy at a shorter distance until it is no longer within terrain"; deployment distance 10 m): the eye's spot =
 // 10 m along the aim, pulled back while inside terrain (min 0.6 m). = server abilities.js leerSpot. Shown while Leer is in hand (ability_target_runtime.js).
@@ -9399,7 +9402,7 @@ function tbLeap() { // Trailblazer leap: concusses enemies near the landing spot
   d.t = Math.min(d.t, 0.4);
 }
 function rsFire() { // Showstopper rocket replaces the gun while held
-  if (!jOn() || J.pick !== "Raze" || !RS.ss || player.hp <= 0 || (mode === "five" && FV.buy > 0)) return false;
+  if (!jOn() || J.pick !== "Raze" || !RS.ss || player.hp <= 0 || (mode === "five" && FV.buy > 0 && FV.menu)) return false;
   if (RS.ssd > 0) return true; // launcher still coming up (1.4 s equip, wiki windup)
   RS.ss = 0; kick = 1; blip(140, 0.5, "sawtooth", 0.25); RS.pj.push(rsObj("rocket", 0xff5a1a, 1.2, 35, 0)); return true;
 }
@@ -9690,7 +9693,7 @@ function bcTmScan(T, cands, dt) { // T: { p, wu }; cands: [x, z, unit]; returns 
   if (!best) { T.wu = 0; return null; } T.wu = (T.wu || 0) + dt; return T.wu >= XTMK.windup ? best : null; }
 function bcField(q) { bcTdfField(q.x, q.z, q.y); } // Tour De Force kill field (XTDF)
 function bcFire() {
-  if (!jOn() || J.pick !== "Chamber" || !BC.eq || player.hp <= 0 || (mode === "five" && FV.buy > 0)) return false;
+  if (!jOn() || J.pick !== "Chamber" || !BC.eq || player.hp <= 0 || (mode === "five" && FV.buy > 0 && FV.menu)) return false;
   if (BC.cd > 0) return true; const sn = BC.eq === "sn";
   if (sn ? BC.td < 1 : J.q < 1) { BC.eq = ""; return false; }
   if (sn) BC.td--; else J.q--; BC.cd = 1 / (sn ? XTDF.rate : XHH.rate); kick = 1; vmFire(); SFX.gun(sn ? "Operator" : "Sheriff");
@@ -9792,7 +9795,7 @@ function bcSl(u) {
 // ---- Cypher kit (player + bot): Trapwire (pooled in BC.cw, anchors shootable, 20 HP), Cyber Cage (J.smokes), Spycam (BC.cam / BC.cv view + F dart), Neural Theft ----
 BC.cw = []; BC.cam = null; BC.cv = false;
 function cyReveal(list, t) { jUnreveal(); J.rvT = t; J.rv = list.filter((b) => b && b.body && b.head);
-  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map((s) => { const o = new THREE.Mesh(s.geometry, rvMat); o.scale.setScalar(1.15); o.renderOrder = 999; o.raycast = () => {}; s.add(o); return o; }); }); }
+  J.rv.forEach((b) => { b.rvO = [b.body, b.head].map(rvAdd); }); }
 function cyRm(W) { scene.remove(W.m); W.an.forEach((o) => scene.remove(o)); }
 // Cypher Trapwire (wiki Trapwire: max deploy distance 20 m, max wire length 15 m; "A viable position must have two pieces of terrain opposite each
 // other"): the crosshair's hit within 20 m, 0.8 m back toward Cypher; the wire runs across the aim to the nearest wall on each side (at the floor
@@ -10141,7 +10144,7 @@ function enRvFx() { // brief red outline/vignette pulse + REVEALED warning under
   let o = enRvFx.o;
   if (!o) {
     o = enRvFx.o = document.createElement("div");
-    o.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;box-shadow:inset 0 0 0 4px rgba(255,70,60,.9),inset 0 0 120px 30px rgba(255,40,30,.45)";
+    o.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;will-change:opacity;contain:strict;box-shadow:inset 0 0 0 4px rgba(255,70,60,.9),inset 0 0 120px 30px rgba(255,40,30,.45)";
     const t = document.createElement("div"); t.textContent = "REVEALED";
     t.style.cssText = "position:absolute;left:50%;top:calc(50% + 34px);transform:translateX(-50%);font:600 13px/1 Geist,sans-serif;letter-spacing:.18em;color:#ff5a4a;text-shadow:0 0 6px rgba(0,0,0,.8)";
     o.appendChild(t); document.body.appendChild(o);
@@ -10395,7 +10398,8 @@ function jKill() {
 }
 function jKey(code) {
   if (!jOn() || !/^Key[CQEX]$/.test(code)) return false;
-  if (mode === "five" && FV.buy > 0) { say("Abilities unlock at round start", 900); return true; }
+  if (mode === "five" && FV.buy > 0 && FV.menu) return true; // buy phase: abilities are usable (VALORANT), not while the buy menu is open
+  if (mode === "five" && FV.buy > 0 && ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))) { say("Teleports unlock at round start", 900); return true; } // no teleport past the spawn walls (= server castAbility)
   if (player.hp <= 0) return true;
   if (J.pick === "Phoenix") return phKey(code), true;
   if (J.pick === "Sova") return svKey(code), true;
@@ -10429,7 +10433,7 @@ function jKey(code) {
 var XBSD = { head: 150, body: 50, legs: 42.5, fan: 2.5, un: 0.45 }; var XBSB = { head: XBSD.head, body: XBSD.body, legs: XBSD.legs, rate: 6, rec: 0 }; // XBSB: a bot's Blade Storm knife as a WEAP-shaped table (wDmg / bSpread; 6 throws per second = server weapons["Blade Storm"].fireRate)
 function xBsBot(b) { return typeof xBtpK === "function" && !(typeof NET !== "undefined" && NET && NET.socket) && !b.nt && xBtpK(b) > 0; } // offline bot / ally Jett with Blade Storm knives out // Blade Storm per knife (wiki: 50 body, x3 head, x0.85 legs; = server weapons["Blade Storm"].damageRanges[0]); ALT FIRE fan 2.5 deg apart + 0.45 s burst unequip (= server BLADE_FAN_DEG / BLADE_BURST_UNEQUIP)
 function jThrow() {
-  if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0)) return;
+  if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0 && FV.menu)) return;
   J.cd.x = 1 / 6; J.bs--; kick = 1; SFX.ab("bsThrow"); // wiki Blade_Storm: Single Fire 6 per second (= server weapons["Blade Storm"].fireRate)
   ray.setFromCamera(XC0, camera); ray.far = 200;
   const hit = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
@@ -10440,7 +10444,7 @@ function jThrow() {
 // single-fire damage; kills from the burst never refill the knives; the gun comes back after the 0.45 s burst unequip (jTick, J.bsU).
 function jBurstDirs(n) { const o = []; for (let i = 0; i < n; i++) o.push((i - (n - 1) / 2) * XBSD.fan * Math.PI / 180); return o; }
 function jBurst() {
-  if (player.hp <= 0 || J.cd.x > 0 || !J.bsOn || J.bs < 1 || (mode === "five" && FV.buy > 0)) return;
+  if (player.hp <= 0 || J.cd.x > 0 || !J.bsOn || J.bs < 1 || (mode === "five" && FV.buy > 0 && FV.menu)) return;
   const n = J.bs; J.bs = 0; J.bsOn = false; J.cd.x = XBSD.un; J.bsU = XBSD.un; kick = 1; SFX.ab("bsThrow"); // off before the hits: a burst kill (jKill) cannot refill
   const tg = solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])), o = camera.getWorldPosition(new THREE.Vector3()), f = camera.getWorldDirection(new THREE.Vector3()), up = new THREE.Vector3(0, 1, 0); ray.far = 200;
   for (const a of jBurstDirs(n)) { ray.set(o, f.clone().applyAxisAngle(up, a)); // the server's fan: the crosshair ray turned by a about the vertical (look + a, pitch kept)
@@ -11874,7 +11878,9 @@ const XWRNG = (() => { let a = 0x2545f491; return () => { a = (a + 0x6d2b79f5) |
 function xNoRng(fn) { const r = Math.random; Math.random = XWRNG; try { return fn(); } finally { Math.random = r; } }
 function xWarmLazy() { return xNoRng(() => { const warm = []; try {
   if (XWARM) warm.push(XWARM);
-  if (XWARM_BAR) warm.push(XWARM_BAR); // Barrier Orb segments (xBarMake: clones of its material, same program)
+  if (XWARM_BAR) warm.push(XWARM_BAR);
+  try { const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), rvMat); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); } catch (e) {} // bug 11: reveal outline (rvAdd) // Barrier Orb segments (xBarMake: clones of its material, same program)
+  try { const g = ryLeerGet(); g.scale.setScalar(1); warm.push(g); } catch (e) {} // bug 5: Reyna's Leer eye (pooled; free again once the caller removes it) - its additive / pupil programs were linked by the first cast mid-round
   try { for (const w in XRP) { const g = XRP[w].mag; if (g) g.traverse((o) => { if (!o.isMesh || !o.material) return; const m = new THREE.Mesh(o.geometry, xDropMat(o.material)); m.frustumCulled = false; m.raycast = () => {}; warm.push(m); }); } } catch (e) {} // reload magazine drops (xDrop): their pooled transparent clones
   if (typeof xBlob !== "undefined" && xBlob.mat && xBlob.mat.map && renderer.initTexture) renderer.initTexture(xBlob.mat.map); // its program is the shared basic+map one; only the texture was new
   if (typeof muzzle !== "undefined" && muzzle.material.map && renderer.initTexture) renderer.initTexture(muzzle.material.map); // first-person muzzle flash: uploaded on the first shot otherwise
@@ -13202,7 +13208,7 @@ try {
   { const s0 = shoot; shoot = function (a, b, c) { if (XCA.on) { if (performance.now() - XCA.s < (XCA.D + XCA.G + XCA.U) * 1000) return; xCaEnd(); } return s0.call(this, a, b, c); }; }
   (window.XHK = window.XHK || []).push(() => { if (XCA.on && performance.now() - XCA.s > (XCA.D + XCA.G + XCA.U) * 1000 + 120) xCaEnd(); }); // safety net when the scene is covered and vmTick is skipped
   { const k0 = jKey; jKey = function (code) {
-      let ok = false; try { ok = typeof code === "string" && /^Key[CQEX]$/.test(code) && jOn() && player.hp > 0 && !(mode === "five" && FV.buy > 0); } catch (e) {}
+      let ok = false; try { ok = typeof code === "string" && /^Key[CQEX]$/.test(code) && jOn() && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu); } catch (e) {}
       const s0 = ok ? xCaSig() : 0, r = k0.apply(this, arguments);
       if (ok) { try { if (xCaSig() !== s0) xCaStart(XCA_T[(ABI_M[J.pick] || ABI_M.Jett)["CQEX".indexOf(code[3])]] || "cast"); } catch (e) {} }
       return r; }; }
@@ -14026,7 +14032,7 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
 function mpHealTick(dt) { const A = MPC.hl; let w = 0; for (let i = 0; i < A.length; i++) { const h = A[i], u = h.u; if (!u.alive) continue; const n = Math.min(h.r * dt, h.l); h.l -= n; u.hp = Math.min(100, u.hp + n); if (h.l > 0.01) A[w++] = h; } A.length = w; }
 function mpCastOut(m, ex) { MP.conns.forEach((c) => { if (c.u && c !== ex) mpSend(c.conn, m); }); }
 function mpCastIn(c, u, m) { // host: a client's cast
-  const k = String(m.k || ""); if (!/^[cqex]$/.test(k) || !u || !u.alive || !u.g || (MP.m5 && FV.buy > 0)) return;
+  const k = String(m.k || ""); if (!/^[cqex]$/.test(k) || !u || !u.alive || !u.g || (MP.m5 && FV.buy > 0 && ((c.ag === "Omen" && (k === "c" || k === "x")) || (c.ag === "Chamber" && k === "e")))) return; // buy phase: casts allowed (VALORANT), Omen's teleports locked; mpHostHit / hurt keep them harmless
   const ag = Object.hasOwn(KITS, c.ag) ? c.ag : xBAg(u) || "Jett", now = performance.now(), T = c.abT || (c.abT = {});
   if (now - (T[k] || -1e9) < 250) return; // key spam: ignored, the charge stays
   if (k === "x") { if (now - (c.xT || -1e9) < 8000) return; c.xT = now; } // ult points are not tracked on the host: one ult per 8 s at most
@@ -14913,7 +14919,7 @@ async function nmEnsure(key){
   const X=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[0]),Z=nav.nodes.filter((_,i)=>C.playable[i]).map(p=>p[2]);C.bounds={x1:Math.min(...X)-3,x2:Math.max(...X)+3,z1:Math.min(...Z)-3,z2:Math.max(...Z)+3};
   const b=C.bounds;M.boxes.push({x1:b.x1,x2:b.x2,z1:b.z1,z2:b.z1,h:0},{x1:b.x1,x2:b.x2,z1:b.z2,z2:b.z2,h:0});
   if(NM.current){const old=NM.current;if(fsM.parent)fsM.parent.remove(fsM);if(spike.parent&&spike.parent===old.M.g)spike.parent.remove(spike);nmFree(old);for(const k in FMAP)if(FMAP[k]===old.M){const g=new THREE.Group();g.visible=false;FMAP[k]={g,solids:[],boxes:[],built:0};}}
-  committed=true;loadedScene=loadedGeometry=null;NM.current=C;NM.routeCache.clear();if(NM.banCache)NM.banCache.clear();try{for(const sp of nav.spawnNodes||[])for(const st of Object.values(nav.siteNodes||{}))nmPath(C,sp,st);}catch(e){} /* pre-warm routes + climb memo behind the loading overlay (measured up to 102ms cold on ascent under SwiftShader); the map list is the pre-warm set, loader/cache behavior unchanged */scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';try{if(window.xCrash)xCrash.stage('map-upload');}catch(e){}const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
+  committed=true;loadedScene=loadedGeometry=null;NM.current=C;try{nmVoidPanels(C,key);}catch(e){}NM.routeCache.clear();if(NM.banCache)NM.banCache.clear();try{for(const sp of nav.spawnNodes||[])for(const st of Object.values(nav.siteNodes||{}))nmPath(C,sp,st);}catch(e){} /* pre-warm routes + climb memo behind the loading overlay (measured up to 102ms cold on ascent under SwiftShader); the map list is the pre-warm set, loader/cache behavior unchanged */scene.add(root);NM.progress.querySelector('small').textContent='Uploading map textures…';try{if(window.xCrash)xCrash.stage('map-upload');}catch(e){}const t1=nmNow();await nmUpload(mem.textures,()=>ticket===NM.ticket);mem.uploadMs=Math.round(nmNow()-t1);if(ticket===NM.ticket)nmOverlay(null);return C;
  })().catch(e=>{failed=true;controller.abort(e);if(!committed)release();if(ticket===NM.ticket)nmOverlay(key,true);console.error('Original map load failed',key,e);throw e;}).finally(()=>{clearTimeout(timeout);if(NM.pending&&NM.pending.ticket===ticket)NM.pending=null;if(window.xMapPrefetch&&xMapPrefetch.key===key)xMapPrefetch.stop();/* loaded, failed or cancelled: nothing of the prefetch is held past the load */});NM.pending={key,ticket,promise,controller};return promise;
 }
 // Decals and floaters (#lotus-white): the ports export every Decal_/Floater_ material as OPAQUE although
@@ -15264,7 +15270,13 @@ function nmGroundApply(mat,name,stats){const k=nmGroundLayer(name);if(k===null||
 function nmPrepareScene(root){const T=root.userData&&root.userData.nmTexTable;root.traverse(o=>{if(!o.isMesh)return;o.geometry.userData.shared=true;o.castShadow=false;o.receiveShadow=false;const convert=m=>{const miss=!!(m.userData&&m.userData.nmTexMissing&&!m.map),terrain=nmTerrain(m.name);const out=new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide,alphaTest:terrain?0:m.alphaTest||0,transparent:terrain?false:m.transparent,opacity:terrain?1:m.opacity});m.dispose();if(m.map)m.map.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());const st=m.map&&nmTexStatsOf(m.map,T);nmDecalApply(out,nmDecalStyle(m.name,st));nmFoliageApply(out,m.name,st);nmGroundApply(out,m.name,st);if(miss&&(out.alphaTest>0||out.transparent||/Decal|Floater/i.test(m.name)||NM_OVERLAY.test(m.name)||nmFoliageCut(m.name,{cut:1}))){out.visible=false;out.userData.nmTexMissing=true;}/* groundalpha: also the OPAQUE-exported foliage / decals, cut from their texture's alpha when it loads *//* mapdouble: its texture failed and its alpha is its shape - not drawn, rather than a solid quad (nmTexMissingMark) */return out;};o.material=Array.isArray(o.material)?o.material.map(convert):convert(o.material);});if(T)delete root.userData.nmTexTable;/* texture stats table: only needed here */return root;}
 // A custom set (e.g. LOW with anti-aliasing switched on) keeps the texture cap of the preset it came from (vs.gqb): the AA switch re-prepares the map and dropped the LOW 256 px cap (41 -> 149 MB of Lotus textures).
 function nmQuality(){let q=null;try{q=localStorage.getItem('vs.gq');if(q==='custom')q=localStorage.getItem('vs.gqb')||q;}catch(e){}if(!q)q=typeof xLowDev!=='undefined'&&xLowDev?'low':'medium';return q;}
-function nmTexCap(quality,deviceMemory){if(quality===undefined)quality=nmQuality();if(deviceMemory===undefined)deviceMemory=typeof navigator!=='undefined'?navigator.deviceMemory:undefined;return quality==='low'||(deviceMemory>0&&deviceMemory<=4)?256:0;}
+// bug 12 (Lotus missing walls): render panels for the wall boxes server/map-void-fill.json adds to collision-patch.bin, so a filled
+// gap also LOOKS closed (keep in sync with its "boxes": [x0, x1, z0, z1, y0, y1], world metres). Parented to the map group (freed with it).
+var NM_VOIDBOX={lotus:[[42.72,43.15,-2.55,-1.05,5.8,9.4]]};/* drawn face set 0.1 m behind the collision box's (42.62), flush with the pillars */
+function nmVoidPanels(C,key){const L=NM_VOIDBOX[key];if(!L||!C||!C.M||!C.M.g)return 0;const g=C.M.g;g.updateMatrixWorld(true);const mat=nmVoidPanels.m||(nmVoidPanels.m=new THREE.MeshLambertMaterial({color:0x756445/* the lit sandstone wall around the slot */,side:THREE.DoubleSide}));let n=0;for(const b of L){const m=new THREE.Mesh(new THREE.BoxGeometry(b[1]-b[0],b[5]-b[4],b[3]-b[2]),mat),p=new THREE.Vector3((b[0]+b[1])/2,(b[4]+b[5])/2,(b[2]+b[3])/2);g.worldToLocal(p);m.position.copy(p);m.userData.nmVoid=true;m.raycast=()=>{};g.add(m);n++;}return n;}
+// bug 1 (Ascent not loading on iPhone Safari): WebKit has no navigator.deviceMemory, so iPhones never got the texture cap - Ascent
+// decodes ~320 MB of map textures, the most of any map. iOS WebKit is treated like a <=4 GB device (256 px cap).
+function nmTexCap(quality,deviceMemory){if(quality===undefined)quality=nmQuality();if(deviceMemory===undefined)deviceMemory=typeof navigator!=='undefined'?navigator.deviceMemory:undefined;return quality==='low'||(deviceMemory>0&&deviceMemory<=4)||(typeof nmIOSWebKit==='function'&&nmIOSWebKit())?256:0;}
 function nmBytes(g){let n=0;if(!g)return 0;for(const k in g.attributes){const a=g.attributes[k];n+=a.array?a.array.byteLength:0;}if(g.index&&g.index.array)n+=g.index.array.byteLength;return n;}
 function nmTexBytes(w,h,mips){return Math.round(w*h*4*(mips?4/3:1));}
 function nmDropArray(){this.array=null;}
@@ -15488,19 +15500,45 @@ function nmIcon(ctx,x,z,r,ag,ring,dir){
  ctx.beginPath();ctx.arc(x,z,r,0,Math.PI*2);ctx.fillStyle=ring;ctx.fill();
  const art=nmIconArt(ag);if(art){const ri=r-Math.max(1.5,r*.2);ctx.drawImage(art,x-ri,z-ri,ri*2,ri*2);}}
 function nmIconX(ctx,x,z,r,col){ctx.strokeStyle=col;ctx.lineWidth=Math.max(1.5,r*.35);ctx.beginPath();ctx.moveTo(x-r,z-r);ctx.lineTo(x+r,z+r);ctx.stroke();ctx.beginPath();ctx.moveTo(x+r,z-r);ctx.lineTo(x-r,z+r);ctx.stroke();ctx.lineWidth=1;}
-function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mode==='retake');g.classList.toggle('x-mm',!!show);g.classList.toggle('x-five',mode==='five');XCALL.visible=false;if(!show)return;const now=performance.now();if(now-(nmMinimap.last||0)<80)return;nmMinimap.last=now;const ctx=mmx,W=MM.width,H=MM.height,px=W/((now-(nmMinimap.ct||-1e9)>1000||!nmMinimap.cw?(nmMinimap.ct=now,nmMinimap.cw=MM.getBoundingClientRect().width):nmMinimap.cw)||W/2),{s,X,Z}=nmMapProjection(C,W,H);ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle='#101c26';ctx.fillRect(0,0,W,H);
- if(C.image.complete&&C.image.naturalWidth){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),point=(u,v)=>{const x=(u/1024-p.xScalarToAdd)/(p.xMultiplier*100)-t.cx,z=-(v/1024-p.yScalarToAdd)/(p.yMultiplier*100)-t.cz;return [ca*x+sa*z,-sa*x+ca*z];},o=point(0,0),a=point(1,0),d=point(0,1);ctx.save();ctx.setTransform((a[0]-o[0])*s,(a[1]-o[1])*s,(d[0]-o[0])*s,(d[1]-o[1])*s,X(o[0]),Z(o[1]));ctx.drawImage(C.image,0,0,1024,1024);ctx.restore();}
- ctx.font='bold '+Math.max(10,W/15,10*px)+'px Arial';ctx.textAlign='center';ctx.fillStyle='#f3efcf';for(const [k,p]of Object.entries(C.meta.sites)){const r=Math.max(7,W/32,6*px),x=Math.max(r+2,Math.min(W-r-2,X(p[0]))),z=Math.max(r+2,Math.min(H-r-2,Z(p[2])));ctx.fillStyle='#18242e';ctx.beginPath();ctx.arc(x,z,r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f3efcf';ctx.fillText(k,x,z+Math.max(3,W/48,3.5*px));}const dot=(x,z,color,r)=>{ctx.beginPath();ctx.arc(X(x),Z(z),r*px,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};const dia=(x,z,r)=>{const cx=X(x),cz=Z(z);r*=px;ctx.beginPath();ctx.moveTo(cx,cz-r);ctx.lineTo(cx+r,cz);ctx.lineTo(cx,cz+r);ctx.lineTo(cx-r,cz);ctx.closePath();};
- const vis=nmSpot(now),ir=Math.max(8,6*px),ac=(typeof XAC!=='undefined'&&XAC.on&&XAC.hex)||'#5fe4df',ec=(typeof XEC!=='undefined'&&XEC.hex)||'#ff4655',agOf=u=>typeof xAg==='function'?xAg(u):u.agent,face=u=>{const ry=u.g.rotation?u.g.rotation.y||0:0;return Math.atan2(Math.cos(ry),Math.sin(ry));};/* bots / puppets face +z (rotation.y = atan2(dx, dz)) */
- // agent icons: dead teammates leave an X; enemies only while spotted (and never behind the server's fog of war)
- for(const u of allies){const p=u.g.position;if(u.alive)nmIcon(ctx,X(p.x),Z(p.z),ir,agOf(u),ac,face(u));else nmIconX(ctx,X(p.x),Z(p.z),ir*.55,ac);}for(const u of bots)if(u.alive&&!u.fog&&vis.has(u))nmIcon(ctx,X(u.g.position.x),Z(u.g.position.z),ir,agOf(u),ec,face(u));
- // Last-seen: a fading red "?" for NM_LOST_MS where a spotted enemy dropped out of the team's sight.
- ctx.font='bold '+Math.max(9,7*px)+'px Arial';for(const [b,l]of mmLost){const f=1-(now-l.t)/NM_LOST_MS;if(f<=0||!b.alive){mmLost.delete(b);continue;}ctx.globalAlpha=f;ctx.fillStyle='#ff4655';ctx.fillText('?',X(l.x),Z(l.z)+3*px);ctx.globalAlpha=1;}
- // Orbs, call-out rings and pings use the same world-to-map transform as the players.
- if(mode==='five'&&window.xOrbs)for(const o of window.xOrbs){if(!o.on)continue;dia(o.x,o.z,2.5);ctx.fillStyle='#9ffff0';ctx.fill();}
- if(window.xCMk)for(const q of window.xCMk){if(!q.on)continue;const f=1-(now-q.t)/4000;if(f<=0){q.on=false;continue;}ctx.globalAlpha=f;ctx.beginPath();ctx.arc(X(q.x),Z(q.z),5*px,0,Math.PI*2);ctx.strokeStyle=q.en?'#ff4655':'#7fd8ff';ctx.lineWidth=1.5*px;ctx.stroke();ctx.globalAlpha=1;}
- if(window.xPG)for(const q of window.xPG.s){if(!q.on)continue;ctx.globalAlpha=q.a==null?1:q.a;dia(q.x,q.z,3.5);ctx.strokeStyle=q.en?'#ff4655':'#ffd84a';ctx.lineWidth=1.5*px;ctx.stroke();ctx.globalAlpha=1;}
- ctx.lineWidth=1;if(player.hp>0){/* view cone: a wedge from the player dot along the look direction, as wide as the current horizontal FOV (scoping narrows it) */const half=nmViewHalf(),cx=X(player.x),cz=Z(player.z),dir=Math.atan2(-Math.cos(yaw),-Math.sin(yaw)),r=Math.max(24,Math.min(70,NM_CONE_M*s));ctx.beginPath();ctx.moveTo(cx,cz);ctx.arc(cx,cz,r,dir-half,dir+half);ctx.closePath();ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.stroke();}if(player.hp>0)nmIcon(ctx,X(player.x),Z(player.z),ir*1.12,(typeof J!=='undefined'&&J.pick)||'Jett','#ffffff',Math.atan2(-Math.cos(yaw),-Math.sin(yaw)));else nmIconX(ctx,X(player.x),Z(player.z),ir*.6,'#ffffff');if(mode==='five'&&FV.sp&&(FV.sp.st==='plant'||FV.sp.st==='drop'&&(FV.atk||FV.sp.seen)))dot(FV.sp.x,FV.sp.z,'#ffe269',3);else if(mode==='five'&&FV.sp&&FV.sp.st==='carry'&&FV.sp.c&&FV.sp.c!==player&&allies.includes(FV.sp.c)&&FV.sp.c.g)dot(FV.sp.c.g.position.x,FV.sp.c.g.position.z,'#ffe269',1.6);
+// Minimap (user 2026-11-06 bug 3: "the minimap looks AI-generated"), drawn as VALORANT's: the map art crisp at the canvas's device
+// pixels (backing store = CSS size x devicePixelRatio, high-quality downscale of the 1024 px minimap.png), one marker shape for every
+// unit - an arrowhead along its facing with a thin dark outline, in team colours (you yellow with a flat view cone, teammates teal or the
+// colourblind ally colour, spotted enemies red), a small X where a teammate died - site letters as plain white type with a dark edge,
+// the Spike as a small spike glyph. Rotate minimap (vs.minirot, XOB.mr) turns the map about the view (yours or the spectated
+// teammate's) so it faces up, as the legacy minimap does. nmMinimap.P maps world (x, z) to canvas pixels for later layers (ropes).
+const NM_MM={you:'#f5d742',ink:'rgba(8,12,16,.9)',font:null};
+function nmMmFont(){if(NM_MM.font)return NM_MM.font;let f='';try{f=getComputedStyle(document.documentElement).getPropertyValue('--hf').trim();}catch(e){}return NM_MM.font=f||'Arial,sans-serif';}
+function nmMmSize(){const r=MM.getBoundingClientRect(),cw=r.width||160,d=Math.min(3,Math.max(1,window.devicePixelRatio||1)),w=Math.max(96,Math.round(cw*d));if(r.width>0&&MM.width!==w){MM.width=w;MM.height=w;}return cw;}
+function nmMmUnit(ctx,x,z,r,dir,fill,lw){/* arrowhead: tip along the facing, swept-back wings, a shallow notch at the tail */const p=(k,a)=>[x+Math.cos(dir+a)*r*k,z+Math.sin(dir+a)*r*k],t=p(1.55,0),l=p(1.25,2.45),n=p(.45,Math.PI),q=p(1.25,-2.45);ctx.beginPath();ctx.moveTo(t[0],t[1]);ctx.lineTo(l[0],l[1]);ctx.lineTo(n[0],n[1]);ctx.lineTo(q[0],q[1]);ctx.closePath();ctx.lineJoin='round';ctx.fillStyle=fill;ctx.fill();ctx.lineWidth=lw;ctx.strokeStyle=NM_MM.ink;ctx.stroke();}
+function nmMmX(ctx,x,z,r,col,lw){ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x-r,z-r);ctx.lineTo(x+r,z+r);ctx.moveTo(x+r,z-r);ctx.lineTo(x-r,z+r);ctx.lineWidth=lw*2.6;ctx.strokeStyle=NM_MM.ink;ctx.stroke();ctx.lineWidth=lw*1.4;ctx.strokeStyle=col;ctx.stroke();ctx.lineCap='butt';}
+function nmMmSpike(ctx,x,z,h,lw,planted){const w=h*.42;ctx.beginPath();ctx.moveTo(x,z-h);ctx.lineTo(x+w,z-h*.35);ctx.lineTo(x+w,z+h*.45);ctx.lineTo(x,z+h*.8);ctx.lineTo(x-w,z+h*.45);ctx.lineTo(x-w,z-h*.35);ctx.closePath();ctx.fillStyle='#ece8e1';ctx.fill();ctx.lineWidth=lw;ctx.strokeStyle=NM_MM.ink;ctx.stroke();ctx.beginPath();ctx.moveTo(x,z-h*.55);ctx.lineTo(x+w*.45,z);ctx.lineTo(x,z+h*.45);ctx.lineTo(x-w*.45,z);ctx.closePath();ctx.fillStyle=planted?'#ff4655':'#8a96a3';ctx.fill();}
+function nmMinimap(C){const g=$('game'),show=running&&player&&(mode==='five'||mode==='retake');g.classList.toggle('x-mm',!!show);g.classList.toggle('x-five',mode==='five');XCALL.visible=false;if(!show)return;const now=performance.now();if(now-(nmMinimap.last||0)<80)return;nmMinimap.last=now;
+ if(now-(nmMinimap.ct||-1e9)>1000||!nmMinimap.cw){nmMinimap.ct=now;nmMinimap.cw=nmMmSize();}
+ const ctx=mmx,W=MM.width,H=MM.height,px=W/(nmMinimap.cw||W/2),lw=Math.max(1,px),{s,X:X0,Z:Z0}=nmMapProjection(C,W,H);
+ const rot=typeof XOB!=='undefined'&&!!XOB.mr,vx=rot&&Number.isFinite(XOB.vx)?XOB.vx:player.x,vz=rot&&Number.isFinite(XOB.vz)?XOB.vz:player.z,vy=!rot?0:Number.isFinite(XOB.vy)?XOB.vy:yaw,rc=Math.cos(vy),rs=Math.sin(vy),ax=X0(vx),az=Z0(vz);
+ const zm=rot?1.6:1/* rotate: zoomed about the view, as VALORANT's rotating minimap (at 1x the far side of the map left the box mostly empty) */,P=rot?(x,z)=>{const dx=(X0(x)-ax)*zm,dz=(Z0(z)-az)*zm;return [W/2+dx*rc-dz*rs,H/2+dx*rs+dz*rc];}:(x,z)=>[X0(x),Z0(z)];nmMinimap.P=P;minimap.r=vy;
+ ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle='rgba(12,18,24,.72)';ctx.fillRect(0,0,W,H);
+ if(C.image.complete&&C.image.naturalWidth){const t=C.meta.transform,p=C.meta.apiProjection,ca=Math.cos(t.angle),sa=Math.sin(t.angle),point=(u,v)=>{const x=(u/1024-p.xScalarToAdd)/(p.xMultiplier*100)-t.cx,z=-(v/1024-p.yScalarToAdd)/(p.yMultiplier*100)-t.cz;return [ca*x+sa*z,-sa*x+ca*z];},o=point(0,0),a=point(1,0),d=point(0,1);
+  ctx.save();if(rot){ctx.translate(W/2,H/2);ctx.rotate(vy);ctx.scale(zm,zm);ctx.translate(-ax,-az);}ctx.transform((a[0]-o[0])*s,(a[1]-o[1])*s,(d[0]-o[0])*s,(d[1]-o[1])*s,X0(o[0]),Z0(o[1]));ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.globalAlpha=.94;ctx.drawImage(C.image,0,0,1024,1024);ctx.restore();}
+ const F=nmMmFont();ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+ // site letters: plain white type, a thin dark edge for contrast on light floors, kept inside the frame
+ ctx.font='700 '+Math.round(12*px)+'px '+F;for(const [k,q]of Object.entries(C.meta.sites)){const m=P(q[0],q[2]),e=8*px,x=Math.max(e,Math.min(W-e,m[0])),z=Math.max(e,Math.min(H-e,m[1]));ctx.lineWidth=3*px;ctx.strokeStyle='rgba(8,12,16,.6)';ctx.strokeText(k,x,z);ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillText(k,x,z);}
+ const vis=nmSpot(now),ur=3.6*px,ac=(typeof XAC!=='undefined'&&XAC.on&&XAC.hex)||'#5fe4df',ec=(typeof XEC!=='undefined'&&XEC.hex)||'#ff4655',face=u=>{const ry=u.g.rotation?u.g.rotation.y||0:0;return Math.atan2(Math.cos(ry),Math.sin(ry))+vy;};/* bots / puppets face +z (rotation.y = atan2(dx, dz)) */
+ const dia=(x,z,r)=>{const m=P(x,z);r*=px;ctx.beginPath();ctx.moveTo(m[0],m[1]-r);ctx.lineTo(m[0]+r,m[1]);ctx.lineTo(m[0],m[1]+r);ctx.lineTo(m[0]-r,m[1]);ctx.closePath();};
+ // you: the flat view cone (as wide as the current horizontal FOV, scoping narrows it) under every marker
+ const yd=Math.atan2(-Math.cos(yaw),-Math.sin(yaw))+vy;if(player.hp>0){const half=nmViewHalf(),m=P(player.x,player.z),r=Math.max(22*px,Math.min(44*px,NM_CONE_M*s*zm));ctx.beginPath();ctx.moveTo(m[0],m[1]);ctx.arc(m[0],m[1],r,yd-half,yd+half);ctx.closePath();ctx.fillStyle='rgba(255,255,255,.16)';ctx.fill();}
+ // teammates (dead: a small X where they fell), then enemies only while spotted (never behind the server's fog of war)
+ for(const u of allies){const q=u.g.position,m=P(q.x,q.z);if(u.alive)nmMmUnit(ctx,m[0],m[1],ur,face(u),ac,lw);else nmMmX(ctx,m[0],m[1],2.2*px,ac,lw);}
+ for(const u of bots)if(u.alive&&!u.fog&&vis.has(u)){const m=P(u.g.position.x,u.g.position.z);nmMmUnit(ctx,m[0],m[1],ur,face(u),ec,lw);}
+ // last seen: a fading red "?" for NM_LOST_MS where a spotted enemy dropped out of the team's sight
+ ctx.font='700 '+Math.round(10*px)+'px '+F;for(const [b,l]of mmLost){const f=1-(now-l.t)/NM_LOST_MS;if(f<=0||!b.alive){mmLost.delete(b);continue;}const m=P(l.x,l.z);ctx.globalAlpha=f;ctx.lineWidth=2.5*px;ctx.strokeStyle='rgba(8,12,16,.7)';ctx.strokeText('?',m[0],m[1]);ctx.fillStyle=ec;ctx.fillText('?',m[0],m[1]);ctx.globalAlpha=1;}
+ // orbs, call-out rings and pings: same projection as the units
+ if(mode==='five'&&window.xOrbs)for(const o of window.xOrbs){if(!o.on)continue;dia(o.x,o.z,2.5);ctx.fillStyle='#9ffff0';ctx.fill();ctx.lineWidth=lw;ctx.strokeStyle=NM_MM.ink;ctx.stroke();}
+ if(window.xCMk)for(const q of window.xCMk){if(!q.on)continue;const f=1-(now-q.t)/4000;if(f<=0){q.on=false;continue;}const m=P(q.x,q.z);ctx.globalAlpha=f;ctx.beginPath();ctx.arc(m[0],m[1],5*px,0,Math.PI*2);ctx.strokeStyle=q.en?ec:ac;ctx.lineWidth=1.5*px;ctx.stroke();ctx.globalAlpha=1;}
+ if(window.xPG)for(const q of window.xPG.s){if(!q.on)continue;ctx.globalAlpha=q.a==null?1:q.a;dia(q.x,q.z,3.5);ctx.strokeStyle=q.en?ec:'#ffd84a';ctx.lineWidth=1.5*px;ctx.stroke();ctx.globalAlpha=1;}
+ // you on top (dead: an X where you fell); the Spike last: planted / dropped where it lies, carried by a teammate beside them
+ {const m=P(player.x,player.z);const yc=typeof XEC!=='undefined'&&XEC.k==='yellow'&&!XEC.cbh?'#ffffff':NM_MM.you;/* yellow enemies: you in white */if(player.hp>0)nmMmUnit(ctx,m[0],m[1],ur*1.15,yd,yc,lw);else nmMmX(ctx,m[0],m[1],2.4*px,yc,lw);}
+ if(mode==='five'&&FV.sp){const S=FV.sp;if(S.st==='plant'||S.st==='drop'&&(FV.atk||S.seen)){const m=P(S.x,S.z);nmMmSpike(ctx,m[0],m[1],5*px,lw,S.st==='plant');}else if(S.st==='carry'&&S.c&&S.c!==player&&allies.includes(S.c)&&S.c.g){const m=P(S.c.g.position.x,S.c.g.position.z);nmMmSpike(ctx,m[0]+5*px,m[1]-5*px,3.4*px,lw,false);}}
 }
 {const map=minimap;minimap=function(){const C=nmActive();return C?nmMinimap(C):map.apply(this,arguments);};const bounds=mmBounds;mmBounds=function(n){const C=nmActive();return C?C.bounds:bounds(n);};const loc=xLoc;xLoc=function(x,z){const C=nmActive();if(!C)return loc(x,z);let best='',d=Infinity;for(const c of C.meta.callouts){const r=Math.hypot(c.position[0]-x,c.position[2]-z);if(r<d){d=r;best=c.name;}}return best;};}
 // Existing hooks keep their original function references, so add the native minimap after them.
@@ -15514,7 +15552,14 @@ function nmTeleports(C){if((typeof NET!=='undefined'&&NET.socket)||C.key!=='bind
 // Native pads (nmTeleports, above) move bots and the player; the legacy check only runs on the blockout.
 {const legacy=xTpBots;xTpBots=function(){if(nmActive())return;return legacy.apply(this,arguments);};}
 window.xNativeMaps={state:NM,ensure:nmEnsure,cancel:nmCancel,near:nmNear,path:nmPath,height:nmHeight,blocked:nmBlocked,activate(key){FV.pick=FV.map=key;mode='five';fUseMap();useMap('five');return NM.current.meta;},memory(){const C=NM.current;return C&&C.memory?Object.assign({},C.memory,{textures:C.memory.textures.length}):null;},probe(){const C=nmActive();return C?{key:C.key,objects:C.meta.objects,navigation:C.nav.validation,player:[player.x,player.y,player.z],sites:C.meta.sites}:null;}};
-{const remake=xRemake;xRemake=function(){const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}
+// Bug 2 (memory crash after Video -> Medium on phone and computer): Medium/High turn MSAA on, which only a new WebGL context can
+// do, and with a native map resident that meant a second context plus a full reload of the map (nmRehydrate) while the old one
+// was still alive; each further Low<->Medium switch started another overlapping reload (measured on Lotus, 960x540: JS heap
+// 344 MB -> 1028 MB after four switches, still reloading 10 min later). With a native map resident or loading, the renderer
+// is no longer swapped: the choice is saved (vs.aa) and the page's next start creates its renderer with it (xAA0); the rest of
+// the preset (resolution, shadows, skyline) applies at once. Without a native map the swap is cheap and stays immediate.
+function nmRemakeHeld(){return !!((NM.current&&NM.current.scene)||NM.pending);}
+{const remake=xRemake;xRemake=function(){if(nmRemakeHeld()){NM.aaPending=true;try{xApplyShadows();resize();}catch(e){}say('Anti-aliasing applies after reloading the page',1600);return;}const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){NM.aaPending=false;nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}
 // Native warmup compiles the visible scene plus the pooled hit-path effects that stay hidden until first use (tracer
 // lines, localized hit impacts, spark/decal pools): without them the first shot / first hit of a match compiled their
 // programs mid-fight. Only invisible leaf objects parented to the scene are flipped (never the hidden collision meshes
@@ -16215,7 +16260,7 @@ const netSgBlk0=sgBlk;sgBlk=function(x,z,r,y=0){if(!NET.socket)return netSgBlk0(
 const netShoot0=shoot;shoot=function(){if(NET.socket&&(netReyna?.dismiss>0||netChannel?.remaining>0))return false;const before=ammo,k0=kSwing,ss=typeof RS!=='undefined'&&RS.ss,r=netShoot0.apply(this,arguments);const swung=rw==='knife'&&kSwing!==k0,rocket=ss&&!RS.ss;/* Showstopper: the click that launched the rocket is one fire pulse (the server's launcher fires on it; a semi-auto gun sends no held fire) */if(NET.socket&&MP.st==='game'&&(swung||rocket||(rw!=='knife'&&ammo<before))){NET.firePulse=performance.now()+80;NET.fireHeavy=swung&&kHv===1?NET.firePulse:0;/* ...and stays pending until an input message carried it: on a slow page the next 50 ms input tick runs after the frame, past the 80 ms window (online Showstopper launched no rocket) */NET.firePend=1;NET.firePendH=NET.fireHeavy?1:0;if(typeof xAD!=='undefined'&&xAD.bs&&rw!=='knife'){NET.altPulse=NET.firePulse;NET.firePendA=1;}/* qa-36: Classic ALT FIRE (xBurst) - the server fires the 3 rounds at once on alt:1 */if(rocket)NET.ssFiredAt=performance.now();}return r;}; // knife: one pulse per swing the client actually started (a click during a swing sent a pulse the server could turn into an extra hit); a heavy swing sends kh so the server applies the heavy cooldown/damage
 /* window, not document: the keymap layer re-sends a rebound key on window only (it never reaches document) */addEventListener('keydown',e=>{if(e.code!=='KeyR'||!(NET.socket&&MP.st==='game')||xKbSkip(e)||e.repeat)return;netSend({t:'reload'});if(reloading>0)netReload=true;/* the page's own R handler already started the local reload: the loop must not send it again */});
 // Camera, server shots and bots all treat positive pitch as looking up; send it unchanged.
-function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,view:typeof MP==='undefined'?100:Math.max(30,Math.min(220,MP.snapClock?.delay||MP.DELAY||100))/* the page's real interpolation delay: 50 ms in a 40 Hz room, 35 in a 60 Hz one (the server floors it at rewind.js REWIND.minView) */,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld)||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */,u:kk.KeyF?1:0/* Use held: grabs / lets go of a rope ascender (shared motor) */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
+function netInputMsg(kk,w){const seq=++NET.seq;const log=NET.inLog||(NET.inLog=[]);log.push({seq,t:performance.now()});if(log.length>240)log.shift();const fp=NET.firePend,fh=NET.firePendH,fa=NET.firePendA;NET.firePend=NET.firePendH=NET.firePendA=0;/* a pending click rides this message once */return {t:'in',seq,view:typeof MP==='undefined'?100:Math.max(30,Math.min(220,MP.snapClock?.delay||MP.DELAY||100))/* the page's real interpolation delay: 50 ms in a 40 Hz room, 35 in a 60 Hz one (the server floors it at rewind.js REWIND.minView) */,r:yaw,p:pitch,f:(kk.KeyW?1:0)-(kk.KeyS?1:0),s:(kk.KeyD?1:0)-(kk.KeyA?1:0),j:kk.Space?1:0,c:kk.ControlLeft||kk.ControlRight?1:0,w:kk.ShiftLeft||kk.ShiftRight?1:0,ads:ads?1:0,az:ads===2&&w==='Operator'&&typeof xSC!=='undefined'&&xSC.lv===2?1:0/* Operator second zoom (5x): teammates spectating see it (roundState pov ADS 2) */,h4:kk.Digit4||kk.Numpad4?1:0,fire:(w!=='Knife'&&!WEAP[w]?.semi&&fireHeld&&!(FV.buy>0&&FV.menu))/* buy menu open: its clicks buy, never fire */||NET.firePulse>performance.now()||fp?1:0,kh:NET.fireHeavy>performance.now()||fh?1:0,alt:NET.altPulse>performance.now()||fa?1:0,cb:J.pick==='Jett'&&kk.KeyC?1:0/* Cloudburst steering: C held */,u:kk.KeyF?1:0/* Use held: grabs / lets go of a rope ascender (shared motor) */};} // a held knife click is one swing on the client, so it is a pulse (not held fire) online
 function netSyncSmokes(rows){const seen=new Set();for(const e of rows){if(e.kind!=='smoke'||!Number.isFinite(e.id)||!Array.isArray(e.p)||e.p.length!==3||!e.p.every(Number.isFinite)||!Number.isFinite(e.r)||e.r<=0||e.r>12||!Number.isFinite(e.tl)||!(e.tl>0))continue;seen.add(e.id);let S=J.smokes.find(s=>s.netId===e.id);if(!S)S=J.smokes.find(s=>s.netId==null&&!s.cb&&Math.hypot(s.p.x-e.p[0],s.p.y-e.p[1],s.p.z-e.p[2])<1);if(!S){netSmoke0(e.p[0],e.p[2],false,e.tl,e.p[1],e.r,e.cyl);S=J.smokes[J.smokes.length-1];}for(const other of J.smokes)if(other!==S&&other.netId==null&&!other.cb&&Math.hypot(other.p.x-e.p[0],other.p.y-e.p[1],other.p.z-e.p[2])<1)other.t=0;S.netId=e.id;S.t=e.tl;S.p.set(...e.p);S.a=1;S.m.scale.set(e.r/4,e.cyl?1:e.r/4,e.r/4);}J.smokes=J.smokes.filter(s=>{if(s.netId==null||seen.has(s.netId))return true;jRel(s.m);return false;});}
 let netWeapon='',netReload=false,netEquipWant=null,netEquipUntil=0,netRec=false;
 // The gun the server holds, in hand on the page: a sidearm goes in the sidearm slot, anything else in the primary slot, and the
@@ -16250,7 +16295,7 @@ const netOmenFts0=okFtsAt;okFtsAt=function(x,z){if(!(NET.socket&&MP.st==='game'&
 // Anchor placement/return have no local charge delta. Send intent before legacy optimistic movement.
 // Chamber Headhunter (Q) is the server's: each press takes one charge and swaps in a 1-round Sheriff (Q again puts it
 // away and refunds the round). The local overlay (BC.eq 'hp') only drew the HUD; online fire went to the held gun.
-const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&FV.buy<=0){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Jett'&&code==='KeyE'&&netTwReady()){const d=jDashKeys();m.f=d.f;m.s=d.s;m.r=+d.r.toFixed(4);J.dash=jDash(d);NET.tw=null;NET.dashUntil=performance.now()+XPAR2.dashTime*1000+250;}/* Tailwind dash predicted at once (the server runs the same shared-motor dash from these keys / yaw) */if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
+const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&!(FV.buy>0&&(FV.menu||J.pick==='Omen'&&code==='KeyC'||J.pick==='Chamber'&&code==='KeyE'))/* buy phase: abilities allowed (VALORANT; server castAbility), Omen's teleport stays locked */){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Jett'&&code==='KeyE'&&netTwReady()){const d=jDashKeys();m.f=d.f;m.s=d.s;m.r=+d.r.toFixed(4);J.dash=jDash(d);NET.tw=null;NET.dashUntil=performance.now()+XPAR2.dashTime*1000+250;}/* Tailwind dash predicted at once (the server runs the same shared-motor dash from these keys / yaw) */if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
 function netChamberAnchor(A,time){if(J.pick!=='Chamber')return;J.cd.e=Math.max(0,(A.cool?.e||0)-time);const a=A.anchor;if(!Array.isArray(a)){if(BC.an){scene.remove(BC.an.m);BC.an=null;}return;}if(!BC.an){const m=new THREE.Mesh(ringGeo,fireMat(0xd8b04a,.8));m.rotation.x=-Math.PI/2;scene.add(m);BC.an={m};}BC.an.x=a[0];BC.an.y=a[1];BC.an.z=a[2];BC.an.m.position.set(a[0],a[1]+.06,a[2]);}
 // Online Showstopper: the launcher's 1.4 s equip and 10 s window run on the server's clock (status ssr = equip left, ssu =
 // window left). The page counted RS.ssd / RS.sst down by its clamped frame dt (<= 0.1 s), so on a ~1 frame/s page the local
@@ -16349,8 +16394,8 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
-const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
-const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||FV.buy>0||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
+const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||(FV.buy>0&&FV.menu)||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||(FV.buy>0&&FV.menu)||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
 
 // ---- PARTY MODES (modes-1, user 2026-10-26: "add more gamemodes for multiplayer and make it so you can change gamemode when in a team") ----
 // The server room is the party. Its leader (host) picks the mode and map from the Online panel while the party is in the lobby; the
@@ -17176,7 +17221,7 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
 }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
-  if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
+  if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0 && FV.menu)) { J.eq = null; return; }
   if (q.rot) { if (!(typeof mpAltHeld !== "undefined" && mpAltHeld) || !xRotOn(q)) q.rot = false; else { yaw = q.ry; pitch = q.rp; } } // ALT FIRE let go: the mouse turns the view again
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
@@ -17190,7 +17235,7 @@ function xEqTick(dt) {
 }
 const xEqKey0 = jKey;
 jKey = function (code) {
-  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
+  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))))) return xEqKey0.apply(this, arguments);
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
@@ -18003,6 +18048,30 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
   for(let i=1;i<pts.length;i++){const q=pts[i],p=pts[i-1];L+=Math.hypot(q[0]-p[0],q[2]-p[2]);if(Math.abs(q[1]-s[1])>dy||L>run)break;
    if(vis(q)){last=q;continue;}const a=last||p,c=[(a[0]+q[0])/2,(a[1]+q[1])/2+head,(a[2]+q[2])/2];if(Math.hypot(c[0]-s[0],c[2]-s[2])>=near)return c;}
   return last&&Math.hypot(last[0]-s[0],last[2]-s[2])>=near?[last[0],last[1]+head,last[2]]:null;}
+ // Holding an angle (bug 8, user 2026-11-06: "bad crosshair placement when bots hold angles"; offline xhpCalc, server
+ // holdLook). A holder's crosshair sits where an enemy first shows: for each way an enemy can come (its spawn, each site,
+ // mid, a planted Spike; srcs [{pts, w}]: the nav points of the route from the bot's spot toward that source, the spot
+ // itself excluded), walked from the spot while vis(point) (a clear eye line at head height) and the straight distance
+ // stays under HOLD.run m on one floor (HOLD.dy): the first point out of sight -> the midpoint with the last one in sight
+ // (the edge of the cover the enemy comes round, at PRE.head); nothing hidden and HOLD.open m+ in sight -> the farthest point
+ // in sight (an open lane). Corners under HOLD.near m (a wall at the shoulder) are dropped. Scored w / (4 + d) (near chokes
+ // first), corners within HOLD.merge rad of each other merged (the second adds half its score). Returns the best HOLD.keep,
+ // best first: [{x, y, z, d, w, yaw}] (yaw = atan2(dx, dz), the page's convention; the server turns it round).
+ const HOLD={run:45,dy:5,open:8,near:2.5,merge:.3,keep:3,main:1.5,dwell:[2.2,5.2],dk:4,
+  // source weights [defending, attacking]: a defender's enemies come from their spawn (and through mid), rarely through its
+  // own team's other site; an attacker's from the defenders' spawn, the sites and mid; a planted Spike draws both sides
+  w:{spawn:[2,1.6],site:[.5,1],mid:[1,.8],spike:[1.4,1.4]}};
+ function holdCorners(srcs,vis,x,y,z){const A=[],head=PRE.head;
+  for(const S of srcs||[]){const P=S&&S.pts;if(!P||!P.length)continue;let last=null,pt=null,run=0;
+   for(let i=0;i<P.length&&run<HOLD.run;i++){const n=P[i];run=Math.hypot(n[0]-x,n[2]-z);if(Math.abs(n[1]-y)>HOLD.dy)break;if(vis(n)){last=n;continue;}pt=last?[(last[0]+n[0])/2,(last[1]+n[1])/2+head,(last[2]+n[2])/2]:null;break;}
+   if(!pt&&last&&run>=HOLD.open)pt=[last[0],last[1]+head,last[2]];if(!pt)continue;const d=Math.hypot(pt[0]-x,pt[2]-z);if(d<HOLD.near)continue;
+   const yaw=Math.atan2(pt[0]-x,pt[2]-z),sc=S.w/(HOLD.dk+d)*30;let dup=null;for(const a of A)if(Math.abs(wrapA(a.yaw-yaw))<HOLD.merge){dup=a;break;}if(dup){dup.w+=sc*.5;continue;}A.push({yaw,x:pt[0],y:pt[1],z:pt[2],d,w:sc});}
+  A.sort((a,b)=>b.w-a.w);if(A.length>HOLD.keep)A.length=HOLD.keep;return A;}
+ // Which of a holder's corners it watches next and for how long (s): drawn by score with the best one counted HOLD.main x
+ // (a player checks its second angle now and then, a weak one rarely; was 45 % of the time on a uniformly drawn other one,
+ // so a site holder looked away from the main entry when the push came); committed for the dwell, so the crosshair never
+ // wanders between them.
+ function holdNext(A,rand){let k=0;if(A&&A.length>1){let t=0;for(let i=0;i<A.length;i++)t+=(A[i].w||1)*(i?1:HOLD.main);let x=rand()*t;for(k=0;k<A.length-1;k++){x-=(A[k].w||1)*(k?1:HOLD.main);if(x<0)break;}}return {k,dwell:HOLD.dwell[0]+rand()*(HOLD.dwell[1]-HOLD.dwell[0])};}
  function trackLag(P,t){return (P.lag||.08)*(TRACK.floor+(1-TRACK.floor)*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // bot-gun: tracking a visible target keeps getting better with time - the lag left after a long track is TRACK.floor of
  // the first one (was 0.35)
@@ -18390,11 +18459,14 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  //  on the Spike 'defuse' with style 'ninja' (nobody seen: just defuse), 'stick' (half done or no time to fight first: keep
  //  defusing under fire), 'tap' (attackers around and time to spare: tap the defuse to bait a peek, once), or 'clear'
  //  (attackers around and time to spare: fight first).
+ // bug 9 ("bots rush a planted Spike without checking likely enemy positions"): attackers alive, nobody seen, time to spare -> on the
+ //  Spike first 'clear' / 'check' for RETAKE_CLEAR.t s (ctx.clear: s spent within 8 m of the Spike with no contact) before a ninja defuse.
+ const RETAKE_CLEAR={t:2.5,slack:3};
  function retake(P,rand,ctx){const need=ctx.eta+(ctx.half?SPIKE.half:SPIKE.defuse),slack=ctx.left-need;
   // no attacker alive (all died after the plant): nothing to clear, wait for or fake against - go straight on and stick the defuse
   // (a stale sighting / sound from before the last kill must not hold it off; save only when even a straight run cannot make it)
   if(ctx.enemies===0){if(ctx.at)return {act:'defuse',style:'stick'};return slack<-.25&&!ctx.half?{act:'save',style:null}:{act:'go',style:null};}
-  if(ctx.at){if(slack<-.25&&!ctx.half)return {act:'save',style:null};if(!ctx.seen)return {act:'defuse',style:'ninja'};if(ctx.half||slack<2.5)return {act:'defuse',style:'stick'};
+  if(ctx.at){if(slack<-.25&&!ctx.half)return {act:'save',style:null};if(!ctx.seen&&!ctx.half&&slack>RETAKE_CLEAR.slack&&(ctx.clear||0)<RETAKE_CLEAR.t)return {act:'clear',style:'check'};if(!ctx.seen)return {act:'defuse',style:'ninja'};if(ctx.half||slack<2.5)return {act:'defuse',style:'stick'};
    if(!ctx.tapped&&slack>4&&rand()<.3+(P?P.aggression:.5)*.4)return {act:'defuse',style:'tap'};return {act:'clear',style:null};}
   if(slack<-.25)return {act:'save',style:null};
   if(ctx.enemies>=ctx.mates+2&&slack<6&&(P?P.patience:.5)>.35)return {act:'save',style:null};
@@ -18621,7 +18693,7 @@ if (typeof xUbPost === "function") { const hp0 = xUbPost; xUbPost = function (M)
  // presses X); a different call or none restarts it. st {k, at} per bot; rnd() draws the delay (called once per new call).
  function ultReady(st,t,want,rnd){if(!st)return false;if(!want){st.k=null;return false;}
   if(st.k!==want){st.k=want;const r=typeof rnd==='function'?rnd():.5;st.at=t+ULTX.delay[0]+clamp(r,0,1)*(ULTX.delay[1]-ULTX.delay[0]);return false;}return t>=st.at;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner,HOLD,holdCorners,holdNext};
 });
 // Spawn barriers (Valorant's buy-phase walls), shared by the server (spike.js world, bots.js) and the page (UMD:
 // index.html inlines it in the BOT VARIETY block and reads window.SpawnBarriers; native_maps_runtime nmBlocked and the
@@ -18701,7 +18773,7 @@ function xbRand(u){return u.xbr||(u.xbr=BotRoutes.rng(BotRoutes.hash((u.name||''
 function xbLvl(){try{return S&&S.diff||'normal';}catch(e){return 'normal';}}
 function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;u.xbAP=null;return;}const r=xbRand(u);
  if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed,postKill:xbNow()-(u.xKillT==null?-1e9:u.xKillT)<BotBrain.TRADE.focus});/* lane-botfeel2: right after its own kill the next fight reacts TRADE.lag late (= server) */u.xhE=BotBrain.crosshair(B,r,!!pre);
-  u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3;u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,BotBrain.idlePitch(B)-Math.atan2(h-1.6,d),d,{start:u.rtE*k,level:L});
+  u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3,p0=u.xhpA&&Number.isFinite(u.xhpP)?u.xhpP:BotBrain.idlePitch(B);/* bug 8: the crosshair's pitch at first sight - a held corner's head height (xhpYaw), else level at the idle pitch - against the aim point on the enemy's real floor (ctx.dy) */u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,p0-Math.atan2(h-1.6+(ctx.dy||0),d),d,{start:u.rtE*k,level:L});
   u.xbPull=BotBrain.recoilPull(B,L);u.xbSl=r()>BotBrain.discipline(B,L);u.stand=B.stand*(.8+r()*.4);u.rtX=1;return;}
  u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.xbAP=null;u.rtX=0;u.stand=B.stand*(.8+r()*.4);}
 // reaction gate in ms for difficulty D (normal = the bot's own 180-320 ms draw; +150 ms when it was not pre-aimed). With the
@@ -19083,7 +19155,8 @@ function xbvRetake(u,team){
  let mates=defP?1:0,grouped=0;const p=u.g.position;for(const v of team)if(v&&v.alive){mates++;if(v!==u&&Math.hypot(v.g.position.x-p.x,v.g.position.z-p.z)<12)grouped++;}if(defP&&Math.hypot(player.x-p.x,player.z-p.z)<12)grouped++;
  const R=u.xRet&&u.xRet.k===k?u.xRet:{k,seenAt:-1e9,tapped:false,tapAt:null,r:BotRoutes.rng(BotRoutes.hash((u.name||'')+'|ret|'+k+'|'+xbvSeed()))};
  for(const d of team){if(!d||!d.alive)continue;let q=null;if(d.see>0){const t=d.xTt||d.xTg;q=t&&(t.g?t.g.position:t);}if(!q&&d.hearT>0&&d.hear)q={x:d.hear[0],z:d.hear[1]};if(q&&Math.hypot(q.x-sp.x,q.z-sp.z)<12)R.seenAt=now;}
- const dist=Math.hypot(p.x-sp.x,p.z-sp.z),c=BotBrain.retake(xbBrain(u),R.r,{left:timeLeft,eta:dist*1.25/XBV_RUN,half:s.dt>=3.5,mates,enemies:atkL.length,grouped,seen:now-R.seenAt<3000,at:dist<3.2,tapped:R.tapped});
+ const dist=Math.hypot(p.x-sp.x,p.z-sp.z),seen=now-R.seenAt<3000;if(dist<8&&!seen){if(R.clrFrom==null)R.clrFrom=now;}else R.clrFrom=null;/* bug 9: time spent checking the site */
+ const c=BotBrain.retake(xbBrain(u),R.r,{left:timeLeft,eta:dist*1.25/XBV_RUN,half:s.dt>=3.5,mates,enemies:atkL.length,grouped,seen,at:dist<3.2,tapped:R.tapped,clear:R.clrFrom==null?0:(now-R.clrFrom)/1000});
  if(c.style==='tap'&&R.tapAt==null)R.tapAt=now;R.c=c;R.at=now+500;u.xRet=R;(XBV.rlog||(XBV.rlog=[])).push({name:u.name,t:+timeLeft.toFixed(1),act:c.act,style:c.style});if(XBV.rlog.length>200)XBV.rlog.shift();return c;}
 if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvSp()||!x||x===player||!x.g||FV.sp.st!=='plant')return do0.apply(this,arguments);
  const team=bots.includes(x)?bots:allies,c=xbvRetake(x,team),R=x.xRet;if(c.act==='save'||c.act==='clear')return false;
@@ -19271,13 +19344,10 @@ function xhpAngles(C,x,y,z,atk){const k=C.key+'|'+Math.round(x)+','+Math.round(z
  const W=typeof XHPW!=='undefined'&&XHPW.pre.get(k);if(W&&W.C===C&&W.x===x&&W.y===y&&W.z===z&&W.sig===xhpSig()){XHPW.pre.delete(k);XHPW.hit++;A=W.A;}else{A=xhpCalc(C,x,y,z,atk);if(!A)return [];} /* roundstart: a corner set xhpWarm worked out in the buy phase for exactly this unit position (same map / cell / side, same x y z) is the answer this call would compute: it enters the cache here, as a computed one would */
  if(XHP.cache.size>600)XHP.cache.clear();XHP.cache.set(k,A);return A;}
 // xhpAngles' corner set from (x, y, z) (null: no nav floor there, nothing cached)
-function xhpCalc(C,x,y,z,atk){const A=[];
- try{const N=C.nav.nodes,s=nmNear(C,x,z,y);if(s<0)return null;const eye=new RV(x,y+1.5,z),q=new RV(),srcs=[],en=atk?C.meta.defender:C.meta.attacker;srcs.push([en,1.6]);for(const n in C.meta.sites)srcs.push([C.meta.sites[n],1]);srcs.push([xbvMid(C),.8]);
-  for(const [src,w] of srcs){const e=nmNear(C,src[0],src[2],src[1]);if(e<0||e===s)continue;const P=nmPath(C,s,e);if(!P||P.length<2)continue;let last=null,pt=null,run=0;
-   for(let i=1;i<P.length&&run<45;i++){const n=N[P[i]];run=Math.hypot(n[0]-x,n[2]-z);if(Math.abs(n[1]-y)>5)break;q.set(n[0],n[1]+1.5,n[2]);if(los(eye,q)){last=n;continue;}pt=last?[(last[0]+n[0])/2,(last[1]+n[1])/2+1.5,(last[2]+n[2])/2]:null;break;}
-   if(!pt&&last&&run>=8)pt=[last[0],last[1]+1.5,last[2]];if(!pt)continue;const d=Math.hypot(pt[0]-x,pt[2]-z);if(d<2.5)continue;
-   const yaw=Math.atan2(pt[0]-x,pt[2]-z),sc=w/(4+d)*30;let dup=null;for(const a of A)if(Math.abs(xAng(a.yaw-yaw))<.3){dup=a;break;}if(dup){dup.w+=sc*.5;continue;}A.push({yaw,x:pt[0],y:pt[1],z:pt[2],d,w:sc});}
-  A.sort((a,b)=>b.w-a.w);if(A.length>3)A.length=3;}catch(e){}
+function xhpCalc(C,x,y,z,atk){let A=[];
+ try{const N=C.nav.nodes,s=nmNear(C,x,z,y);if(s<0)return null;const eye=new RV(x,y+1.5,z),q=new RV(),srcs=[],en=atk?C.meta.defender:C.meta.attacker,L=[[en,1.6]];for(const n in C.meta.sites)L.push([C.meta.sites[n],1]);L.push([xbvMid(C),.8]);
+  for(const [src,w] of L){const e=nmNear(C,src[0],src[2],src[1]);if(e<0||e===s)continue;const P=nmPath(C,s,e);if(!P||P.length<2)continue;const pts=[];for(let i=1;i<P.length;i++)pts.push(N[P[i]]);srcs.push({pts,w});}
+  A=BotBrain.holdCorners(srcs,n=>los(eye,q.set(n[0],n[1]+1.5,n[2])),x,y,z);}catch(e){} /* the corner walk / scoring is shared with the server's holdLook (bug 8) */
  return A;}
 // Round-start warm-up (roundstart; user, 75 Hz: "When round starts, it goes down to 30fps"): on the first action frames
 // every bot standing on its goal asked xhpAngles for its corners at once, and each new corner set searches up to five
@@ -19321,10 +19391,12 @@ function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.pos
   if(H.seat){if(Math.hypot(H.seat[0]-p.x,H.seat[1]-p.z)>.5)return x2(out,H.seat[0],H.seat[1]);H.seat=null;H.ang=xhpAngles(C,p.x,p.y,p.z,atk);const B=xbBrain(u),r=xhpRand(u);H.until=now+(2.5+(B?B.patience:.5)*3.5+r()*1.5)*1000;}
   if(now>=H.until){H.until=now+1500;const q=xhpSeat(C,u,H,team);if(q&&Math.hypot(q[0]-p.x,q[1]-p.z)>.6){H.seat=q;H.shifts++;return x2(out,q[0],q[1]);}}
   return x2(out,p.x,p.z);}catch(e){}return g;};}
+// the held corner's pitch: head height there (BotBrain.AIM_H.head over its floor) less the bot's own idle drop (= server holdLook)
+function xhpPitch(u,p,a){const B=xbBrain(u);if(!B)return null;return Math.atan2(a.y-BotBrain.PRE.head+BotBrain.AIM_H.head-(p.y+1.6),Math.hypot(a.x-p.x,a.z-p.z)||1)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}
 // the yaw a holding / walking bot keeps its crosshair on when nothing it heard or saw is fresher (null = the base facing)
 function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const p=u.g.position,now=performance.now();if(u.xHp&&!u.xHp.seat&&Math.hypot(u.xHp.bx-p.x,u.xHp.bz-p.z)>4.5)u.xHp=null;const H=u.xHp;
- if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),A=H.ang;let k=0;if(A.length>1&&r()>.55)k=1+Math.floor(r()*(A.length-1));H.ai=k;H.aiT=now+(2.2+r()*3)*1000;}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);}
- if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
+ if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),n=BotBrain.holdNext(H.ang,r),B=xbBrain(u);H.ai=n.k;H.aiT=now+n.dwell*1000;H.e=B?BotBrain.preAimErr(B,r):0;/* bug 8: an average player's placement (~4 deg sd), as the server's holdLook */}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;u.xhpP=xhpPitch(u,p,a);return Math.atan2(a.x-p.x,a.z-p.z)+(H.e||0);}
+ if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;u.xhpP=xhpPitch(u,p,a);return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
  u.xhpA=null;if(!(vx||vz))return null;const hd=Math.atan2(vx,vz);const c=u.xhpC;if(c&&now<c.t+250&&Math.abs(xAng(c.h-hd))<.5)return c.y;
  {const r=xhpRoute(u,p,hd);if(r!=null){u.xhpC={t:now,h:hd,y:r};return r;}}
  const o=[p.x,p.y+1.5,p.z];XHP.ANG.length=XHP.DEP.length=0;for(let i=-6;i<=6;i++){const a=hd+i*.21;XHP.ANG.push(a);XHP.DEP.push(xhpDepth(o,a,40));}
@@ -22626,6 +22698,9 @@ function xspvTick(dt) {
 // charges from the bot kit (xBCh), online the kit's names only (the server sends no teammate charges), ult points
 // from sbUlt. With nobody left to follow the weapon / ammo read "—" and the ability bar is hidden.
 var XSPH = { on: false, ag: null, el: null };
+// The player's own credits (#xCr) and Spike-carry tag (#xSpkC) are not the followed teammate's: hidden while spectating (#game.x-spec,
+// user 2026-11-06 bug 10: "your own character's HUD stays visible while spectating"), back on revive / next round / match end (xsphOff).
+function xsphCls(on) { try { const g = $('game'); if (g && g.classList.contains('x-spec') !== on) g.classList.toggle('x-spec', on); if (!XSPH.css) { XSPH.css = document.createElement('style'); XSPH.css.textContent = '#game.x-spec #xCr,#game.x-spec #xSpkC{visibility:hidden!important}'; document.head.appendChild(XSPH.css); } } catch (e) {} }
 function xsphTarget() { try { if (!running || !player || player.hp > 0 || !xKL.sp || mode === 'duel') return null; const a = xKL.cur; return a && a.alive && allies.indexOf(a) >= 0 ? a : null; } catch (e) { return null; } }
 function xsphSpec() { try { return !!(running && player && player.hp <= 0 && xKL.sp && mode !== 'duel'); } catch (e) { return false; } }
 function xsphAmmo(a, w) { // [mag text, reserve text]
@@ -22643,10 +22718,10 @@ function xsphKit(a) { // the followed teammate's abilities in the player's abili
     el.classList.toggle('off', n === 0); el.classList.toggle('rdy', false); el.classList.toggle('x-empty', n === 0); el.classList.remove('x-tmon'); const ei = el.querySelector('i'); if (ei) ei.style.setProperty('--p', '0');
     const pp = el.querySelector('.x-pp'); if (pp) { const m = Math.min(4, Math.max(n || 0, mx[k] || 1)); if (pp.childElementCount !== m) pp.innerHTML = '<s></s>'.repeat(m); for (let i = 0; i < m; i++) pp.children[i].className = n != null && i < n ? 'on' : ''; } });
   const x = $('jX'); if (x) { let u = [0, 0]; try { u = sbUlt(a.name); } catch (e) {} const em = x.querySelector('em'), rdy = u[1] > 0 && u[0] >= u[1]; if (em) em.textContent = u[1] > 0 ? u[0] + '/' + u[1] : ''; x.classList.toggle('rdy', rdy); x.classList.toggle('off', !rdy); x.classList.remove('x-tmon'); const ei = x.querySelector('i'); if (ei) ei.style.setProperty('--p', u[1] > 0 ? (1 - u[0] / u[1]).toFixed(3) : '1'); x.setAttribute('data-pips', u[0] + '/' + u[1]); const pp = document.getElementById('xPips'); if (pp) pp.innerHTML = ''; } }
-function xsphOff() { if (!XSPH.on) return; XSPH.on = false; XSPH.ag = null; try { const ab = $('xAb'); if (ab) { ab.classList.remove('x-spec'); ab.setAttribute('aria-label', (J.pick || 'Jett') + ' abilities'); } ['jC', 'jQ', 'jE', 'jX'].forEach((id, i) => { const sp = $(id) && $(id).querySelector('span'); if (sp) sp.textContent = K().n[i]; }); xAbIcons.a = null; xAbIcons(); J.hs = ''; xHud.ux = null; } catch (e) {} }
+function xsphOff() { if (!XSPH.on) return; XSPH.on = false; XSPH.ag = null; xsphCls(false); try { const ab = $('xAb'); if (ab) { ab.classList.remove('x-spec'); ab.setAttribute('aria-label', (J.pick || 'Jett') + ' abilities'); } ['jC', 'jQ', 'jE', 'jX'].forEach((id, i) => { const sp = $(id) && $(id).querySelector('span'); if (sp) sp.textContent = K().n[i]; }); xAbIcons.a = null; xAbIcons(); J.hs = ''; xHud.ux = null; } catch (e) {} }
 function xsphHud() {
   if (!xsphSpec()) { xsphOff(); return; }
-  XSPH.on = true; const a = xsphTarget();
+  XSPH.on = true; xsphCls(true); const a = xsphTarget();
   if (!a) { setT('xWn', '—'); setT('xMag', '—'); setT('xRs', '—'); setT('xHp', 0); setT('xArm', 0); const ab = $('xAb'); if (ab) ab.classList.remove('on'); return; }
   const w = xspvWeap(a), am = xsphAmmo(a, w);
   setT('xWn', w); setT('xMag', am[0]); setT('xRs', am[1]); setT('xHp', Math.max(0, Math.ceil(a.hp || 0))); setT('xArm', Math.ceil(a.armor || 0)); try { $('xHp').classList.toggle('lo', a.hp <= 30); } catch (e) {}
@@ -23436,7 +23511,7 @@ function xroNear() { const C = typeof nmActive === 'function' && nmActive(), VM_
   const text = st === 2 ? 'Let go' : 'Grab rope'; if (el.lastChild.textContent !== text) el.lastChild.textContent = text; if (el.style.display !== 'flex') el.style.display = 'flex';
 });
 addEventListener('keydown', (e) => { if (e.code !== 'KeyF' || e.repeat) return; try { if (xroNear() && typeof VM !== 'undefined' && VM.ins > 0) VM.ins = 0; } catch (er) {} }); // F at a rope is Use, not the weapon inspect
-if (typeof nmMinimap === 'function') { const mm0 = nmMinimap; nmMinimap = function (C) { const t0 = nmMinimap.last; const r = mm0.apply(this, arguments); try { if (C && C.ropes && nmMinimap.last !== t0 && typeof mmx !== 'undefined') { const ctx = mmx, { X, Z } = nmMapProjection(C, MM.width, MM.height), px = Math.max(1, (nmMinimap.cw ? MM.width / nmMinimap.cw : 1)); ctx.save(); ctx.fillStyle = '#e9dcae'; ctx.strokeStyle = '#18242e'; ctx.lineWidth = px; for (const q of C.ropes) { const x = X(q.x), z = Z(q.z); ctx.beginPath(); ctx.arc(x, z, 2.2 * px, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } ctx.restore(); } } catch (e) {} return r; }; nmMinimap.last = 0; }
+if (typeof nmMinimap === 'function') { const mm0 = nmMinimap; nmMinimap = function (C) { const t0 = nmMinimap.last; const r = mm0.apply(this, arguments); try { if (C && C.ropes && nmMinimap.last !== t0 && typeof mmx !== 'undefined') { const ctx = mmx, { X, Z } = nmMapProjection(C, MM.width, MM.height), P = nmMinimap.P, px = Math.max(1, (nmMinimap.cw ? MM.width / nmMinimap.cw : 1)); ctx.save(); ctx.fillStyle = '#e9dcae'; ctx.strokeStyle = 'rgba(8,12,16,.9)'; ctx.lineWidth = px; for (const q of C.ropes) { const m = P ? P(q.x, q.z) : [X(q.x), Z(q.z)], x = m[0], z = m[1]; /* the minimap's own projection (rotate option) */ ctx.beginPath(); ctx.arc(x, z, 2.2 * px, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } ctx.restore(); } } catch (e) {} return r; }; nmMinimap.last = 0; }
 window.xRopes = XRO;
 // ---- END ROPE ASCENDERS ----
 // ---- CHARACTER COLLISION ----

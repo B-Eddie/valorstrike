@@ -129,6 +129,30 @@
   for(let i=1;i<pts.length;i++){const q=pts[i],p=pts[i-1];L+=Math.hypot(q[0]-p[0],q[2]-p[2]);if(Math.abs(q[1]-s[1])>dy||L>run)break;
    if(vis(q)){last=q;continue;}const a=last||p,c=[(a[0]+q[0])/2,(a[1]+q[1])/2+head,(a[2]+q[2])/2];if(Math.hypot(c[0]-s[0],c[2]-s[2])>=near)return c;}
   return last&&Math.hypot(last[0]-s[0],last[2]-s[2])>=near?[last[0],last[1]+head,last[2]]:null;}
+ // Holding an angle (bug 8, user 2026-11-06: "bad crosshair placement when bots hold angles"; offline xhpCalc, server
+ // holdLook). A holder's crosshair sits where an enemy first shows: for each way an enemy can come (its spawn, each site,
+ // mid, a planted Spike; srcs [{pts, w}]: the nav points of the route from the bot's spot toward that source, the spot
+ // itself excluded), walked from the spot while vis(point) (a clear eye line at head height) and the straight distance
+ // stays under HOLD.run m on one floor (HOLD.dy): the first point out of sight -> the midpoint with the last one in sight
+ // (the edge of the cover the enemy comes round, at PRE.head); nothing hidden and HOLD.open m+ in sight -> the farthest point
+ // in sight (an open lane). Corners under HOLD.near m (a wall at the shoulder) are dropped. Scored w / (4 + d) (near chokes
+ // first), corners within HOLD.merge rad of each other merged (the second adds half its score). Returns the best HOLD.keep,
+ // best first: [{x, y, z, d, w, yaw}] (yaw = atan2(dx, dz), the page's convention; the server turns it round).
+ const HOLD={run:45,dy:5,open:8,near:2.5,merge:.3,keep:3,main:1.5,dwell:[2.2,5.2],dk:4,
+  // source weights [defending, attacking]: a defender's enemies come from their spawn (and through mid), rarely through its
+  // own team's other site; an attacker's from the defenders' spawn, the sites and mid; a planted Spike draws both sides
+  w:{spawn:[2,1.6],site:[.5,1],mid:[1,.8],spike:[1.4,1.4]}};
+ function holdCorners(srcs,vis,x,y,z){const A=[],head=PRE.head;
+  for(const S of srcs||[]){const P=S&&S.pts;if(!P||!P.length)continue;let last=null,pt=null,run=0;
+   for(let i=0;i<P.length&&run<HOLD.run;i++){const n=P[i];run=Math.hypot(n[0]-x,n[2]-z);if(Math.abs(n[1]-y)>HOLD.dy)break;if(vis(n)){last=n;continue;}pt=last?[(last[0]+n[0])/2,(last[1]+n[1])/2+head,(last[2]+n[2])/2]:null;break;}
+   if(!pt&&last&&run>=HOLD.open)pt=[last[0],last[1]+head,last[2]];if(!pt)continue;const d=Math.hypot(pt[0]-x,pt[2]-z);if(d<HOLD.near)continue;
+   const yaw=Math.atan2(pt[0]-x,pt[2]-z),sc=S.w/(HOLD.dk+d)*30;let dup=null;for(const a of A)if(Math.abs(wrapA(a.yaw-yaw))<HOLD.merge){dup=a;break;}if(dup){dup.w+=sc*.5;continue;}A.push({yaw,x:pt[0],y:pt[1],z:pt[2],d,w:sc});}
+  A.sort((a,b)=>b.w-a.w);if(A.length>HOLD.keep)A.length=HOLD.keep;return A;}
+ // Which of a holder's corners it watches next and for how long (s): drawn by score with the best one counted HOLD.main x
+ // (a player checks its second angle now and then, a weak one rarely; was 45 % of the time on a uniformly drawn other one,
+ // so a site holder looked away from the main entry when the push came); committed for the dwell, so the crosshair never
+ // wanders between them.
+ function holdNext(A,rand){let k=0;if(A&&A.length>1){let t=0;for(let i=0;i<A.length;i++)t+=(A[i].w||1)*(i?1:HOLD.main);let x=rand()*t;for(k=0;k<A.length-1;k++){x-=(A[k].w||1)*(k?1:HOLD.main);if(x<0)break;}}return {k,dwell:HOLD.dwell[0]+rand()*(HOLD.dwell[1]-HOLD.dwell[0])};}
  function trackLag(P,t){return (P.lag||.08)*(TRACK.floor+(1-TRACK.floor)*Math.exp(-Math.max(0,t)/((P.settle||.25)*2)));}
  // bot-gun: tracking a visible target keeps getting better with time - the lag left after a long track is TRACK.floor of
  // the first one (was 0.35)
@@ -516,11 +540,14 @@
  //  on the Spike 'defuse' with style 'ninja' (nobody seen: just defuse), 'stick' (half done or no time to fight first: keep
  //  defusing under fire), 'tap' (attackers around and time to spare: tap the defuse to bait a peek, once), or 'clear'
  //  (attackers around and time to spare: fight first).
+ // bug 9 ("bots rush a planted Spike without checking likely enemy positions"): attackers alive, nobody seen, time to spare -> on the
+ //  Spike first 'clear' / 'check' for RETAKE_CLEAR.t s (ctx.clear: s spent within 8 m of the Spike with no contact) before a ninja defuse.
+ const RETAKE_CLEAR={t:2.5,slack:3};
  function retake(P,rand,ctx){const need=ctx.eta+(ctx.half?SPIKE.half:SPIKE.defuse),slack=ctx.left-need;
   // no attacker alive (all died after the plant): nothing to clear, wait for or fake against - go straight on and stick the defuse
   // (a stale sighting / sound from before the last kill must not hold it off; save only when even a straight run cannot make it)
   if(ctx.enemies===0){if(ctx.at)return {act:'defuse',style:'stick'};return slack<-.25&&!ctx.half?{act:'save',style:null}:{act:'go',style:null};}
-  if(ctx.at){if(slack<-.25&&!ctx.half)return {act:'save',style:null};if(!ctx.seen)return {act:'defuse',style:'ninja'};if(ctx.half||slack<2.5)return {act:'defuse',style:'stick'};
+  if(ctx.at){if(slack<-.25&&!ctx.half)return {act:'save',style:null};if(!ctx.seen&&!ctx.half&&slack>RETAKE_CLEAR.slack&&(ctx.clear||0)<RETAKE_CLEAR.t)return {act:'clear',style:'check'};if(!ctx.seen)return {act:'defuse',style:'ninja'};if(ctx.half||slack<2.5)return {act:'defuse',style:'stick'};
    if(!ctx.tapped&&slack>4&&rand()<.3+(P?P.aggression:.5)*.4)return {act:'defuse',style:'tap'};return {act:'clear',style:null};}
   if(slack<-.25)return {act:'save',style:null};
   if(ctx.enemies>=ctx.mates+2&&slack<6&&(P?P.patience:.5)>.35)return {act:'save',style:null};
@@ -747,5 +774,5 @@
  // presses X); a different call or none restarts it. st {k, at} per bot; rnd() draws the delay (called once per new call).
  function ultReady(st,t,want,rnd){if(!st)return false;if(!want){st.k=null;return false;}
   if(st.k!==want){st.k=want;const r=typeof rnd==='function'?rnd():.5;st.at=t+ULTX.delay[0]+clamp(r,0,1)*(ULTX.delay[1]-ULTX.delay[0]);return false;}return t>=st.at;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner};
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner,HOLD,holdCorners,holdNext};
 });

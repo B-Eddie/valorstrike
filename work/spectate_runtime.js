@@ -91,6 +91,9 @@ function xspvTick(dt) {
 // charges from the bot kit (xBCh), online the kit's names only (the server sends no teammate charges), ult points
 // from sbUlt. With nobody left to follow the weapon / ammo read "—" and the ability bar is hidden.
 var XSPH = { on: false, ag: null, el: null };
+// The player's own credits (#xCr) and Spike-carry tag (#xSpkC) are not the followed teammate's: hidden while spectating (#game.x-spec,
+// user 2026-11-06 bug 10: "your own character's HUD stays visible while spectating"), back on revive / next round / match end (xsphOff).
+function xsphCls(on) { try { const g = $('game'); if (g && g.classList.contains('x-spec') !== on) g.classList.toggle('x-spec', on); if (!XSPH.css) { XSPH.css = document.createElement('style'); XSPH.css.textContent = '#game.x-spec #xCr,#game.x-spec #xSpkC{visibility:hidden!important}'; document.head.appendChild(XSPH.css); } } catch (e) {} }
 function xsphTarget() { try { if (!running || !player || player.hp > 0 || !xKL.sp || mode === 'duel') return null; const a = xKL.cur; return a && a.alive && allies.indexOf(a) >= 0 ? a : null; } catch (e) { return null; } }
 function xsphSpec() { try { return !!(running && player && player.hp <= 0 && xKL.sp && mode !== 'duel'); } catch (e) { return false; } }
 function xsphAmmo(a, w) { // [mag text, reserve text]
@@ -108,10 +111,10 @@ function xsphKit(a) { // the followed teammate's abilities in the player's abili
     el.classList.toggle('off', n === 0); el.classList.toggle('rdy', false); el.classList.toggle('x-empty', n === 0); el.classList.remove('x-tmon'); const ei = el.querySelector('i'); if (ei) ei.style.setProperty('--p', '0');
     const pp = el.querySelector('.x-pp'); if (pp) { const m = Math.min(4, Math.max(n || 0, mx[k] || 1)); if (pp.childElementCount !== m) pp.innerHTML = '<s></s>'.repeat(m); for (let i = 0; i < m; i++) pp.children[i].className = n != null && i < n ? 'on' : ''; } });
   const x = $('jX'); if (x) { let u = [0, 0]; try { u = sbUlt(a.name); } catch (e) {} const em = x.querySelector('em'), rdy = u[1] > 0 && u[0] >= u[1]; if (em) em.textContent = u[1] > 0 ? u[0] + '/' + u[1] : ''; x.classList.toggle('rdy', rdy); x.classList.toggle('off', !rdy); x.classList.remove('x-tmon'); const ei = x.querySelector('i'); if (ei) ei.style.setProperty('--p', u[1] > 0 ? (1 - u[0] / u[1]).toFixed(3) : '1'); x.setAttribute('data-pips', u[0] + '/' + u[1]); const pp = document.getElementById('xPips'); if (pp) pp.innerHTML = ''; } }
-function xsphOff() { if (!XSPH.on) return; XSPH.on = false; XSPH.ag = null; try { const ab = $('xAb'); if (ab) { ab.classList.remove('x-spec'); ab.setAttribute('aria-label', (J.pick || 'Jett') + ' abilities'); } ['jC', 'jQ', 'jE', 'jX'].forEach((id, i) => { const sp = $(id) && $(id).querySelector('span'); if (sp) sp.textContent = K().n[i]; }); xAbIcons.a = null; xAbIcons(); J.hs = ''; xHud.ux = null; } catch (e) {} }
+function xsphOff() { if (!XSPH.on) return; XSPH.on = false; XSPH.ag = null; xsphCls(false); try { const ab = $('xAb'); if (ab) { ab.classList.remove('x-spec'); ab.setAttribute('aria-label', (J.pick || 'Jett') + ' abilities'); } ['jC', 'jQ', 'jE', 'jX'].forEach((id, i) => { const sp = $(id) && $(id).querySelector('span'); if (sp) sp.textContent = K().n[i]; }); xAbIcons.a = null; xAbIcons(); J.hs = ''; xHud.ux = null; } catch (e) {} }
 function xsphHud() {
   if (!xsphSpec()) { xsphOff(); return; }
-  XSPH.on = true; const a = xsphTarget();
+  XSPH.on = true; xsphCls(true); const a = xsphTarget();
   if (!a) { setT('xWn', '—'); setT('xMag', '—'); setT('xRs', '—'); setT('xHp', 0); setT('xArm', 0); const ab = $('xAb'); if (ab) ab.classList.remove('on'); return; }
   const w = xspvWeap(a), am = xsphAmmo(a, w);
   setT('xWn', w); setT('xMag', am[0]); setT('xRs', am[1]); setT('xHp', Math.max(0, Math.ceil(a.hp || 0))); setT('xArm', Math.ceil(a.armor || 0)); try { $('xHp').classList.toggle('lo', a.hp <= 30); } catch (e) {}

@@ -70,19 +70,23 @@ export function flankNode(sim,u,target){
 // Routes: the A* route is re-routed once per goal through BotRoutes.route (lanes seeded by bot, round and goal, cost
 // added where teammates already walk) and followed from that cache until the goal moves more than 6 m, the bot leaves
 // it, or the round changes. At most two re-routes per simulation tick; past that a bot keeps the plain route this tick.
-export function variedPath(sim,u,start,goal,find){
+export function variedPath(sim,u,start,goal,find,keep){
  const W=sim.world,N=W.nav.nodes,round=sim.round||0,c=u.vroute;
  if(c&&c.round===round&&c.team===u.team&&N[c.goal]&&N[goal]&&hyp2(N[c.goal][0]-N[goal][0],N[c.goal][2]-N[goal][2])<6&&Math.abs(N[c.goal][1]-N[goal][1])<2){
   let k=c.path.indexOf(start,c.i);if(k<0){const q=N[start];for(let j=c.i;j<Math.min(c.path.length,c.i+14);j++){const n=N[c.path[j]];if(hyp2(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
   if(k>=0&&k<c.path.length-1){c.i=k;return c.path.slice(k);}
  }
  const base=find(W,start,goal);if(base.length<4)return base;
- if(sim._vrT!==sim.time){sim._vrT=sim.time;sim._vrN=0;}if(sim._vrN>=2)return base;sim._vrN++;
+ if(sim._vrT!==sim.time){sim._vrT=sim.time;sim._vrN=0;}if(sim._vrN>=2)return keep&&keep.length>1?keep:base;/* over the re-route budget: a bot with a route keeps it this tick (bug 7: flipping between the plain and the varied lane walked it back and forth) */sim._vrN++;
  const bl=blockedNodes(W),inBase=new Set(base),allowed=W.allowed,peers=[];
  for(const v of sim.units)if(v!==u&&v.alive&&v.team===u.team&&v.vroute&&v.vroute.round===round)peers.push({path:v.vroute.path.slice(v.vroute.i)});
  const r=BotRoutes.route(W.nav,base,u.name+'|'+u.id+'|'+sim.map+'|'+round+'|'+goal,peers,i=>(!allowed||allowed.has(i))&&(!bl[i]||inBase.has(i)),null);
  u.vroute={goal,round,team:u.team,path:r,i:0};sim.routeStats&&sim.routeStats.push(r);return r.slice();
 }
+// A fresh route starts at the nav node nearest the bot, which is often one it has just walked past: walking back to it
+// and then forward again was the back-and-forth of bug 7 (every repath, 0.8-1.7 s). Leading nodes the bot is already
+// past (it stands nearer the next node than that node lies from the one before, same floor) are dropped.
+export function routeAhead(N,R,x,y,z){while(R&&R.length>1){const a=N[R[0]],b=N[R[1]];if(!a||!b||Math.abs(b[1]-y)>1.2||Math.hypot(b[0]-x,b[2]-z)>Math.hypot(b[0]-a[0],b[2]-a[2])+.2)break;R.shift();}return R;}
 // Spacing: while walking a route, a bot steers away from teammates closer than 1.8 m (soft, deterministic right of way).
 const SPACE_OUT=[0,0],SPACE_LIST=[];
 export function spaceLook(sim,u){SPACE_LIST.length=0;for(const v of sim.units)if(v!==u&&v.alive&&!v.loading&&v.team===u.team&&Math.abs(v.x-u.x)<1.8&&Math.abs(v.z-u.z)<1.8)SPACE_LIST.push(v);if(!SPACE_LIST.length)return;
@@ -241,17 +245,36 @@ const CR_ANG=[],CR_DEP=[];
 // HOLD_RE s, when that corner lies inside its current view (no sweep round). Was: only a heard / remembered spot was pre-aimed; standing bots kept whatever heading they stopped on
 // (median 24 deg off at first sight). A held corner carries a seeded placement error (BotBrain.preAimErr x 0.4).
 const HOLD_ANG=[],HOLD_DEP=[],HOLD_RE=2.2;
-function holdLook(sim,u){const W=sim.world,M=W.map;if(!sim.objectiveRoutes||!M||!M.attacker||!M.defender)return null;
- if(u.hold&&sim.time<u.hold.t+HOLD_RE&&Math.hypot(u.hold.x-u.x,u.hold.z-u.z)<1)return u.hold.y;
- const sp=u.team===sim.atk?M.defender:M.attacker,h=Math.atan2(u.x-sp[0],u.z-sp[2]);if(!Number.isFinite(h))return null;
+// Bug 8 (user 2026-11-06: "bad crosshair placement when bots hold angles"): the hold looked only toward the enemy spawn
+// and only inside the bot's current view, so a bot that stopped facing a wall kept facing it. Now (= offline xhpCalc /
+// xhpYaw, shared BotBrain.holdCorners / holdNext): once per spot it works out where an enemy first shows on each way in
+// (its spawn, each site, mid, the planted Spike: the nav route from the spot, walked until it leaves the bot's sight) and
+// settles the crosshair on the best of those corners at head height (BotBrain.AIM_H.head less the bot's own idle drop),
+// turning at its own turn rate, now and then checking its second angle for a dwell. Nothing found -> the old pick (the
+// opening toward the enemy spawn inside its view). sim.holdTurn === false keeps that old in-view pick only (view-cone tests).
+function holdSrcs(sim,u,s){const W=sim.world,M=W.map,N=W.nav.nodes,sp=sim.spike,atk=u.team===sim.atk?1:0,H=BotBrain.HOLD.w,out=[],L=[[atk?M.defender:M.attacker,H.spawn[atk]]];
+ for(const n in M.sites)L.push([M.sites[n],H.site[atk]]);const m=sitePoint(sim,'mid');if(m)L.push([m,H.mid[atk]]);if(sp&&sp.st==='plant')L.push([[sp.x,sp.y,sp.z],H.spike[atk]]);
+ for(const [q,w] of L){const e=W.near(q[0],q[2],q[1]);if(!(e>=0)||e===s)continue;let R=null;try{R=path(W,s,e);}catch(err){R=null;}if(!R||R.length<2||R[R.length-1]!==e)continue;const pts=[];for(let i=1;i<R.length;i++)pts.push(N[R[i]]);out.push({pts,w});}
+ return out;}
+function holdLook(sim,u){const W=sim.world,M=W.map;u.lookP=null;if(!sim.objectiveRoutes||!M||!M.attacker||!M.defender)return null;
+ const P=persona(sim,u),sp=sim.spike,key=(sim.round||0)+'|'+(sp&&sp.st==='plant'?'p':'');let H=u.hold;
+ if(!H||H.key!==key||Math.hypot(H.x-u.x,H.z-u.z)>1){H=u.hold={key,x:u.x,z:u.z,A:[],k:0,next:0,y:null};
+  if(sim.holdTurn!==false&&W.nav&&typeof W.near==='function'){const s=W.near(u.x,u.z,u.y);if(s>=0){const V=eyeVis(W,u);H.A=BotBrain.holdCorners(holdSrcs(sim,u,s),q=>V(q),u.x,u.y,u.z);}}
+  if(!H.A.length)H.y=oldHold(sim,u,P);}
+ if(!H.A.length)return H.y;
+ if(sim.time>=H.next){const n=BotBrain.holdNext(H.A,P.r);H.k=n.k;H.next=sim.time+n.dwell;H.e=BotBrain.preAimErr(P.brain,P.r);/* an average player's placement, not a pixel (~4 deg sd), drawn per settle */}
+ const a=H.A[Math.min(H.k,H.A.length-1)],d=Math.hypot(a.x-u.x,a.z-u.z)||1,B=P.brain;
+ u.lookP=Math.atan2(a.y-BotBrain.PRE.head+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),d)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);/* head height on that corner, less the bot's own idle drop */
+ return Math.atan2(u.x-a.x,u.z-a.z)+H.e;}
+function oldHold(sim,u,P){const W=sim.world,M=W.map,sp=u.team===sim.atk?M.defender:M.attacker,h=Math.atan2(u.x-sp[0],u.z-sp[2]);if(!Number.isFinite(h)||!W.ray)return null;
  HOLD_ANG.length=HOLD_DEP.length=0;const o=[u.x,u.y+1.5-(u.ch||0),u.z];for(let i=-8;i<=8;i++){const a=h+i*.2;HOLD_ANG.push(a);const d=W.ray(o,[-Math.sin(a),0,-Math.cos(a)],40);HOLD_DEP.push(Number.isFinite(d)?d:40);}
- const P=persona(sim,u),y0=BotBrain.cornerPick(HOLD_ANG,HOLD_DEP,h),y1=y0==null?null:y0+BotBrain.preAimErr(P.brain,P.r)*.4,/* lane-adad: the held corner is picked inside the bot's own view (SENSE.fov / 2 of where it looks) - a holder settles its crosshair on the angle in front of it, it never sweeps its view round to a lane behind its shoulder (that sweep saw an enemy 56 deg off a still bot's view: test-bot-perception) */y=y1!=null&&Math.abs(BotBrain.wrapA(y1-(u.look||0)))<=BotBrain.SENSE.fov/2?y1:null;u.hold={t:sim.time,x:u.x,z:u.z,y};return y;}
+ const y0=BotBrain.cornerPick(HOLD_ANG,HOLD_DEP,h),y1=y0==null?null:y0+BotBrain.preAimErr(P.brain,P.r)*.4;/* lane-adad: inside the bot's own view only */return y1!=null&&Math.abs(BotBrain.wrapA(y1-(u.look||0)))<=BotBrain.SENSE.fov/2?y1:null;}
 function routeLook(sim,u){const W=sim.world,R=u.route,N=W.nav&&W.nav.nodes;if(!R||!R.length||!N)return null;const pts=[[u.x,u.y,u.z]];
  for(let i=0;i<R.length&&pts.length<12;i++){const n=N[R[i]];if(n)pts.push(n);}
- const c=BotBrain.routeCorner(pts,eyeVis(W,u));return c?Math.atan2(u.x-c[0],u.z-c[2]):null;}
-export function cornerLook(sim,u,heading,turned){const W=sim.world;if(!W||!W.ray||!Number.isFinite(heading))return null;const mv=Math.hypot(u.vx||0,u.vz||0)>.8||u.input&&(u.input.forward||u.input.side);if(!mv){u.corner=null;return turned?null:holdLook(sim,u);}/* turned: this tick's think aimed the bot itself (an ult / ability / corpse / held sound): the hold does not turn it away */u.hold=null;
- if(u.corner&&sim.time<u.corner.t+.25&&Math.abs(BotBrain.wrapA(u.corner.h-heading))<.5)return u.corner.y;
- {const r=routeLook(sim,u);if(r!=null&&Math.abs(BotBrain.wrapA(r-heading))<1.3){u.corner={t:sim.time,h:heading,y:r};return r;}}
+ const c=BotBrain.routeCorner(pts,eyeVis(W,u));if(!c)return null;u.routeP=Math.atan2(c[1]-BotBrain.PRE.head+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),Math.hypot(c[0]-u.x,c[2]-u.z)||1)+BotBrain.idlePitch(persona(sim,u).brain)-Math.atan2(BotBrain.AIM_H.head-1.6,15);/* bug 8: head height on that corner (ramps, stairs), not level */return Math.atan2(u.x-c[0],u.z-c[2]);}
+export function cornerLook(sim,u,heading,turned){const W=sim.world;if(!W||!W.ray||!Number.isFinite(heading))return null;const mv=Math.hypot(u.vx||0,u.vz||0)>.8||u.input&&(u.input.forward||u.input.side);u.lookP=null;if(!mv){u.corner=null;return turned?null:holdLook(sim,u);}/* turned: this tick's think aimed the bot itself (an ult / ability / corpse / held sound): the hold does not turn it away */u.hold=null;
+ if(u.corner&&sim.time<u.corner.t+.25&&Math.abs(BotBrain.wrapA(u.corner.h-heading))<.5){u.lookP=u.corner.p??null;return u.corner.y;}
+ {const r=routeLook(sim,u);if(r!=null&&Math.abs(BotBrain.wrapA(r-heading))<1.3){u.corner={t:sim.time,h:heading,y:r,p:u.routeP};u.lookP=u.routeP;return r;}}
  CR_ANG.length=CR_DEP.length=0;const o=[u.x,u.y+1.5-(u.ch||0),u.z];for(let i=-6;i<=6;i++){const a=heading+i*.21;CR_ANG.push(a);const d=W.ray(o,[-Math.sin(a),0,-Math.cos(a)],40);CR_DEP.push(Number.isFinite(d)?d:40);}
  const y=BotBrain.cornerPick(CR_ANG,CR_DEP,heading);u.corner={t:sim.time,h:heading,y};return y;}
 // Pre-aim a heard / remembered spot's corner (bug lane 2026-11-03, = offline xpaCorner, lane-preaim): the enemy comes into
@@ -266,6 +289,6 @@ function contactCorner(sim,u,c,P){const W=sim.world;if(!W||!W.ray||typeof W.near
  u.pcK={key,id:c.id,pt,o:pt?BotBrain.preAimErr(P.brain,BotBrain.rng(BotBrain.hash((u.name||'')+'|pre|'+key))):0};return pt;}
 export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||u.fdgOn/* turning away from a flash (spike.js flashDodge) */||u.lookOwn===sim.time/* lane-adad: this tick's think aimed the bot itself - shooting down enemy utility (spike.js shootUtility) or lining up an ult on a corpse / remembered enemy (spike.js botUlt face) - so the idle view (hold / route / contact pre-aim) must not turn it away: the hold flicked a Turret shooter 0.032 rad off the device every other tick (a 12 m Turret survived the magazine), and the contact corner undid a Sage's turn onto a body every tick (Resurrection never cast) */||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
  let want=u.look;const c=u.mem&&BotBrain.memBest(u.mem,sim.time,u.x,u.z,BotBrain.SENSE.glance),cd=c?Math.hypot(c.x-u.x,c.z-u.z):0;
- if(c&&cd>.8&&cd<45){const k=contactCorner(sim,u,c,P);if(k){const kd=Math.hypot(k[0]-u.x,k[2]-u.z)||1;want=Math.atan2(u.x-k[0],u.z-k[2])+(u.pcK.o||0);u.pitch=Math.atan2(k[1]-(u.y+1.6-(u.ch||0)),kd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}else{want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}u.viewAt=c.id;u.corner=null;}else{u.viewAt=null;const k=cornerLook(sim,u,want,Math.abs(BotBrain.wrapA(u.look-L0))>1e-4);if(k!=null)want=k;}
+ if(c&&cd>.8&&cd<45){const k=contactCorner(sim,u,c,P);if(k){const kd=Math.hypot(k[0]-u.x,k[2]-u.z)||1;want=Math.atan2(u.x-k[0],u.z-k[2])+(u.pcK.o||0);u.pitch=Math.atan2(k[1]-(u.y+1.6-(u.ch||0)),kd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}else{want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}u.viewAt=c.id;u.corner=null;}else{u.viewAt=null;const k=cornerLook(sim,u,want,Math.abs(BotBrain.wrapA(u.look-L0))>1e-4);if(k!=null){want=k;if(Number.isFinite(u.lookP))u.pitch=u.lookP;}}
  if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt,u.turnSt||(u.turnSt={v:0})).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
  if(f||s){const wx=-Math.sin(L)*f+Math.cos(L)*s,wz=-Math.cos(L)*f-Math.sin(L)*s;u.input.forward=-Math.sin(V)*wx-Math.cos(V)*wz;u.input.side=Math.cos(V)*wx-Math.sin(V)*wz;}}

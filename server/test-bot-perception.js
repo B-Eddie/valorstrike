@@ -23,7 +23,7 @@ const all=nodes.map((_,i)=>i),near=(x,z)=>{let b=0,d=Infinity;for(const i of all
 const WALL={on:false};const G=()=>({map:{attacker:[-20,0,20],defender:[20,0,-20],sites:{A:[-8,0,0],B:[8,0,0]}},nav:{nodes,adj},playable:all,allowed:new Set(all),near,ground:()=>0,blocked:()=>false,ray:(o,d,max)=>WALL.on?Math.min(1,max):Infinity});
 const median=a=>{const b=[...a].sort((x,y)=>x-y);return b.length?b[b.length>>1]:NaN;};
 function duo(k,{mode='tdm',bx=0,bz=0,look=0,tx=0,tz=-12,weapon='Vandal',hold=true}={}){WALL.on=false;const s=new Simulation(G(),mode,'ascent',B.rng(500+k)),t=s.add('Target','Jett',true),b=s.add(NAMES[k%NAMES.length],'Sage',false);
- s.phase='game';s.remaining=1e9;s.maxKills=1e9;if(hold)s.objectiveRoutes=true;/* no roaming: the bot holds its spot, only its view moves */
+ s.phase='game';s.remaining=1e9;s.maxKills=1e9;if(hold){s.objectiveRoutes=true;s.holdTurn=false;}/* no roaming: the bot holds its spot, only its view moves; holdTurn false: the view cone checks keep the bot's own view (bug 8's hold turns a holder onto its best entry corner - here the open plane's site A, 90 deg off - which is test-bot-hold-aim's business) */
  Object.assign(t,{team:1,x:tx,y:0,z:tz,hp:100,armor:0,look:0,loading:false,protectedUntil:0,invulnerableUntil:0,input:{}});Object.assign(b,{team:0,x:bx,y:0,z:bz,look,weapon,ammo:1e9,loading:false,protectedUntil:0});
  persona(s,b);b.pitch=B.idlePitch(persona(s,b).brain);return {s,t,b};}
 // one simulated tick for the bot only (the target is moved by the test): Simulation.step's bot + botView + the shot

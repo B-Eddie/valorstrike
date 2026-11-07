@@ -10,7 +10,8 @@ const block=n=>{let i=src.indexOf('async function '+n+'(');if(i<0)i=src.indexOf(
 for(const s of [src,html]){
  assert(/const t0=nmNow\(\);nmPrepareScene\(gl\.scene\);[^\n]*const mem=await nmBudget\(gl\.scene,nmTexCap\(\)\);/.test(s),'loader does not budget the scene before use');
  assert(/scene\.add\(root\);[^\n]*await nmUpload\(mem\.textures,\(\)=>ticket===NM\.ticket\);[^\n]*nmOverlay\(null\);return C;/.test(s),'textures are not uploaded during loading');
- assert(s.includes('{const remake=xRemake;xRemake=function(){const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}'),'renderer recreation does not reload the map');
+ assert(s.includes('const before=renderer,result=remake.apply(this,arguments);if(renderer!==before){NM.aaPending=false;nmWatchContext(renderer);nmRehydrate();}return result;};nmWatchContext(renderer);}'),'renderer recreation does not reload the map');
+ assert(s.includes('function nmRemakeHeld(){return !!((NM.current&&NM.current.scene)||NM.pending);}')&&s.includes('xRemake=function(){if(nmRemakeHeld()){NM.aaPending=true;'),'renderer swapped (second context + map reload) while a native map is resident (bug 2)');
 }
 assert(!/gl\.scene\.traverse\(o=>\{if\(!o\.isMesh\)return;o\.geometry\.userData\.shared/.test(src),'old in-line conversion still present');
 // Render meshes are never ray-cast: the native map's solids are the BVH collision mesh alone (dropped arrays are safe).

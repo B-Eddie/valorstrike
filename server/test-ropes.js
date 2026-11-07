@@ -11,6 +11,12 @@
 //     and down to the far floor.
 //  6. Snapshot rows carry [25] = rope index ([24] = Blade Storm knives) while climbing; fog hides it.
 //  7. Buy phase: the bots' buy walk graph (bots.js buyAdj) has no rope links and no buy area reaches the Vent room floor.
+//  8. Stuck recovery never moves a bot through the rope wall (user, Split: "missing collision on the rope wall area lets bots
+//     pass through"). Collision there matches the drawn walls; the crossing was the server's progress rescue (simulation.js
+//     botProgress) putting a bot that stalled at a rope's foot onto its route node = the rope link's far node, 4 m up / down
+//     and 1.2-2.3 m across, straight through the ledge face (seen in a 600 s Split TDM bot soak, Vent - A Tower side).
+//     For every rope link, a bot stalled at the link's start with the far node as its route node is rescued onto its own
+//     level, with a clear line from where it stood (no wall between).
 import assert from 'node:assert/strict';import fs from 'node:fs/promises';
 import {loadWorld} from './src/world.js';import {SpikeSimulation} from './src/spike.js';import {weapons} from './src/simulation.js';import {path} from './src/path.js';import {ropeBot} from './src/ropes.js';import {fogRow} from './src/fog.js';
 import Motor from './src/motor.cjs';
@@ -91,4 +97,11 @@ console.log('ropes: offline = online identical on 4 ropes');
  for(let k=0;k<200&&s.buy>0;k++)s.step(.05);assert(s.units.every(u=>!u.rope),'nobody on a rope in the buy phase');
  for(const u of s.units)if(!u.human&&u.buyMill&&u.buyMill.spot)assert(u.buyMill.spot[1]>8||u.buyMill.spot[1]<7||Math.hypot(u.buyMill.spot[0]-13.5,u.buyMill.spot[2]+12)>4,'no buy spot in the Vent room');}
 console.log('ropes: buy phase walk graph without rope links');
+// 8. stuck rescue at a rope stays on the bot's side of the wall
+{const N=W.nav.nodes;let n=0;for(const L of W.ropeLinks.values()){const r=R[L.k],s=new SpikeSimulation(W),b=s.add('Bot Sova','Sova',false);s.phase='game';
+  const st=L.up?[r.x,r.y0,r.z]:N[L.a].slice();[b.x,b.y,b.z]=st;let moved=false;
+  for(let k=0;k<140&&!moved;k++){s.time+=.05;b.input={forward:1};b.sawTarget=false;b.route=[L.b];moved=s.botProgress(b);}
+  assert(moved,r.name+': a stalled bot is still rescued');assert(Math.abs(b.y-st[1])<1.2,r.name+(L.up?' (up)':' (down)')+': rescued onto its own floor, not through the ledge to the far floor ('+st[1].toFixed(2)+' -> '+b.y.toFixed(2)+')');
+  for(const h of [.6,1.2]){const o=[st[0],st[1]+h,st[2]],d=[b.x-st[0],b.y-st[1],b.z-st[2]],l=Math.hypot(...d);assert(l<.05||W.ray(o,d.map(v=>v/l),l)>=l,r.name+': no wall between the stall and the rescue node');}n++;}
+ console.log('ropes: stuck rescue at '+n+' rope link starts stays on the near floor (never through the rope wall)');}
 console.log('ropes: all checks passed');

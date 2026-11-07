@@ -120,7 +120,7 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
 }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
-  if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0)) { J.eq = null; return; }
+  if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0 && FV.menu)) { J.eq = null; return; }
   if (q.rot) { if (!(typeof mpAltHeld !== "undefined" && mpAltHeld) || !xRotOn(q)) q.rot = false; else { yaw = q.ry; pitch = q.rp; } } // ALT FIRE let go: the mouse turns the view again
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
   if (xEqHold(q) === "mark" && q.st !== "rel" && q.st !== "rec" && !Number.isFinite(q.md) && q.st !== "draw") xDarkInit(q);
@@ -134,7 +134,7 @@ function xEqTick(dt) {
 }
 const xEqKey0 = jKey;
 jKey = function (code) {
-  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0)) return xEqKey0.apply(this, arguments);
+  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))))) return xEqKey0.apply(this, arguments);
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away

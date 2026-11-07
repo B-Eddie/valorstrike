@@ -19,7 +19,7 @@ function xbRand(u){return u.xbr||(u.xbr=BotRoutes.rng(BotRoutes.hash((u.name||''
 function xbLvl(){try{return S&&S.diff||'normal';}catch(e){return 'normal';}}
 function xbEngage(u,pre,ctx){const B=xbBrain(u);if(!B){u.rtE=.26;u.xhE=null;u.stand=.35;u.xbAP=null;return;}const r=xbRand(u);
  if(ctx){u.bn=0;u.xbTrk=null;/* a new fight (bot-gun): no burst left over from the last one fires before this flick (allies kept u.bn across targets / lost sight: first shots 0.5+ rad off the crosshair), and the tracking lag starts from this fight's target motion (u.xbTrk kept the last bearing it saw the target at: a re-peek read the jump as a 3 rad/s crossing -> 0.1-0.17 rad lag on the first shots) */const L=xbLvl(),k=(BotBrain.LEVEL[L]||BotBrain.LEVEL.normal).rt;u.rtE=BotBrain.reaction(B,r,{pre:!!pre,off:ctx.off,flashed:!!ctx.flashed,postKill:xbNow()-(u.xKillT==null?-1e9:u.xKillT)<BotBrain.TRADE.focus});/* lane-botfeel2: right after its own kill the next fight reacts TRADE.lag late (= server) */u.xhE=BotBrain.crosshair(B,r,!!pre);
-  u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3;u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,BotBrain.idlePitch(B)-Math.atan2(h-1.6,d),d,{start:u.rtE*k,level:L});
+  u.xbSpot=BotBrain.aimHeight(B,r,L);const d=ctx.d||15,h=BotBrain.AIM_H[u.xbSpot]||1.3,p0=u.xhpA&&Number.isFinite(u.xhpP)?u.xhpP:BotBrain.idlePitch(B);/* bug 8: the crosshair's pitch at first sight - a held corner's head height (xhpYaw), else level at the idle pitch - against the aim point on the enemy's real floor (ctx.dy) */u.xbAP=BotBrain.aimPlan(B,r,ctx.e0y||0,p0-Math.atan2(h-1.6+(ctx.dy||0),d),d,{start:u.rtE*k,level:L});
   u.xbPull=BotBrain.recoilPull(B,L);u.xbSl=r()>BotBrain.discipline(B,L);u.stand=B.stand*(.8+r()*.4);u.rtX=1;return;}
  u.rtE=BotBrain.reaction(B,r);u.xhE=BotBrain.crosshair(B,r,!!pre);u.xbAP=null;u.rtX=0;u.stand=B.stand*(.8+r()*.4);}
 // reaction gate in ms for difficulty D (normal = the bot's own 180-320 ms draw; +150 ms when it was not pre-aimed). With the
@@ -401,7 +401,8 @@ function xbvRetake(u,team){
  let mates=defP?1:0,grouped=0;const p=u.g.position;for(const v of team)if(v&&v.alive){mates++;if(v!==u&&Math.hypot(v.g.position.x-p.x,v.g.position.z-p.z)<12)grouped++;}if(defP&&Math.hypot(player.x-p.x,player.z-p.z)<12)grouped++;
  const R=u.xRet&&u.xRet.k===k?u.xRet:{k,seenAt:-1e9,tapped:false,tapAt:null,r:BotRoutes.rng(BotRoutes.hash((u.name||'')+'|ret|'+k+'|'+xbvSeed()))};
  for(const d of team){if(!d||!d.alive)continue;let q=null;if(d.see>0){const t=d.xTt||d.xTg;q=t&&(t.g?t.g.position:t);}if(!q&&d.hearT>0&&d.hear)q={x:d.hear[0],z:d.hear[1]};if(q&&Math.hypot(q.x-sp.x,q.z-sp.z)<12)R.seenAt=now;}
- const dist=Math.hypot(p.x-sp.x,p.z-sp.z),c=BotBrain.retake(xbBrain(u),R.r,{left:timeLeft,eta:dist*1.25/XBV_RUN,half:s.dt>=3.5,mates,enemies:atkL.length,grouped,seen:now-R.seenAt<3000,at:dist<3.2,tapped:R.tapped});
+ const dist=Math.hypot(p.x-sp.x,p.z-sp.z),seen=now-R.seenAt<3000;if(dist<8&&!seen){if(R.clrFrom==null)R.clrFrom=now;}else R.clrFrom=null;/* bug 9: time spent checking the site */
+ const c=BotBrain.retake(xbBrain(u),R.r,{left:timeLeft,eta:dist*1.25/XBV_RUN,half:s.dt>=3.5,mates,enemies:atkL.length,grouped,seen,at:dist<3.2,tapped:R.tapped,clear:R.clrFrom==null?0:(now-R.clrFrom)/1000});
  if(c.style==='tap'&&R.tapAt==null)R.tapAt=now;R.c=c;R.at=now+500;u.xRet=R;(XBV.rlog||(XBV.rlog=[])).push({name:u.name,t:+timeLeft.toFixed(1),act:c.act,style:c.style});if(XBV.rlog.length>200)XBV.rlog.shift();return c;}
 if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvSp()||!x||x===player||!x.g||FV.sp.st!=='plant')return do0.apply(this,arguments);
  const team=bots.includes(x)?bots:allies,c=xbvRetake(x,team),R=x.xRet;if(c.act==='save'||c.act==='clear')return false;
@@ -589,13 +590,10 @@ function xhpAngles(C,x,y,z,atk){const k=C.key+'|'+Math.round(x)+','+Math.round(z
  const W=typeof XHPW!=='undefined'&&XHPW.pre.get(k);if(W&&W.C===C&&W.x===x&&W.y===y&&W.z===z&&W.sig===xhpSig()){XHPW.pre.delete(k);XHPW.hit++;A=W.A;}else{A=xhpCalc(C,x,y,z,atk);if(!A)return [];} /* roundstart: a corner set xhpWarm worked out in the buy phase for exactly this unit position (same map / cell / side, same x y z) is the answer this call would compute: it enters the cache here, as a computed one would */
  if(XHP.cache.size>600)XHP.cache.clear();XHP.cache.set(k,A);return A;}
 // xhpAngles' corner set from (x, y, z) (null: no nav floor there, nothing cached)
-function xhpCalc(C,x,y,z,atk){const A=[];
- try{const N=C.nav.nodes,s=nmNear(C,x,z,y);if(s<0)return null;const eye=new RV(x,y+1.5,z),q=new RV(),srcs=[],en=atk?C.meta.defender:C.meta.attacker;srcs.push([en,1.6]);for(const n in C.meta.sites)srcs.push([C.meta.sites[n],1]);srcs.push([xbvMid(C),.8]);
-  for(const [src,w] of srcs){const e=nmNear(C,src[0],src[2],src[1]);if(e<0||e===s)continue;const P=nmPath(C,s,e);if(!P||P.length<2)continue;let last=null,pt=null,run=0;
-   for(let i=1;i<P.length&&run<45;i++){const n=N[P[i]];run=Math.hypot(n[0]-x,n[2]-z);if(Math.abs(n[1]-y)>5)break;q.set(n[0],n[1]+1.5,n[2]);if(los(eye,q)){last=n;continue;}pt=last?[(last[0]+n[0])/2,(last[1]+n[1])/2+1.5,(last[2]+n[2])/2]:null;break;}
-   if(!pt&&last&&run>=8)pt=[last[0],last[1]+1.5,last[2]];if(!pt)continue;const d=Math.hypot(pt[0]-x,pt[2]-z);if(d<2.5)continue;
-   const yaw=Math.atan2(pt[0]-x,pt[2]-z),sc=w/(4+d)*30;let dup=null;for(const a of A)if(Math.abs(xAng(a.yaw-yaw))<.3){dup=a;break;}if(dup){dup.w+=sc*.5;continue;}A.push({yaw,x:pt[0],y:pt[1],z:pt[2],d,w:sc});}
-  A.sort((a,b)=>b.w-a.w);if(A.length>3)A.length=3;}catch(e){}
+function xhpCalc(C,x,y,z,atk){let A=[];
+ try{const N=C.nav.nodes,s=nmNear(C,x,z,y);if(s<0)return null;const eye=new RV(x,y+1.5,z),q=new RV(),srcs=[],en=atk?C.meta.defender:C.meta.attacker,L=[[en,1.6]];for(const n in C.meta.sites)L.push([C.meta.sites[n],1]);L.push([xbvMid(C),.8]);
+  for(const [src,w] of L){const e=nmNear(C,src[0],src[2],src[1]);if(e<0||e===s)continue;const P=nmPath(C,s,e);if(!P||P.length<2)continue;const pts=[];for(let i=1;i<P.length;i++)pts.push(N[P[i]]);srcs.push({pts,w});}
+  A=BotBrain.holdCorners(srcs,n=>los(eye,q.set(n[0],n[1]+1.5,n[2])),x,y,z);}catch(e){} /* the corner walk / scoring is shared with the server's holdLook (bug 8) */
  return A;}
 // Round-start warm-up (roundstart; user, 75 Hz: "When round starts, it goes down to 30fps"): on the first action frames
 // every bot standing on its goal asked xhpAngles for its corners at once, and each new corner set searches up to five
@@ -639,10 +637,12 @@ function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.pos
   if(H.seat){if(Math.hypot(H.seat[0]-p.x,H.seat[1]-p.z)>.5)return x2(out,H.seat[0],H.seat[1]);H.seat=null;H.ang=xhpAngles(C,p.x,p.y,p.z,atk);const B=xbBrain(u),r=xhpRand(u);H.until=now+(2.5+(B?B.patience:.5)*3.5+r()*1.5)*1000;}
   if(now>=H.until){H.until=now+1500;const q=xhpSeat(C,u,H,team);if(q&&Math.hypot(q[0]-p.x,q[1]-p.z)>.6){H.seat=q;H.shifts++;return x2(out,q[0],q[1]);}}
   return x2(out,p.x,p.z);}catch(e){}return g;};}
+// the held corner's pitch: head height there (BotBrain.AIM_H.head over its floor) less the bot's own idle drop (= server holdLook)
+function xhpPitch(u,p,a){const B=xbBrain(u);if(!B)return null;return Math.atan2(a.y-BotBrain.PRE.head+BotBrain.AIM_H.head-(p.y+1.6),Math.hypot(a.x-p.x,a.z-p.z)||1)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}
 // the yaw a holding / walking bot keeps its crosshair on when nothing it heard or saw is fresher (null = the base facing)
 function xhpYaw(u,dt,vx,vz){if(!xhpOn(u))return null;const p=u.g.position,now=performance.now();if(u.xHp&&!u.xHp.seat&&Math.hypot(u.xHp.bx-p.x,u.xHp.bz-p.z)>4.5)u.xHp=null;const H=u.xHp;
- if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),A=H.ang;let k=0;if(A.length>1&&r()>.55)k=1+Math.floor(r()*(A.length-1));H.ai=k;H.aiT=now+(2.2+r()*3)*1000;}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);}
- if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
+ if(H&&H.ang&&H.ang.length&&!H.seat){if(now>=H.aiT){const r=xhpRand(u),n=BotBrain.holdNext(H.ang,r),B=xbBrain(u);H.ai=n.k;H.aiT=now+n.dwell*1000;H.e=B?BotBrain.preAimErr(B,r):0;/* bug 8: an average player's placement (~4 deg sd), as the server's holdLook */}const a=H.ang[Math.min(H.ai,H.ang.length-1)];u.xhpA=a;u.xhpP=xhpPitch(u,p,a);return Math.atan2(a.x-p.x,a.z-p.z)+(H.e||0);}
+ if(H&&H.seat&&H.ang&&H.ang.length){const a=H.ang[0];u.xhpA=a;u.xhpP=xhpPitch(u,p,a);return Math.atan2(a.x-p.x,a.z-p.z);} // re-seating: keep the main angle (a shoulder step, not a turn away)
  u.xhpA=null;if(!(vx||vz))return null;const hd=Math.atan2(vx,vz);const c=u.xhpC;if(c&&now<c.t+250&&Math.abs(xAng(c.h-hd))<.5)return c.y;
  {const r=xhpRoute(u,p,hd);if(r!=null){u.xhpC={t:now,h:hd,y:r};return r;}}
  const o=[p.x,p.y+1.5,p.z];XHP.ANG.length=XHP.DEP.length=0;for(let i=-6;i<=6;i++){const a=hd+i*.21;XHP.ANG.push(a);XHP.DEP.push(xhpDepth(o,a,40));}

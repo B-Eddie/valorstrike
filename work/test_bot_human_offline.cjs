@@ -12,7 +12,7 @@ const THREE=require(path.join(root,'server/node_modules/three/build/three.cjs'))
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8'),A='// ---- BOT VARIETY ----',Z='// ---- END BOT VARIETY ----',i=html.indexOf(A),j=html.indexOf(Z,i);assert(i>=0&&j>i,'bot variety block');
 const block=html.slice(i,j+Z.length);
 // base loop wiring (enemy bots)
-for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, flashed:','typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt)','typeof xbShot === "function" ? xbShot(b, tg, from, w, W, d, D)',
+for(const w of ['xbEngage(b, b.pre, { off: Math.abs(oy), e0y: oy, d, dy:','typeof xbFaceAim === "function" ? xbFaceAim(b, Math.atan2(dx, dz), dt)','typeof xbShot === "function" ? xbShot(b, tg, from, w, W, d, D)',
  '(botStopped(b) || b.xbSl)'/* 83b0d90: weapon deadzone stop (was BOT_STOP 1.4 m/s) */,'(b.bn > 0 || typeof xbReady !== "function" || xbReady(b, d))','b.see = see && !(b.blind > 0) ?','if (b.blind > 0) b.xbFl = performance.now();'])assert(html.includes(w),'wired: '+w);
 assert(!/if \(see\) b\.g\.rotation\.y = Math\.atan2\(dx, dz\);/.test(html),'enemy bots no longer snap their yaw onto the target');
 for(const w of ['b.bn = typeof xbBurst === "function" ? xbBurst(b, d, W) :','(b.xbPz != null ? Math.max(1 / (W.rate || 4), b.xbPz) :'])assert(html.includes(w),'wired: '+w);
