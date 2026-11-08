@@ -384,8 +384,6 @@ function svxAnimTick() {
     s.m.scale.setScalar(s.s * (1 - u * 0.7));
   }
 }
-// ---- END SOVA FX ----
-
 function svxSetLifeScale(x) { svxC.lifeScale = Math.max(0.1, +x || 1); }
 function svxFxAge() { return svxC.fxT0 ? Math.round(performance.now() - svxC.fxT0) : -1; }
 function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
@@ -407,3 +405,4 @@ function svxDump() {
     return [m.geometry && m.geometry.type, m.position.toArray().map(v => +v.toFixed(1)).join(","), "s" + m.scale.x.toFixed(2), "op" + (m.material.uniforms ? m.material.uniforms.uOp.value : m.material.opacity).toFixed(2), "vis" + m.visible, "par" + (m.parent === scene)].join("|");
   }).join(" ;; ");
 }
+// ---- END SOVA FX ----

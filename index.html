@@ -14539,158 +14539,6 @@ window.xLdInfo = function () { const ag = (u) => { try { return xAg(u) || u.agen
 window.xLdKeys = function (dt) { for (const k in keys) keys[k] = false; fireHeld = false; if (dt) try { clock.getDelta(); } catch (e) {} };
 try { applyBright(); } catch (e) {} // a saved brightness reaches the game canvas, which did not exist yet when settings loaded
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
-function svxDumpEnds() {
-  const out = [];
-  for (const s of svxC.anim) {
-    if (!s.axis) continue;
-    s.m.updateMatrixWorld(true);
-    const a = s.m.localToWorld(new THREE.Vector3(0, -31, 0));
-    const b = s.m.localToWorld(new THREE.Vector3(0, 31, 0));
-    out.push([a, b].map(v => v.toArray().map(n => +n.toFixed(1)).join(",")).join(" -> "));
-  }
-  return out.join(" ;; ");
-}
-function svxDump() {
-  if (svxC.lastF) return JSON.stringify(svxC.lastF);
-  return svxC.anim.map(s => {
-    const m = s.m;
-    return [m.geometry && m.geometry.type, m.position.toArray().map(v => +v.toFixed(1)).join(","), "s" + m.scale.x.toFixed(2), "op" + (m.material.uniforms ? m.material.uniforms.uOp.value : m.material.opacity).toFixed(2), "vis" + m.visible, "par" + (m.parent === scene)].join("|");
-  }).join(" ;; ");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
-function svxDumpEnds() {
-  const out = [];
-  for (const s of svxC.anim) {
-    if (!s.axis) continue;
-    s.m.updateMatrixWorld(true);
-    const a = s.m.localToWorld(new THREE.Vector3(0, -31, 0));
-    const b = s.m.localToWorld(new THREE.Vector3(0, 31, 0));
-    out.push([a, b].map(v => v.toArray().map(n => +n.toFixed(1)).join(",")).join(" -> "));
-  }
-  return out.join(" ;; ");
-}
-function svxDump() {
-  if (svxC.lastF) return JSON.stringify(svxC.lastF);
-  return svxC.anim.map(s => {
-    const m = s.m;
-    return [m.geometry && m.geometry.type, m.position.toArray().map(v => +v.toFixed(1)).join(","), "s" + m.scale.x.toFixed(2), "op" + (m.material.uniforms ? m.material.uniforms.uOp.value : m.material.opacity).toFixed(2), "vis" + m.visible, "par" + (m.parent === scene)].join("|");
-  }).join(" ;; ");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
-function svxDumpEnds() {
-  const out = [];
-  for (const s of svxC.anim) {
-    if (!s.axis) continue;
-    s.m.updateMatrixWorld(true);
-    const a = s.m.localToWorld(new THREE.Vector3(0, -31, 0));
-    const b = s.m.localToWorld(new THREE.Vector3(0, 31, 0));
-    out.push([a, b].map(v => v.toArray().map(n => +n.toFixed(1)).join(",")).join(" -> "));
-  }
-  return out.join(" ;; ");
-}
-function svxDump() {
-  if (svxC.lastF) return JSON.stringify(svxC.lastF);
-  return svxC.anim.map(s => {
-    const m = s.m;
-    return [m.geometry && m.geometry.type, m.position.toArray().map(v => +v.toFixed(1)).join(","), "s" + m.scale.x.toFixed(2), "op" + (m.material.uniforms ? m.material.uniforms.uOp.value : m.material.opacity).toFixed(2), "vis" + m.visible, "par" + (m.parent === scene)].join("|");
-  }).join(" ;; ");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
-function svxDumpEnds() {
-  const out = [];
-  for (const s of svxC.anim) {
-    if (!s.axis) continue;
-    s.m.updateMatrixWorld(true);
-    const a = s.m.localToWorld(new THREE.Vector3(0, -31, 0));
-    const b = s.m.localToWorld(new THREE.Vector3(0, 31, 0));
-    out.push([a, b].map(v => v.toArray().map(n => +n.toFixed(1)).join(",")).join(" -> "));
-  }
-  return out.join(" ;; ");
-}
-function svxDump() {
-  if (svxC.lastF) return JSON.stringify(svxC.lastF);
-  return svxC.anim.map(s => {
-    const m = s.m;
-    return [m.geometry && m.geometry.type, m.position.toArray().map(v => +v.toFixed(1)).join(","), "s" + m.scale.x.toFixed(2), "op" + (m.material.uniforms ? m.material.uniforms.uOp.value : m.material.opacity).toFixed(2), "vis" + m.visible, "par" + (m.parent === scene)].join("|");
-  }).join(" ;; ");
-}
-
 // ---- VALORANT ASSET INTEGRATION ----
 // Models and native clips: Riot Games via Kingdom Archives. Map props: public Ascent port.
 // Texture memory cap (quality-linked): a full native load decodes ~640MB of RGBA textures
@@ -23416,8 +23264,6 @@ function svxAnimTick() {
     s.m.scale.setScalar(s.s * (1 - u * 0.7));
   }
 }
-// ---- END SOVA FX ----
-
 function svxSetLifeScale(x) { svxC.lifeScale = Math.max(0.1, +x || 1); }
 function svxFxAge() { return svxC.fxT0 ? Math.round(performance.now() - svxC.fxT0) : -1; }
 function svxAnimN() { return svxC.anim.length + (window.__svxErr ? " ERR " + window.__svxErr : ""); }
@@ -23439,6 +23285,7 @@ function svxDump() {
     return [m.geometry && m.geometry.type, m.position.toArray().map(v => +v.toFixed(1)).join(","), "s" + m.scale.x.toFixed(2), "op" + (m.material.uniforms ? m.material.uniforms.uOp.value : m.material.opacity).toFixed(2), "vis" + m.visible, "par" + (m.parent === scene)].join("|");
   }).join(" ;; ");
 }
+// ---- END SOVA FX ----
 // ---- BOT VARIETY ----
 // Shared client/server routing and spacing. Costs are preferences, never permanent blockers.
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.BotRoutes=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
