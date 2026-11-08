@@ -444,8 +444,6 @@ function netReynaClear(){for(const m of netSouls.values()){scene.remove(m);m.mat
 function netReynaSync(state){netReyna=state||null;const valid=player.hp>0&&state,rows=valid?state.souls||[]:[],ids=new Set(rows.map(s=>s.id));
  for(const [id,m]of netSouls)if(!ids.has(id)){try{reyEnd(m.userData.rx);}catch(e){}scene.remove(m);m.material.dispose();netSouls.delete(id);}
  J.so=[];for(const s of rows){let m=netSouls.get(s.id);if(!m){m=new THREE.Mesh(orbGeo,fireMat(0xc04dff,.9));m.scale.setScalar(1.4);netSouls.set(s.id,m);try{m.userData.rx=reySoul(new THREE.Vector3(...s.p),Math.max(0.5,s.remaining||3));if(m.userData.rx)m.visible=false;}catch(e){}}m.position.set(...s.p);scene.add(m);J.so.push({m,p:m.position,t:s.remaining});}
- for(const [id,m]of netSouls)if(!ids.has(id)){scene.remove(m);m.material.dispose();netSouls.delete(id);}
- J.so=[];for(const s of rows){let m=netSouls.get(s.id);if(!m){m=new THREE.Mesh(orbGeo,fireMat(0xc04dff,.9));m.scale.setScalar(1.4);netSouls.set(s.id,m);}m.position.set(...s.p);scene.add(m);J.so.push({m,p:m.position,t:s.remaining});}
  J.emp=valid&&state.empress?1:0;J.dis=valid?state.dismiss:0;J.ohT=valid?state.overheal:0;J.hl=null;const overlay=document.getElementById('xEmp');if(overlay){overlay.classList.toggle('on',!!J.emp);overlay.classList.toggle('dis',J.dis>0);}
 }
 const netSoul0=rySoul;rySoul=function(){if(NET.socket)return;return netSoul0.apply(this,arguments);};
