@@ -10,7 +10,7 @@ const win={};vm.runInNewContext(fs.readFileSync(ROOT+'models/valorant/manifest.j
 export function runtime(skin=null){const cache={};const ctx={THREE:{...THREE,SkeletonUtils},console,Math,Promise,Set,XNR:()=>{},XV:{config:win.VALORANT_ASSETS,failures:{}},
   ...(skin?{xskGet:()=>skin.id,xskAsset:()=>skin.asset,xskModelData:async()=>JSON.parse(fs.readFileSync(ROOT+skin.asset.config))}:{}),
   xvLoad:(n)=>cache[n]||(cache[n]=parse(ROOT+'models/valorant/'+n+'.glb'))};vm.createContext(ctx);
- vm.runInContext(cut(vr,'function xvFind(','function xvStatic(')+cut(vr,'function xvFPPlay(','function xvFPClear(')+';globalThis.api={xvFPLoad,xvFPPlay};',ctx);return ctx.api;}
+ vm.runInContext(cut(vr,'function xvaSlug(','function xvaFilesOf(')/* xvFPLoad's arms file (4558ae6: KAY/O -> kayo-fp) */+cut(vr,'function xvFind(','function xvStatic(')+cut(vr,'function xvFPPlay(','function xvFPClear(')+';globalThis.api={xvFPLoad,xvFPPlay};',ctx);return ctx.api;}
 const wn=(w)=>w==='melee'?'Knife':w.charAt(0).toUpperCase()+w.slice(1);
 export async function build(agent='jett',weapon='vandal',api=runtime()){const F=await api.xvFPLoad(wn(agent),wn(weapon));const cam=new THREE.Group();cam.add(F.root);return {F,cam,api};}
 // pose at kind/t (t: fraction of the clip), returns hand gaps in metres (viewmodel space = camera space, unscaled)
