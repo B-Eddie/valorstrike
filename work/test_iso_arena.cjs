@@ -23,7 +23,7 @@ const fails=[];const check=(c,m)=>{if(!c){fails.push(m);console.log('FAIL',m);}}
  xe('(()=>{const b=bots[0];yaw=-Math.PI/2;pitch=0;b.g.position.set(player.x+10,0,player.z);b.x=player.x+10;b.z=player.z;return true;})()');
  const home=xe('({x:player.x,y:player.y,z:player.z})'),bHome=xe('({x:bots[0].g.position.x,y:bots[0].g.position.y,z:bots[0].g.position.z})');
  xe('J.ult=K().u;true');await tap('KeyX');
- let s=xe('({x:player.x,y:player.y,z:player.z,duel:J.a18.duel,bx:bots[0].g.position.x,shell:!!J.a18.duelM,kids:J.a18.duelM?J.a18.duelM.children.length:0,parts:J.a18.duelM?((k)=>({floor:k.filter(c=>c.isMesh&&c.material.isMeshLambertMaterial&&!c.material.emissiveIntensity).length,walls:k.filter(c=>c.isMesh&&c.geometry.type==="PlaneGeometry").length,cover:k.filter(c=>c.isMesh&&c.material.isMeshLambertMaterial&&c.material.emissiveIntensity>0).length}))(J.a18.duelM.children):null,onScene:J.a18.duelM?!!J.a18.duelM.parent:false})');
+ let s=xe('({x:player.x,y:player.y,z:player.z,duel:J.a18.duel,bx:bots[0].g.position.x,shell:!!J.a18.duelM,kids:J.a18.duelM?J.a18.duelM.children.length:0,parts:J.a18.duelM?((k)=>({floor:k.filter(c=>c.isMesh&&c.material.isMeshLambertMaterial&&c.material.emissive.getHex()===0).length,walls:k.filter(c=>c.isMesh&&c.geometry.type==="PlaneGeometry").length,cover:k.filter(c=>c.isMesh&&c.material.isMeshLambertMaterial&&c.material.emissive.getHex()!==0).length}))(J.a18.duelM.children):null,onScene:J.a18.duelM?!!J.a18.duelM.parent:false})');
  check(s.duel>10&&s.x===10000-4&&Math.abs(s.bx-(10000+4))<0.5,'both combatants are pulled into the pocket cell '+JSON.stringify(s));
  // the merge's restyle (a18ArenaShell: floor rim, wall grids and rails, cover edge lines) adds trim to the group; count the
  // structural pieces, not the children
