@@ -15,7 +15,7 @@ const realCreate=document.createElement;document.createElement=t=>{const e=realC
 const meshes=[];
 function Mesh(g,mt){this.geometry=g;this.material=mt;const p={x:0,y:0,z:0,set(x,y,z){p.x=x;p.y=y;p.z=z;}};this.position=p;this.rotation={x:0,y:0};this.scale={setScalar(s){this.s=s}};meshes.push(this);}
 const THREE={Mesh,BoxGeometry:class{constructor(...a){this.a=a}},MeshLambertMaterial:class{constructor(o){Object.assign(this,o)}},SphereGeometry:class{},RingGeometry:class{rotateX(){}},MeshBasicMaterial:class{constructor(o){Object.assign(this,o)}},AdditiveBlending:1,DoubleSide:2};
-const ctx=vm.createContext({document,performance:{now:()=>now},say:(t,ms)=>said.push(t),Math,NET:{},netTb:new Map(),netWf:new Map(),skxEnd(){},mkxEnd(){},THREE,
+const ctx=vm.createContext({a18Reset(){},a18Tick(){},sgBlk(){return false},xUtilCands(){return []},/* offline names (AGENTS 18 block, sgBlk, xUtilCands) the shared mesh consumer at the end of the online block wraps */document,performance:{now:()=>now},say:(t,ms)=>said.push(t),Math,NET:{},netTb:new Map(),netWf:new Map(),skxEnd(){},mkxEnd(){},THREE,
  console,player:{tagT:0,tagK:0,tagS:0},
  jM:(g,m)=>new Mesh(g,m),ringGeo:{},smokeGeo:{},orbGeo:{},fireMat:(c,o)=>({color:c,opacity:o}),xSmokeM:(n,c1,c2)=>({name:n,opacity:1}),
  scene:{add(m){}},jRel:m=>{ctx.__rel=(ctx.__rel||0)+1;},xE:e=>{throw e;}});
