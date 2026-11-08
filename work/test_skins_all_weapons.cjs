@@ -44,6 +44,7 @@ for (const w of all) {
 const win = {}; vm.runInNewContext(fs.readFileSync('models/valorant/manifest.js', 'utf8'), { window: win });
 const loads = [];
 const fpCtx = Object.assign(ctx, { XV: { config: win.VALORANT_ASSETS, failures: {} }, xvLoad: (n) => { loads.push(n); return fs.existsSync('models/valorant/' + n + '.glb') ? Promise.resolve({ scene: { name: n }, animations: [] }) : Promise.reject(new Error('missing models/valorant/' + n + '.glb')); } });
+vm.runInContext(vr.slice(vr.indexOf('function xvaSlug('), vr.indexOf('function xvaFilesOf(')), fpCtx); // xvFPData names the arms file through it (4558ae6)
 vm.runInContext(vr.slice(vr.indexOf('function xvFPData('), vr.indexOf('function xvFPLoad(')), fpCtx);
 // 4. Loading gate: xvFPList (Competitive) lists every buyable gun and xvFPPreload resolves each one's rig data.
 vm.runInContext(vr.slice(vr.indexOf('function xvFPList('), vr.indexOf('function xvKnCombo(')), fpCtx);
