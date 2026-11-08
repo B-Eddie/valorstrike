@@ -31,6 +31,9 @@ const fails=[];const fail=s=>{fails.push(s);console.log('FAIL',s);};
    if(a==='Astra')xe('J.a18.starList.push({x:player.x+3,z:player.z,fx:null});true'); // Astra C/Q/E activate a placed Star (wiki Stars): nothing happens without one
    const before=xe(`JSON.stringify([J.${slot},(J.a18fx||[]).length,J.smokes.length,J.zones.length,J.a18.stars])`);
    await tap(code,120);await adv(150);
+   // equip-then-fire abilities (work/ability_equip_runtime.js, e.g. Deadlock's GravNet): the press only draws it, FIRE throws.
+   // Before the round reset cleared the agents-18 fx lane, the previous match's expiring fx changed the count and hid this.
+   if(xe('!!(J.eq&&J.eq.st!=="rec")')){await adv(350);H.mouse(0,true);await adv(60);H.mouse(0,false);await adv(700);}
    const after=xe(`JSON.stringify([J.${slot},(J.a18fx||[]).length,J.smokes.length,J.zones.length,J.a18.stars])`);
    if(before===after)fail(a+': '+slot+' cast had no effect '+before);
   }

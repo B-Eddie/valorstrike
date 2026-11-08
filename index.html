@@ -29664,6 +29664,15 @@ function a18Aim(dist) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = d
 function a18Smoke(p, dur, r, c1, c2) { const m = jM(smokeGeo, xSmokeM("a18" + (a18Smoke.n = (a18Smoke.n || 0) + 1), c1, c2)); m.position.set(p.x, (p.y || 0) + 1.7, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, r) }); SFX.smoke(); return m; }
 function a18Zone(p, life, r, rate, name, col) { const m = jM(zoneGeo, fireMat(col || 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.05, p.z); m.scale.setScalar(r / 2.5); scene.add(m); J.zones.push({ m, p: p.clone(), t: life, R: 0, r0: r, rate, name }); return m; }
 function a18Fx(o) { (J.a18fx = J.a18fx || []).push(o); return o; }
+// round reset: nothing in the agents-18 fx lane outlives the round (an Aftershock / Armageddon fireball that went off just
+// before the round ended, a pending boom / pulse that would still hit in the next buy phase). Removes every mesh an entry
+// holds and ends bound fx modules without their end-of-life callbacks (those can detonate); bots' own models are never
+// stored here (tg is the unit, not its mesh).
+function a18FxClear() { const F = J.a18fx; if (!F || !F.length) return;
+  for (const e of F) { try { if (e.jx && e.jx.end) e.jx.end(); } catch (er) {}
+    try { if (e.kind === "armagchain") { a18ArmagFree(e.grp); e.grp = null; } else if (e.kind === "acidfx" && !e.dead) a18AcidFree(e); } catch (er) {} /* the lanes' own frees (holder objects, disposals) */
+    for (const k in e) { const v = e[k]; try { if (v && v.isObject3D) jRel(v); else if (Array.isArray(v)) for (const it of v) if (it && it.m && it.m.isObject3D) jRel(it.m); } catch (er) {} } }
+  F.length = 0; }
 function a18Deafen(sec) { try { if (typeof ac === "undefined" || !ac || typeof master === "undefined" || !master) return; const t = ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(0.0001, t); master.gain.setValueAtTime(S.muted ? 0 : S.vol / 100, t + sec); } catch (e) {} }/* Bassquake deafen: the mix ducks for the duration (wiki: deafened) */
 function a18Orb(p, delay, fn, hide) { const m = jM(orbGeo, xAdd("a18orb" + (a18Fx.n = (a18Fx.n || 0) + 1), 0xfff6e8, 1)); m.position.copy(p); scene.add(m); if (hide) m.visible = false; a18Fx({ m, t: delay, pop: fn }); }
 function a18BotsIn(p, r, dy) { const out = []; for (const b of bots) if (b.alive && Math.hypot(b.g.position.x - p.x, b.g.position.z - p.z) < r && Math.abs(b.g.position.y - p.y) < (dy || 4)) out.push(b); return out; }
@@ -29981,7 +29990,7 @@ function a18Tick(dt) {
 const a18Hurt0 = hurt;
 hurt = function (t, n, by) { if (t === player && J.a18) { if (J.a18.shield) { J.a18.shield = 0; blip(880, 0.1, "sine", 0.1); return; } if (J.a18.drift > 0 || J.a18.evo > 0 && n < 0) return; } return a18Hurt0(t, n, by); };
 // round start: fresh stars / fuel / anchors (jRound resets J.c/q/e from KITS already)
-const a18Round0 = jRound; jRound = function (match) { a18Round0(match); J.medGen=(J.medGen||0)+1; for(const u of [player].concat(bots,typeof allies!=="undefined"?allies:[]))if(u)u.medDecay=null; J.medClock=0; if (A18SET.has(J.pick)) a18Reset(); };
+const a18Round0 = jRound; jRound = function (match) { a18Round0(match); a18FxClear(); J.medGen=(J.medGen||0)+1; for(const u of [player].concat(bots,typeof allies!=="undefined"?allies:[]))if(u)u.medDecay=null; J.medClock=0; if (A18SET.has(J.pick)) a18Reset(); };
 // kill credit: signature 2-kill resets (Iso Double Tap, Waylay Refract, Yoru Gatecrash), Neon slide charges, Clove Pick-me-up window
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
