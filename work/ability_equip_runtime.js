@@ -133,7 +133,7 @@ function xEqTick(dt) {
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
   else if (q.st === "rel") { if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; } }
-  else if (q.st === "rel") { if (xEqCast(q)) { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } else { q.st = "ready"; q.t = 0; } }
+  else if (q.st === "rel") { if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; } }
   else if (q.st === "rec") { J.eq = null; const w = xEqWeap(); VM.sw = VM.swT = xReeqT(q.k, w); VM.ins = 0; } // ability put away: the gun re-equips (fast / instant), no fire until it is up
 }
 const xEqKey0 = jKey;
