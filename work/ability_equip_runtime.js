@@ -122,7 +122,7 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
 }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
-  if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0 && FV.menu)) { J.eq = null; return; }
+  if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0 && (FV.menu || !xBpOk(J.pick, J.eq.k)))) { J.eq = null; return; } // buy phase: a pending equip outside XBPA (drawn as the round reset) is dropped, its charge kept
   if (q.rot) { if (!(typeof mpAltHeld !== "undefined" && mpAltHeld) || !xRotOn(q)) q.rot = false; else { yaw = q.ry; pitch = q.rp; } } // ALT FIRE let go: the mouse turns the view again
   if (q.st === "steer") { if (!RS.hk || RS.hk.w != null || !RS.hk.hold || !fireHeld) { if (RS.hk) RS.hk.hold = false; q.st = "rec"; q.t = q.rec = xUneqT(q.k); } return; } // Guiding Light held: stays in hand until FIRE is released, the hawk pops or its flight ends (wiki), then the unequip + gun re-equip
   if (q.st === "hold") { q.h += dt; if (!fireHeld) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } return; } // releasing FIRE throws
