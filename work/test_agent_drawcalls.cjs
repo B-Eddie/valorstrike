@@ -20,14 +20,14 @@ const bt=(m,i,v)=>{v.fromBufferAttribute(m.geometry.attributes.position,i);retur
 const rows=[];let tot0=0,tot1=0;
 (async()=>{for(const ag of AGENTS){
  const A=await parse(OUT+ag+'.glb'),B=await parse(OUT+ag+'.glb');const clipsA=ctx.xvaClips(L,ag,A.scene),clipsB=ctx.xvaClips(L,ag,B.scene);
- const m0=skins(B.scene),before=m0.map(o=>({name:o.name,n:o.geometry.attributes.position.count,mat:o.material.name,tr:o.material.transparent}));
+ const m0=skins(B.scene),before=m0.map(o=>({name:o.name,n:o.geometry.attributes.position.count,mat:o.material.name,tr:o.material.transparent,par:o.parent&&o.parent.name}));
  const probes=ctx.xvaMerge(B.scene,H.agents[ag].contactProbes||[]),m1=skins(B.scene),SA=skins(A.scene);
- const opaqueMats=new Set(before.filter(b=>!b.tr).map(b=>b.mat)),want=opaqueMats.size+before.filter(b=>b.tr).length;
+ const opaqueMats=new Set(before.filter(b=>!b.tr).map(b=>b.mat+'|'+b.par)),want=opaqueMats.size+before.filter(b=>b.tr).length;/* per mesh node: xvaMerge never merges across parents (its key holds parent / matrix; Gekko's GLB has two body nodes sharing one material) */
  assert.equal(m1.length,want,ag+': one draw per opaque material ('+before.length+' -> '+m1.length+', want '+want+')');
  m1.forEach(o=>{const a=SA.find(x=>x.name===o.name);assert(a,ag+' kept mesh '+o.name);assert.equal(o.material.name,a.material.name);assert.equal(o.material.transparent,a.material.transparent);assert.equal(o.skeleton.bones.length,a.skeleton.bones.length);});
  // where every original primitive went: merged mesh + vertex offset
  const where={};for(const o of m1){let off=0;const g=o.geometry;for(const b of before){if(b.mat!==o.material.name||b.tr)continue;}}
- const map={};{const by={};for(const b of before){const k=b.tr?b.name:b.mat;(by[k]=by[k]||[]).push(b);}for(const k in by){let off=0;for(const b of by[k]){map[b.name]={mesh:by[k][0].name,off};off+=b.n;}}}
+ const map={};{const by={};for(const b of before){const k=b.tr?b.name:b.mat+"|"+b.par;(by[k]=by[k]||[]).push(b);}for(const k in by){let off=0;for(const b of by[k]){map[b.name]={mesh:by[k][0].name,off};off+=b.n;}}}
  for(const o of m1)assert.equal(o.geometry.attributes.position.count,before.filter(b=>map[b.name].mesh===o.name).reduce((a,b)=>a+b.n,0),ag+' vertex count of '+o.name);
  // locomotion: same clips, same time -> identical bone matrices and skinned vertices
  const mxA=new T.AnimationMixer(A.scene),mxB=new T.AnimationMixer(B.scene);const names=['Idle_Loop','Jog_Fwd_Loop','Walk_Loop','Crouch_Fwd_Loop'].filter(n=>clipsA.some(c=>c.name===n));const pick=names.length?names:[clipsA[0].name];
