@@ -1,0 +1,160 @@
+{
+ "tag": "after",
+ "root": "working tree (fixed rows)",
+ "steps": [
+  [
+   "7.6",
+   "assets",
+   1
+  ],
+  [
+   "99.1",
+   "stage",
+   {
+    "A": "Viper",
+    "B": "Astra",
+    "face": 0
+   }
+  ],
+  [
+   "99.9",
+   "models",
+   {
+    "mk": 1,
+    "fail": {}
+   }
+  ],
+  [
+   "103.9",
+   "legs 0",
+   {
+    "brimstone": {
+     "clip": [
+      "run",
+      "aim"
+     ],
+     "bones": {
+      "L_Foot": {
+       "fwd": 0.471,
+       "lat": -0.118,
+       "up": 0.115
+      },
+      "R_Foot": {
+       "fwd": 0.042,
+       "lat": 0.047,
+       "up": 0.309
+      }
+     }
+    },
+    "jett": {
+     "clip": [
+      "run",
+      "aim"
+     ],
+     "bones": {
+      "L_Foot": {
+       "fwd": 0.578,
+       "lat": -0.117,
+       "up": 0.162
+      },
+      "R_Foot": {
+       "fwd": -0.051,
+       "lat": 0.053,
+       "up": 0.268
+      }
+     }
+    }
+   }
+  ],
+  [
+   "364.8",
+   "legs 1",
+   {
+    "brimstone": {
+     "clip": [
+      "run",
+      "aim"
+     ],
+     "bones": {
+      "L_Foot": {
+       "fwd": 0.069,
+       "lat": -0.119,
+       "up": 0.31
+      },
+      "R_Foot": {
+       "fwd": 0.476,
+       "lat": 0.044,
+       "up": 0.111
+      }
+     }
+    },
+    "jett": {
+     "clip": [
+      "run",
+      "aim"
+     ],
+     "bones": {
+      "L_Foot": {
+       "fwd": -0.307,
+       "lat": -0.122,
+       "up": 0.127
+      },
+      "R_Foot": {
+       "fwd": 0.743,
+       "lat": 0.05,
+       "up": 0.232
+      }
+     }
+    }
+   }
+  ],
+  [
+   "379.8",
+   "legs 2",
+   {
+    "brimstone": {
+     "clip": [
+      "run",
+      "aim"
+     ],
+     "bones": {
+      "L_Foot": {
+       "fwd": 0.464,
+       "lat": -0.118,
+       "up": 0.114
+      },
+      "R_Foot": {
+       "fwd": 0.048,
+       "lat": 0.047,
+       "up": 0.311
+      }
+     }
+    },
+    "jett": {
+     "clip": [
+      "run",
+      "aim"
+     ],
+     "bones": {
+      "L_Foot": {
+       "fwd": 0.421,
+       "lat": -0.106,
+       "up": 0.419
+      },
+      "R_Foot": {
+       "fwd": 0.029,
+       "lat": 0.042,
+       "up": 0.123
+      }
+     }
+    }
+   }
+  ],
+  [
+   "408.3",
+   "errors",
+   []
+  ]
+ ],
+ "errors": []
+}

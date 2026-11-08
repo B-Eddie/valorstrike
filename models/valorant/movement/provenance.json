@@ -5521,5 +5521,12 @@
       "veto"
     ],
     "method": "Derived from the baked jett rows (identity correction at the build reference) by per-bone rest-pose correction computed from each game-path agent GLB (models/valorant/agents/, the rigs the runtime animates): absolute q*corr, additive corr^-1*q*corr. Pelvis.position copied when the Splitter node matches jett, otherwise rotated into the agent Splitter frame via qX^-1*qJett (world-delta transfer; rest local translation is zero). The Rocklan pack was unavailable in this checkout; no new animation curves authored."
+  },
+  "agentRowRedo": {
+    "agents": [
+      "brimstone"
+    ],
+    "date": "2026-11-08",
+    "reason": "frame-aware retarget (a skeleton whose parent frames differ from jett's, e.g. Brimstone 180 deg about Z): absolute C*(q*j^-1)*C^-1*x, C=P_X^-1*P_jett; additive D^-1*q*D, D=W_jett^-1*W_X; Pelvis.position kept (already in the agent Splitter frame)"
   }
 }
