@@ -34,7 +34,11 @@ const assets={fetch:async r=>new Response(await fs.promises.readFile('public'+ne
 // in front of the 15.8 m building wall (x 17); with the jump-feel air control (3.5 -> 12, 9952f26) the page's motor (30 fps)
 // Updrafted off the box beside the end and steered round it into the neutral area (work/test_spawn_barrier_tall_client.cjs:
 // out N 1.50 m past at 14.11, 10.84, -13.50). The panel runs on over the box into that wall, to x 17.25.
-export const FIX={ascent:{atk:{3:{p:[[30.81,8.36],[41.7,7.14]]}}},bind:{atk:{1:{p:[[-28.5,5.25],[-20.82,5.25]],y0:5.69}},def:{2:{p:[[10.5,-15],[17.25,-15]]}}},breeze:{atk:{3:{p:[[25.5,13],[32,13]],in:1}}},haven:{atk:{3:{p:[[8.41,26],[20.75,26]]}}},
+// buy-phase Updraft (the owner, 2026-11-07: spawn-barrier bypass, e.g. Jett jump): Breeze def 5 runs on along the 4 m box's SW face
+// (Updraft onto its 12 m top, then out), Haven def 0 east end over the 4 m box to x -15.75, Split atk 1 south end down to the tall z 13 wall
+// (tools/spawn-barrier-probe.mjs abilityRuns: real Updraft / Tailwind casts steered -75..75 deg from every ledge start)
+export const FIX={ascent:{atk:{3:{p:[[30.81,8.36],[41.7,7.14]]}}},bind:{atk:{1:{p:[[-28.5,5.25],[-20.82,5.25]],y0:5.69}},def:{2:{p:[[10.5,-15],[17.25,-15]]}}},breeze:{atk:{3:{p:[[25.5,13],[32,13]],in:1}},def:{5:{p:[[25.2,-12.05],[26.84,-12.6],[27.7,-13.12],[28.08,-14.03],[31.75,-15.25],[31.75,-16],[34,-16],[37,-18.25],[46.41,-18.25]]}}},haven:{atk:{3:{p:[[8.41,26],[20.75,26]]}},def:{0:{p:[[-27.79,1.25],[-15.75,1.25]]}}},
+ split:{atk:{1:{p:[[-18.27,12.9],[-18,14.52],[-16.87,21.27]]}}},
  lotus:{atk:{0:{p:[[-18.75,29.25],[-18.75,40.24],[-17.25,40.24]],y:[4.38,11.33]},2:{p:[[-5.26,29],[2.2,29]],y:[5.9,12]}}}};
 const r2=v=>Math.round(v*100)/100;
 // ---- barrier-3: walls up to the sky (user: "Make barriers higher in buy phase, I can jump past one in Haven") ----

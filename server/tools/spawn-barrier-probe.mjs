@@ -86,6 +86,7 @@ export function reach(w,key,SB,o={}){const Z=zoneOf(key,w.nav);if(!Z)throw Error
 // at it. The casts themselves are refused in the buy phase (server castAbility0 sim.buy > 0, page jKey) - these runs check the
 // wall would hold even so. Out = as escapes(). -> {runs, leaks}
 export const UPDRAFT=Math.sqrt(2*18*6);
+export const END_NEAR=3,ANGLES=[-75,-45,-20,20,45,75];
 export function ledgeStarts(key,SB,keep,side,o={}){const polys=polylines(SB,key).filter(q=>q.side===side),K=o.per||10,S=[];
  for(const q of polys){const C=[];for(const [x,z,y] of keep[side]||[]){const sd=sdist(q,x,z);if(sd<.6||sd>4)continue;C.push([x,y,z,sd]);}
   C.sort((a,b)=>b[1]-a[1]);const pick=[];for(const c of C){if(pick.length>=K)break;if(pick.some(p=>Math.hypot(p[0]-c[0],p[2]-c[2])<1.5))continue;pick.push(c);}
@@ -98,13 +99,18 @@ export function ledgeRuns(w,key,SB,keep,o={}){const Z=zoneOf(key,w.nav);const N=
   for(const st of ledgeStarts(key,SB,keep,side,o)){const [sx,sy,sz]=st.at;
    // the nearest point of the panel: run straight at it
    let bp=null;for(const g of st.q.segs){const t=Math.max(0,Math.min(g.len,(sx-g.ax)*g.tx+(sz-g.az)*g.tz)),px=g.ax+g.tx*t,pz=g.az+g.tz*t,d=Math.hypot(px-sx,pz-sz);if(!bp||d<bp.d)bp={d,px,pz};}
-   const dl=Math.hypot(bp.px-sx,bp.pz-sz)||1,dx=(bp.px-sx)/dl,dz=(bp.pz-sz)/dl;
-   for(const pat of ['fj','fcj','up','dash']){
+   const dl=Math.hypot(bp.px-sx,bp.pz-sz)||1,bx=(bp.px-sx)/dl,bz=(bp.pz-sz)/dl;
+   // buy-phase Updraft (the owner, 2026-11-07: Jett got out by jumping): near a wall's end (within END_NEAR of either end of its
+   // panel) the Updraft is also steered round the end, ANGLES deg off the line to the wall, with and without jump spam
+   // (Breeze def 5 / Haven def 0 / Split atk 1 were got round this way: an Updraft onto a 4 m box beside the end, then out)
+   const S0=st.q.segs[0],S1=st.q.segs[st.q.segs.length-1],nearEnd=Math.min(Math.hypot(bp.px-S0.ax,bp.pz-S0.az),Math.hypot(bp.px-(S1.ax+S1.tx*S1.len),bp.pz-(S1.az+S1.tz*S1.len)))<END_NEAR;
+   const PATS=[['fj',0],['fcj',0],['up',0],['dash',0]];if(nearEnd)for(const a of ANGLES)PATS.push(['up',a],['upn',a]);
+   for(const [pat,ang] of PATS){const ar=ang*Math.PI/180,dx=bx*Math.cos(ar)-bz*Math.sin(ar),dz=bx*Math.sin(ar)+bz*Math.cos(ar);
     Object.assign(u,{x:sx,y:sy,z:sz,vx:0,vz:0,vy:0,alive:true,hp:100,dash:null,loading:false,air:false});s.buy=30;runs++;
-    if(pat==='up'){u.vy=UPDRAFT;u.air=true;}if(pat==='dash')u.dash=Motor.dash(1,0,yaw(dx,dz),11,.45);
+    if(pat==='up'||pat==='upn'){u.vy=UPDRAFT;u.air=true;}if(pat==='dash')u.dash=Motor.dash(1,0,yaw(dx,dz),11,.45);
     let px=sx,pz=sz,esc=null;
-    for(let k=0;k*.05<3;k++){s.command(u,{t:'in',seq:SEQ++,r:yaw(dx,dz),p:0,f:1,s:0,j:pat!=='dash'&&(k%8<4)?1:0,c:pat==='fcj'?1:0});s.step(.05);if(u.dash&&Motor.dashStep(u,u.dash,.05,s.world).left<=0)u.dash=null;/* the buy phase steps no dash: as the round's Simulation.step */
+    for(let k=0;k*.05<3;k++){s.command(u,{t:'in',seq:SEQ++,r:yaw(dx,dz),p:0,f:1,s:0,j:pat!=='dash'&&pat!=='upn'&&(k%8<4)?1:0,c:pat==='fcj'?1:0});s.step(.05);if(u.dash&&Motor.dashStep(u,u.dash,.05,s.world).left<=0)u.dash=null;/* the buy phase steps no dash: as the round's Simulation.step */
      const cr=SB.crossing(key,px,pz,u.x,u.z,u.y+.5);if(cr&&cr.side===side){esc='crossed';break;}px=u.x;pz=u.z;
      const sd=nearestSd(mine,u.x,u.z);if(sd<-1.5){const g=w.ground(u.x,u.z,u.y+.05),zz=zoneAt(u.x,u.z,Number.isFinite(g)&&g<u.y?g:u.y,4);/* in the air: the zone of the floor under the body (Haven attackers' Updraft over their own floor beside panel 2, Breeze defenders' jump at panel 0: no way out) */if(!(own+own.toLowerCase()).includes(zz||'?')){esc='out '+(zz||'off-nav')+' '+sd.toFixed(2)+' m past the wall';break;}}}
-    if(esc)leaks.push({side,panel:st.panel,pat,how:esc,from:[sx,sy,sz].map(v=>+v.toFixed(2)),at:[u.x,u.y,u.z].map(v=>+v.toFixed(2))});}}}
+    if(esc)leaks.push({side,panel:st.panel,pat,ang,how:esc,from:[sx,sy,sz].map(v=>+v.toFixed(2)),at:[u.x,u.y,u.z].map(v=>+v.toFixed(2))});}}}
  return {runs,leaks};}

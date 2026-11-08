@@ -60,12 +60,15 @@ for(const map of MAPS){const T0=Date.now();
  const polys=PR.polylines(SB,map);let runs=0,leaks=0;const yaw=(dx,dz)=>Math.atan2(-dx,-dz),dt=1/30;
  for(const side of ['atk','def']){const own=side==='atk'?'A':'D',mine=polys.filter(q=>q.side===side);
   for(const st of PR.ledgeStarts(map,SB,keep,side,{per:PER})){const [sx,sy,sz]=st.at;let bp=null;for(const g of st.q.segs){const t=Math.max(0,Math.min(g.len,(sx-g.ax)*g.tx+(sz-g.az)*g.tz)),px=g.ax+g.tx*t,pz=g.az+g.tz*t,d=Math.hypot(px-sx,pz-sz);if(!bp||d<bp.d)bp={d,px,pz};}
-   const dl=Math.hypot(bp.px-sx,bp.pz-sz)||1,dx=(bp.px-sx)/dl,dz=(bp.pz-sz)/dl;
-   for(const pat of ['fj','fcj','up','dash']){const P={x:sx,y:sy,z:sz,vx:0,vz:0,vy:0};let D=null;if(pat==='up')P.vy=PR.UPDRAFT;if(pat==='dash')D=VF.dash(1,0,yaw(dx,dz),11,.45);runs++;let px=sx,pz=sz,esc=null;
-    for(let k=0;k*dt<3;k++){const tt=k*dt;if(D){VF.dashStep(P,D,dt,world);if(D.left<=0)D=null;}else VF.step(P,{x:dx,z:dz,jump:pat!=='dash'&&(tt%.4<.2),duck:pat==='fcj',walk:false,speed:6.75,tag:1,hold:false,use:false,f:1,pitch:0},dt,world);
+   const dl=Math.hypot(bp.px-sx,bp.pz-sz)||1,bx=(bp.px-sx)/dl,bz=(bp.pz-sz)/dl;
+   // buy-phase Updraft steered round a wall's end (= the server's ledgeRuns: END_NEAR / ANGLES, with and without jump spam)
+   const S0=st.q.segs[0],S1=st.q.segs[st.q.segs.length-1],nearEnd=Math.min(Math.hypot(bp.px-S0.ax,bp.pz-S0.az),Math.hypot(bp.px-(S1.ax+S1.tx*S1.len),bp.pz-(S1.az+S1.tz*S1.len)))<PR.END_NEAR;
+   const PATS=[['fj',0],['fcj',0],['up',0],['dash',0]];if(nearEnd)for(const a of PR.ANGLES)PATS.push(['up',a],['upn',a]);
+   for(const [pat,ang] of PATS){const ar=ang*Math.PI/180,dx=bx*Math.cos(ar)-bz*Math.sin(ar),dz=bx*Math.sin(ar)+bz*Math.cos(ar);const P={x:sx,y:sy,z:sz,vx:0,vz:0,vy:0};let D=null;if(pat==='up'||pat==='upn')P.vy=PR.UPDRAFT;if(pat==='dash')D=VF.dash(1,0,yaw(dx,dz),11,.45);runs++;let px=sx,pz=sz,esc=null;
+    for(let k=0;k*dt<3;k++){const tt=k*dt;if(D){VF.dashStep(P,D,dt,world);if(D.left<=0)D=null;}else VF.step(P,{x:dx,z:dz,jump:pat!=='dash'&&pat!=='upn'&&(tt%.4<.2),duck:pat==='fcj',walk:false,speed:6.75,tag:1,hold:false,use:false,f:1,pitch:0},dt,world);
      const cr=SB.crossing(map,px,pz,P.x,P.z,P.y+.5);if(cr&&cr.side===side){esc='crossed';break;}px=P.x;pz=P.z;
      if(k%3===0){const sd=PR.nearestSd(mine,P.x,P.z);if(sd<-1.5){const g=nmHeight(P.x,P.z,P.y+.05),zz=zoneAt(P.x,P.z,Number.isFinite(g)&&g<P.y?g:P.y,4);/* in the air: the zone of the floor under the body (a jump over the spawn's own floor is no way out), as the server's ledgeRuns */if(!(own+own.toLowerCase()).includes(zz||'?')){esc='out '+(zz||'off-nav')+' '+sd.toFixed(2)+' m past';break;}}}}
-    if(esc){leaks++;if(leaks<=6)fails.push(map+' '+side+' panel '+st.panel+' '+pat+' from '+[sx,sy,sz].map(v=>v.toFixed(2))+': '+esc+' at '+[P.x,P.y,P.z].map(v=>v.toFixed(2)));}}}}
+    if(esc){leaks++;if(leaks<=6)fails.push(map+' '+side+' panel '+st.panel+' '+pat+(ang?' '+ang+' deg':'')+' from '+[sx,sy,sz].map(v=>v.toFixed(2))+': '+esc+' at '+[P.x,P.y,P.z].map(v=>v.toFixed(2)));}}}}
  if(leaks>6)fails.push(map+': '+(leaks-6)+' more ledge / ability runs out');if(runs<40)fails.push(map+': too few ledge runs ('+runs+')');
  const row=map+': '+SB.pieces(map).length+' pieces (tops >= '+need.toFixed(1)+'), reach '+R.cells+' cells / '+R.leaks.length+' out, '+runs+' ledge / ability runs / '+leaks+' out ('+((Date.now()-T0)/1000).toFixed(0)+' s)';out.push(row);console.log(row);}
 if(fails.length){console.log('FAIL spawn walls can be got over on the page ('+fails.length+'):\n - '+fails.join('\n - '));process.exit(1);}
