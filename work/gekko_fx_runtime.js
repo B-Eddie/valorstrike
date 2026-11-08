@@ -19,7 +19,7 @@ function gkxGeos() { if (gkxGeo) return gkxGeo; gkxGeo = {
   ring: new THREE.RingGeometry(0.86, 1, 48),
   torus: new THREE.TorusGeometry(1, 0.06, 8, 40),
   cone: new THREE.ConeGeometry(0.5, 1, 6),
-  plane: new THREE.PlaneGeometry(1, 1, 1, 4) }; return gkxGeo; }
+  plane: new THREE.PlaneGeometry(1, 1, 1, 4) }; for (const k in gkxGeo) gkxGeo[k].userData.shared = true; return gkxGeo; }
 function gkxShader(k, frag, opts) { if (gkxProg[k]) return gkxProg[k]; const m = new THREE.ShaderMaterial(Object.assign({
   uniforms: { uT: gkxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
   vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vP=position;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",

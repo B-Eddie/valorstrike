@@ -176,7 +176,7 @@ function svxOrient(m, axis) { // keep the strip's length (local Y) pinned to the
 // Axial-billboard lightning strip from a along dir for len meters: dark base + additive glow pair,
 // re-oriented around its axis each frame so it reads from any viewpoint at any distance.
 function svxBoltStrip(a, dir, len, width, seed, life, amp, off, sway, fade) {
-  const geo = new THREE.PlaneGeometry(width, len, 1, 24);
+  const geo = new THREE.PlaneGeometry(width, len, 1, 24); geo.userData.svxOwn = 2;
   const center = a.clone().addScaledVector(dir, len / 2);
   if (off) { // sideways offset around the beam axis: end-on the strips read as spokes around the core
     const sd = new THREE.Vector3().crossVectors(dir, svxC.up);
@@ -185,7 +185,7 @@ function svxBoltStrip(a, dir, len, width, seed, life, amp, off, sway, fade) {
     center.addScaledVector(sd, Math.cos(off.a) * off.r).addScaledVector(u2, Math.sin(off.a) * off.r);
   }
   for (let layer = 0; layer < 2; layer++) {
-    const m = new THREE.Mesh(geo, svxMatBolt(seed, layer === 1, amp, sway));
+    const m = new THREE.Mesh(geo, svxMatBolt(seed, layer === 1, amp, sway)); m.material.userData.svxOwn = 1;
     m.position.copy(center);
     m.raycast = () => {};
     m.renderOrder = layer === 1 ? 4 : 3;
@@ -193,9 +193,13 @@ function svxBoltStrip(a, dir, len, width, seed, life, amp, off, sway, fade) {
     svxFxShader(m, m.material, life, layer === 1 ? 1.0 : 0.95, { axis: dir, fade: fade || 0 });
   }
 }
+// a bolt strip owns its geometry (shared by its 2 layers) and each layer its material: free them when the fx ends, or they
+// stay on the GPU for the page's life (the shared svxC geometries / cached materials carry no svxOwn and are kept)
+function svxDrop(m) { scene.remove(m); const g = m.geometry; if (g && g.userData.svxOwn && --g.userData.svxOwn <= 0) g.dispose();
+  if (m.material && m.material.userData.svxOwn) m.material.dispose(); }
 function svxFxShader(mesh, mat, life, op0, opts) { // register a shader/billboard fx on the anim lane
   opts = opts || {};
-  if (svxC.anim.length > 48) { scene.remove(mesh); return; }
+  if (svxC.anim.length > 48) { svxDrop(mesh); return; }
   scene.add(mesh);
   svxC.fxT0 = performance.now();
   svxC.anim.push({ fx: 1, m: mesh, mat, t0: svxC.fxT0, pt: svxC.fxT0, life: life * 1000 * (svxC.lifeScale || 1), op0, s: mesh.scale.x, grow: opts.grow || 0, fade: opts.fade || 0, bill: !!opts.bill, axis: opts.axis ? opts.axis.clone() : null });
@@ -368,7 +372,7 @@ function svxAnimTick() {
   const now = performance.now();
   for (let i = A.length - 1; i >= 0; i--) {
     const s = A[i], u = (now - s.t0) / s.life;
-    if (u >= 1) { scene.remove(s.m); A.splice(i, 1); continue; }
+    if (u >= 1) { svxDrop(s.m); A.splice(i, 1); continue; }
     const dt = Math.min(0.1, (now - s.pt) / 1000); s.pt = now;
     if (s.fx) { // shader / fade lane: no velocity, no gravity
       if (s.mat.uniforms) { s.mat.uniforms.uT.value += dt; let f; if (s.fade === 1) { const r = u < 0.15 ? u / 0.15 : 1; const dec = u < 0.78 ? 1 : 1 - (u - 0.78) / 0.22; f = r * dec; } else if (s.fade === 2) { f = u < 0.72 ? 1 : Math.pow(1 - (u - 0.72) / 0.28, 1.5); } else { f = Math.pow(1 - u, 1.5); } s.mat.uniforms.uOp.value = s.op0 * f; }

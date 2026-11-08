@@ -13,7 +13,7 @@ function vtxGeos() { if (vtxGeo) return vtxGeo; vtxGeo = {
   ring: new THREE.RingGeometry(0.82, 1, 48),
   cone: new THREE.ConeGeometry(0.5, 1, 9, 4),
   plane: new THREE.PlaneGeometry(1, 1, 1, 4),
-  box: new THREE.BoxGeometry(1, 1, 1) }; return vtxGeo; }
+  box: new THREE.BoxGeometry(1, 1, 1) }; for (const k in vtxGeo) vtxGeo[k].userData.shared = true; return vtxGeo; }
 function vtxShader(k, frag, opts) { if (vtxProg[k]) return vtxProg[k]; const m = new THREE.ShaderMaterial(Object.assign({
   uniforms: { uT: vtxU, uP: { value: 0 }, uSeed: { value: 0 }, uA: { value: 1 } },
   vertexShader: "uniform float uT;uniform float uP;uniform float uSeed;varying vec3 vN;varying vec3 vV;varying vec3 vP;varying vec2 vUv;void main(){vUv=uv;vec3 p=position;vP=p;vec4 mv=modelViewMatrix*vec4(p,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}",
