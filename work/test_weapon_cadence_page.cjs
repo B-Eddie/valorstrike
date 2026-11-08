@@ -17,7 +17,7 @@ const close=(a,b,e,m)=>assert.ok(Math.abs(a-b)<=e,`${m}: ${a} vs ${b}`);
  const win={};vm.runInNewContext(fs.readFileSync(path.join(root,'models/valorant/weapon-calibration.js'),'utf8'),{window:win});const cal=win.VALORANT_WEAPON_STATS.weapons;
  // ---- 1. cadence: page (base + feel xRate) vs the server on a 1 ms clock ----
  const a=html.indexOf('const XCAD = {};'),b=html.indexOf('\n',html.indexOf('function xRate(W)',a));assert(a>0&&b>a,'xCad block');
- const pageShots=(w,ads,T,useFeel)=>{const now={t:0},C={window:{ValorantFeel:Motor},performance:{now:()=>now.t},ads,Math,Object,WEAP:{},VF:{profiles:cal},wName:()=>w};for(const n of Object.keys(cal))C.WEAP[n]={rate:cal[n].fireRate};vm.createContext(C);
+ const pageShots=(w,ads,T,useFeel)=>{const now={t:0},C={window:{ValorantFeel:Motor},performance:{now:()=>now.t},ads,Math,Object,WEAP:{},VF:{profiles:cal},wName:()=>w};for(const n of Object.keys(cal))C.WEAP[n]={rate:cal[n].fireRate};C.RS=C.RS||{}/* netInputMsg hg: Skye Guiding Light hold (df60c6c) */;vm.createContext(C);
   vm.runInContext(html.slice(a,b)+(useFeel?';'+line(feel,'xRate=function(W){'):'')+';globalThis.T={shot:w=>xCadShot(w),rate:W=>xRate(W)};',C);const shots=[];let next=0;
   for(let t=0;t<=T*1000;t++){now.t=t;if(t>=next){C.T.shot(w);shots.push(t/1000);next=t+1000/C.T.rate(C.WEAP[w]);}}return shots;};
  const serverShots=(w,ads,T)=>{const s=new S.Simulation({map:{attacker:[0,0,0],defender:[0,0,-40]},nav:{nodes:[[0,0,0],[0,0,-40]],adj:[[1],[0]]},playable:[0,1],ground:()=>0,blocked:()=>false,ray:()=>Infinity},'tdm','ascent',()=>.5),u=s.add('a');s.start(false);u.human=true;
@@ -39,7 +39,7 @@ const close=(a,b,e,m)=>assert.ok(Math.abs(a-b)<=e,`${m}: ${a} vs ${b}`);
  assert.deepEqual([W.Operator.rate,W.Marshal.rate,W.Bulldog.rate,W.Shorty.rate,W.Shorty.pel,W.Judge.mag,W.Frenzy.mag],[.6,1.5,10,3,15,5,15],'the stale values named in values-weapons.md');
  // ---- 3. online Classic alt pulse ----
  assert(srt.includes("if(typeof xAD!=='undefined'&&xAD.bs&&rw!=='knife'){NET.altPulse=NET.firePulse;NET.firePendA=1;}")&&srt.includes('alt:NET.altPulse>performance.now()||fa?1:0'),'online alt pulse wiring');
- {const C={NET:{seq:0,firePend:1,firePendH:0,firePendA:1,altPulse:0,fireHeavy:0,firePulse:0},performance:{now:()=>1e6},yaw:0,pitch:0,ads:0,WEAP:{Classic:{semi:1}},fireHeld:false,J:{pick:'Sage'}};vm.createContext(C);vm.runInContext(line(srt,'function netInputMsg(kk,w)')+'\n;globalThis.m1=netInputMsg({},"Classic");globalThis.m2=netInputMsg({},"Classic");',C);
+ {const C={NET:{seq:0,firePend:1,firePendH:0,firePendA:1,altPulse:0,fireHeavy:0,firePulse:0},performance:{now:()=>1e6},yaw:0,pitch:0,ads:0,WEAP:{Classic:{semi:1}},fireHeld:false,J:{pick:'Sage'}};C.RS=C.RS||{}/* netInputMsg hg: Skye Guiding Light hold (df60c6c) */;vm.createContext(C);vm.runInContext(line(srt,'function netInputMsg(kk,w)')+'\n;globalThis.m1=netInputMsg({},"Classic");globalThis.m2=netInputMsg({},"Classic");',C);
   assert.deepEqual([C.m1.fire,C.m1.alt,C.m2.fire,C.m2.alt],[1,1,0,0],'a pending alt click rides one input message');}
  // ---- 4. real page ----
  const {boot}=require('./page_harness.cjs');const H=boot({real3:true,seed:5}),xe=H.xe;const e0=H.errors.length;/* load-phase harness notes (e.g. 'unexpected external script ...manifest.js') are not page exceptions */const adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t)-1e-6);await new Promise(r=>setImmediate(r));}};

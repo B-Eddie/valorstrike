@@ -7,7 +7,7 @@ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');assert
 (async()=>{
  const T=await import(path.join(__dirname,'..','server','node_modules','three','build','three.module.js'));
  const {Simulation}=await import(path.join(__dirname,'..','server','src','simulation.js'));
- const c={NET:{seq:0,firePulse:0},J:{pick:'Phoenix'},FV:{buy:0},WEAP:{Vandal:{}},fireHeld:true,ads:false,performance:{now:()=>0},yaw:0,pitch:0};vm.createContext(c);vm.runInContext(s.slice(a,b),c);
+ const c={NET:{seq:0,firePulse:0},J:{pick:'Phoenix'},FV:{buy:0},WEAP:{Vandal:{}},fireHeld:true,ads:false,performance:{now:()=>0},yaw:0,pitch:0};c.RS=c.RS||{}/* netInputMsg hg: Skye Guiding Light hold (df60c6c) */;vm.createContext(c);vm.runInContext(s.slice(a,b),c);
  for(const dy of [-3,3]){
   // Shooter eye at 1.6 m; target 10 m ahead (-Z) on a floor dy metres lower/higher. Aim at the body centre.
   const dist=10,aim=Math.atan2(dy+.95-1.6,dist);c.pitch=aim;c.yaw=0;

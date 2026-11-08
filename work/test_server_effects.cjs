@@ -6,7 +6,7 @@ class Obj{constructor(){this.position={set:(x,y,z)=>Object.assign(this.position,
 class Mesh extends Obj{constructor(g,m){super();this.geometry=g;this.material=m;}}class Group extends Obj{}
 class BoxGeometry extends Resource{constructor(w,h,d){super({w,h,d})}}
 const live=new Set(),c={THREE:{Mesh,Group,BoxGeometry,MeshLambertMaterial:Resource},XBAR,scene:{add:m=>live.add(m),remove:m=>live.delete(m)},J:{},NET:{socket:{}},sgBlk:()=>false,sgWallEnd:()=>{c.J.sw=null},Map,Set,Math,Array,Number,document:{getElementById:()=>null}};
-vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.sync=netSyncEffects;globalThis.clear=netClearEffects;',c);
+c.bots=c.bots||[]/* netRevealClear walks the bots (df60c6c) */;vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.sync=netSyncEffects;globalThis.clear=netClearEffects;',c);
 const W=XBAR.len/XBAR.segs,mid=i=>-XBAR.len/2+(i+.5)*W;
 // a fresh wall: 4 segments of 2.6 m, 3 m tall, 0.4 m thick, laid along x (yaw 0), lifted 1.5 m to its centre
 c.sync([{id:1,kind:'barrier',p:[0,5,-2.5],yaw:0,hp:1600,seg:[400,400,400,400]}]);assert.equal(live.size,1);const g=[...live][0];assert.ok(g instanceof Group);assert.equal(g.position.y,6.5);assert.equal(g.children.length,4);
