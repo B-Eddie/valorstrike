@@ -7,7 +7,7 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('ass
 const root=path.join(__dirname,'..');const THREE=require(require.resolve('three',{paths:[path.join(root,'server')]}));
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const cut=(a,b,from)=>{const i=html.indexOf(a,from||0);assert(i>0,'missing '+a);const j=html.indexOf(b,i);assert(j>i,'missing end of '+a);return html.slice(i,j);};
-const timers=[];let now=0;const el={style:{}};
+const timers=[];let now=0;const el={style:{},classList:{toggle(){},add(){},remove(){},contains(){return false}}/* the flash toggles its Breach style (df60c6c) */};
 const losCalls=[];
 const ctx=vm.createContext({THREE,Math,console,ray:new THREE.Raycaster(),solids:[],scene:{add(){},remove(){}},J:{e:2,cd:{e:0},tk:0,orbs:[],fx:[]},player:{x:0,y:0,z:0,ch:0,hp:100},yaw:0,pitch:0,
  setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length;},clearTimeout(){},performance:{now:()=>now},
@@ -48,7 +48,7 @@ ctx.J.orbs.length=0;ctx.yaw=0;ctx.phKey('KeyE');const o=ctx.J.orbs[0];assert.ok(
 const rad=(m)=>{m.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(m);return (b.max.x-b.min.x)/2;};
 const core=o.m;core.geometry.computeBoundingSphere();const cr=core.geometry.boundingSphere.radius*core.scale.x;
 assert.ok(cr>=0.28,'core radius >= 0.28 m (was 0.25 m with no glow): '+cr.toFixed(2));
-const kids=core.children.filter(k=>k.isMesh&&k.material&&k.material.blending===THREE.AdditiveBlending);assert.ok(kids.length>=2,'additive glow shells');
+const kids=core.children.filter(k=>k.isMesh&&k.material&&k.material.transparent&&k.material.depthWrite===false);assert.ok(kids.length>=2,'glow shells (transparent, no depth write; normal-blended red-orange since 551ed34, the Phoenix Curveball restyle)');
 assert.ok(rad(core)>=1,'glow reaches >= 1 m: '+rad(core).toFixed(2));assert.ok(core.userData.kids&&core.userData.kids.length===kids.length,'glow released with the orb (userData.kids)');
 // it pops through the shared tick and blinds a facing bot
 {const b=bot(-2.5,0,-1,Math.PI);ctx.bots=[b];ctx.player.hp=0;ctx.orbTick(1);assert.equal(ctx.J.orbs.length,0);assert.equal(b.blind,1.5,'the cast Curveball blinds a bot looking at the pop');}
