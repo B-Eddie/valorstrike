@@ -3818,6 +3818,15 @@ function xShotTgts(base) { // base + live dropped-gun hitboxes, pooled scratch; 
   const ldh = xLdh(); if (!ldh.length) return base;
   const t = xTgtB; t.length = 0; for (let i = 0; i < base.length; i++) t.push(base[i]); for (let i = 0; i < ldh.length; i++) t.push(ldh[i]); return t;
 }
+// The spawn walls stop bullets while the buy phase runs (= the server's SpikeSimulation.traceShot / world.ray: SpawnBarriers.ray
+// while spawnWalls()). Returns how far a shot from o along unit d reaches before a wall (max when no wall is up or in the way).
+function xSbShotD(o, d, max) {
+  try {
+    if (!(mode === "five" && !FV.dm && FV.buy > 0 && running) || !window.SpawnBarriers || (typeof NMB !== "undefined" && NMB.sbOff)) return max;
+    const C = typeof nmActive === "function" && nmActive(); if (!C || !SpawnBarriers.has(C.key)) return max;
+    const h = SpawnBarriers.ray(C.key, [o.x, o.y, o.z], [d.x, d.y, d.z], max); return h ? h.distance : max;
+  } catch (e) { return max; }
+}
 function shoot(hv) {
   if (player.hp <= 0 || fcd > 0 || (mode === "five" && FV.buy > 0 && FV.menu) || VM.sw > 0 || (J.a18 && J.a18.drift > 0)) return; // can't fire until equipped; Dimensional Drift: no weapons (wiki); the buy phase allows firing (VALORANT; user 2026-11-06), not while the buy menu is open (its clicks buy)
   ray.setFromCamera(XC0, camera);
@@ -3842,8 +3851,9 @@ function shoot(hv) {
     ray.far = 200;
     if (W.pel) { xPellets(W, targets); updHud(); return; }
   }
-  XWH.length = 0; ray.intersectObjects(xShotTgts(targets), true, XWH); let hit = XWH[0], wk = 1;
-  if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, 200), 200);
+  const rf0 = ray.far, sf = ray.far = xSbShotD(ray.ray.origin, ray.ray.direction, rf0); // buy phase: the spawn walls stop the shot
+  XWH.length = 0; ray.intersectObjects(xShotTgts(targets), true, XWH); ray.far = rf0; let hit = XWH[0], wk = 1;
+  if (!kn) bFx(null, ray.ray.direction, xSurfHit(hit, ray.ray.direction, sf), sf);
   if (!kn && hit) { const wb = xWall(hit, ray.ray.direction, w); if (wb) { hit = wb; wk = xPen(w).k; } } // wallbang: first hitbox past a thin wall
   if (hit && hit.object.userData.sw) sgDmg(body, hit.object.userData.sw, hit.object.userData.si);
   if (hit && hit.object.userData.ld) { const o = hit.object.userData.ld, n = kn ? body : wDmg(W, "body", hit.distance); o.hp -= n; vmHit(hit.point, n, false, o.hp <= 0); }
@@ -3904,7 +3914,8 @@ function xPellets(W, targets) {
   const alt = W.alt && ads === 1 ? W.alt : null, D = alt || W, BA = alt && window.ValorantFeel && window.ValorantFeel.BUCKY_ALT, n = BA ? BA.pellets : alt ? alt.pel : W.pel, sp = ((typeof VF !== "undefined" && VF.pelCone) || W.cone) * (alt && !BA ? alt.k : 1), d = ray.ray.direction;
   const objs = xShotTgts(targets); let o0 = null;
   if (BA) {
-    ray.far = BA.dist; XPH.length = 0; ray.intersectObjects(objs, true, XPH); const c = XPH[0]; ray.far = 200;
+    ray.far = xSbShotD(ray.ray.origin, d, BA.dist); XPH.length = 0; ray.intersectObjects(objs, true, XPH); const c = XPH[0], cf = ray.far; ray.far = 200;
+    if (cf < BA.dist && !c) { bFx(null, d, xSurfHit(null, d, cf), cf); return; } // a spawn wall inside the 7.5 m canister range stops it (no pellets), as a map wall
     if (c) { const u = c.object.userData; bFx(null, d, xSurfHit(c, d, BA.dist), BA.dist);
       if (u.bot && u.bot.alive) { const b = u.bot, hs = !!u.head, legs = !hs && b.g && c.point.y - b.g.position.y < 0.9, dmg = hs ? BA.head : legs ? BA.legs : BA.body;
         xHS = hs; hurt(b, dmg); xTagAt(b, dmg, wName(), Math.hypot(b.g.position.x - player.x, b.g.position.z - player.z)); vmHit(c.point, dmg, hs, b.hp <= 0.001, b); if (b.hp <= 0.001) kill(b, hs); else flash(b); }
@@ -3916,8 +3927,9 @@ function xPellets(W, targets) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * 6.2832, r = sp * Math.sqrt(Math.random());
       d.copy(XPB).addScaledVector(XPR, Math.cos(a) * r).addScaledVector(XPU, Math.sin(a) * r).normalize();
-      XPH.length = 0; ray.intersectObjects(objs, true, XPH); const hit = XPH[0];
-      if (i < 4) bFx(null, d, xSurfHit(hit, d, 200), 200); // a few tracers only
+      const pf0 = ray.far, pf = ray.far = xSbShotD(ray.ray.origin, d, pf0); // buy phase: the spawn walls stop each pellet
+      XPH.length = 0; ray.intersectObjects(objs, true, XPH); ray.far = pf0; const hit = XPH[0];
+      if (i < 4) bFx(null, d, xSurfHit(hit, d, pf), pf); // a few tracers only
       if (!hit) continue;
       const u = hit.object.userData;
       if (u.sw) sgDmg(wDmg(D, "body", hit.distance), u.sw, u.si);
@@ -5061,16 +5073,22 @@ function loop() {
 }
 const XTK = { defs: [], pool: [], pt: new THREE.Vector3(), aim: new THREE.Vector3(), mv: new THREE.Vector3(), q: new THREE.Vector3() }; // perf pass 9: tick scratch
 function xDget(i, x, z, t) { const f = XTK.pool[i] || (XTK.pool[i] = { x: 0, z: 0, eye: new THREE.Vector3(), t: null }); f.x = x; f.z = z; f.t = t; XTK.defs.push(f); return f; }
-function tick(dt) {
-  const ret = mode === "retake", rf = !ret;
-  const alive = player.hp > 0, defusing = ret && alive && (keys.Digit4 || keys.Numpad4);
-  const planting = mode === "five" && alive && xFvOK && FV.sp && FV.sp.st === "carry" && FV.sp.c === player && !!(keys.Digit4 || keys.Numpad4) && !!inSite(player);
-  if (alive) moveP(dt, 6.75 * (J.dis > 0 ? 1.6 : 1), defusing || planting); // knife speed; the weapon wrapper below scales it
+// The gun clock: knife swing, fire cooldown (fcd), spray decay, held / owed automatic fire and the reload timer. tick() runs it every
+// frame of a round; the buy phase (fiveTick / mpCliTick5) runs it too, so guns fire on their real ammo there as in VALORANT (the
+// buy-phase branches returned before tick(), so fcd never counted down: one shot per gun, no held fire, no reload finishing).
+function xGunTick(dt, alive) {
   if (kSwing > 0) kSwing -= dt;
   let fDue = -1; if (fcd > 0) { fcd -= dt; if (fcd <= 0) fDue = -fcd; } // fDue: how long ago this frame the next round came due (the trigger held through it)
   since += dt; if (since > (sprW === "Phantom" ? 0.27 : 0.3)) spray = Math.max(0, spray - dt * 40);
   if (alive && (fireHeld || xCadOwed()) && rw !== "knife" && !WEAP[wName()].semi && fcd <= 0 && ammo > 0) { const f0 = fcd; shoot(); if (fDue > 0 && fDue < dt && fcd > f0) fcd -= fDue; } // xCadOwed: an ADS burst finishes once started. The cadence carries the part of this frame the round was already due, as the server's fire() (fe07e11): dropping it rounded every interval up to whole frames (Vandal 9.75/s held fired 6.67/s at the 20 Hz harness step, 8.57/s at 60 fps); only when it came due within this frame, so never faster than the gun's rate
   if (reloading > 0) { reloading -= dt; if (reloading <= 0) { reloading = 0; /* not left a hair below 0: online treats it as still reloading (ammo sync off, the next auto-reload never sent) */ const one = XRLP[wName()], n = Math.min(one ? Math.min(1, MAG() - ammo) : MAG() - ammo, rsv); ammo += n; rsv -= n; if (one && ammo < MAG() && rsv > 0) reloading = xRT(); /* next round: xRT (Empress stim /1.1 via the feel wrapper) */ } updHud(); }
+}
+function tick(dt) {
+  const ret = mode === "retake", rf = !ret;
+  const alive = player.hp > 0, defusing = ret && alive && (keys.Digit4 || keys.Numpad4);
+  const planting = mode === "five" && alive && xFvOK && FV.sp && FV.sp.st === "carry" && FV.sp.c === player && !!(keys.Digit4 || keys.Numpad4) && !!inSite(player);
+  if (alive) moveP(dt, 6.75 * (J.dis > 0 ? 1.6 : 1), defusing || planting); // knife speed; the weapon wrapper below scales it
+  xGunTick(dt, alive);
   const near = ret && alive && Math.hypot(player.x - spike.position.x, player.z - spike.position.z) < 2.5; // distance to the spike, not the map origin (native maps plant it at site B)
   if (near && defusing) { defG = 0; const d0 = defuseT; defuseT += dt; if (d0 < 3.5 && defuseT >= 3.5) SFX.defHalf(); } else if (!xDefRel(near) || (defG += dt) >= DEF_CANCEL) { defG = DEF_CANCEL; defuseT = defuseT >= 3.5 ? 3.5 : 0; } // half defuse is kept; a key let-go under 0.2 s holds, stepping off / moving / firing does not
   let ad = false; if (ret) for (const a of allies) if (a.alive && a.def > 0) { ad = a; break; }
@@ -10928,6 +10946,7 @@ function fiveTick(dt) {
   if (FV.buy > 0) { // 20 s buy phase: everyone frozen in spawn, invisible barrier at the spawn edge
     FV.buy -= dt;
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
+    xGunTick(dt, player.hp > 0); // guns fire on real ammo in the buy phase (shoot() still refuses while the buy menu is open; the spawn walls stop the shots); nothing refills at the barrier drop
     if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
     { const te = $("timer"), tv = bpT(); if (te.textContent !== tv) te.textContent = tv; } if (FV.menu) { const be = $("xBT"), bv = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); if (be.textContent !== bv) be.textContent = bv; } // combat lane: written only on change (same-value writes replace the text node)
     if (FV.buy <= 0) { FV.buy = 0; buyMenu(false); say(...xRsLine()); SFX.roundStart(); updHud(); }
@@ -14037,9 +14056,10 @@ function mpCliRound5(e) { // round start: own unit back at spawn with this round
   try { onSkin(); setScope(false); xKLReset(); } catch (er) {} updHud();
 }
 function mpCliLoad(ld, a, rg) {
-  const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
-  if (s !== FV.sec) bEquip(s, "pis");
-  if (p !== FV.pri) { if (p) bEquip(p, "pri"); else { FV.pri = null; if (rw === "pri") swapW("pis"); slots.pri = {}; } }
+  const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic", M = mpCliLoad.m || (mpCliLoad.m = {}); // M: this round's magazines of guns swapped out by a buy, so a sell brings the gun back as fired (no buy-phase refill; offline bUndo keeps e.pa the same way)
+  const keep = (sl, n) => { if (n) M[n] = rw === sl ? { ammo, rsv } : Object.assign({}, slots[sl]); }, back = (sl, n) => { const o = M[n]; if (!o || o.ammo === undefined) return; slots[sl] = { ammo: o.ammo, rsv: o.rsv }; if (rw === sl) { ammo = o.ammo; rsv = o.rsv; reloading = 0; } };
+  if (s !== FV.sec) { keep("pis", FV.sec); bEquip(s, "pis"); back("pis", s); }
+  if (p !== FV.pri) { keep("pri", FV.pri); if (p) { bEquip(p, "pri"); back("pri", p); } else { FV.pri = null; if (rw === "pri") swapW("pis"); slots.pri = {}; } }
   if (a != null) { player.armor = a; player.rgn = rg != null && rg >= 0 ? rg : undefined; }
 }
 function mpCliRS(r) {
@@ -14060,6 +14080,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
   if (FV.buy > 0) {
     FV.buy = Math.max(0, FV.buy - dt);
     if (player.hp > 0 && !FV.menu) moveP(dt, 6.75, false);
+    xGunTick(dt, player.hp > 0); // as fiveTick: the gun clock runs in the buy phase (real ammo, no refill at the barrier drop)
     if (!(typeof xSbOn === "function" && xSbOn())) { const e = xSpawn(FV.map).edge; player.z = FV.atk ? Math.max(e, player.z) : Math.min(-e, player.z); } // native maps: the spawn walls (nmBlocked) hold the player; this plane is the legacy maps' fallback
     { const te = $("timer"), tv = bpT(); if (te.textContent !== tv) te.textContent = tv; } if (FV.menu) { const be = $("xBT"), bv = "00:" + String(Math.max(0, Math.ceil(FV.buy))).padStart(2, "0"); if (be.textContent !== bv) be.textContent = bv; } // combat lane: written only on change (same-value writes replace the text node)
     if (FV.buy <= 0) { buyMenu(false); say(...xRsLine()); try { SFX.roundStart(); } catch (e) {} updHud(); }
@@ -14078,6 +14099,7 @@ function mpCliTick5(dt) { // client: own movement + HUD; the host owns rounds, s
 // Headhunter) arrive in snapshots as the held weapon (bEquip'd into the slot), so after a round reset the Operator
 // model, its 5-round slot and, with no primary bought, a "pri" slot with nothing in it stayed until something else moved.
 function mpRdArm(ld) {
+  if (typeof mpCliLoad === "function") mpCliLoad.m = {}; // a new round: fresh magazines, nothing remembered
   const p = ld && xWOwn(ld[0]) ? ld[0] : null, s = ld && xWOwn(ld[1]) ? ld[1] : "Classic";
   FV.pri = p; FV.sec = s; const pm = p ? WEAP[p].mag : 0, sm = WEAP[s].mag;
   slots.pri = p ? { ammo: pm, rsv: xRsv(p) } : {}; slots.pis = { ammo: sm, rsv: xRsv(s) };

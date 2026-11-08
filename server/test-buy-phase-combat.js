@@ -20,4 +20,11 @@ const shoot=(s,a,n=6)=>{for(let i=0;i<n;i++){a.input={fire:true};a.inputAt=s.tim
 {const s=new SpikeSimulation(W,'five','ascent',()=>.5),o=s.add('o','Omen');s.add('e');s.start(false);s.buy=20;o.ability.c=1;o.ability.q=1;o.ability.ult=99;
  assert.equal(s.command(o,{t:'ab',k:'c'}),false,'Shrouded Step locked in the buy phase (no teleport past the spawn walls)');assert.equal(s.command(o,{t:'ab',k:'x',p:[0,0]}),false,'From the Shadows locked in the buy phase');
  assert.equal(s.command(o,{t:'ab',k:'q'}),true,'Paranoia usable in the buy phase');}
+// buy phase guns (the owner, 2026-11-07: actual-VALORANT buy phase): the magazine fired in the buy phase stays fired - buying and
+// selling a gun or armour never refills the gun in hand, and the round start (barrier drop) refills nothing.
+{const {s,a}=mk();a.weapon=a.primary=a.secondary='Classic';a.primary=null;a.ammo=12;a.reserve=36;a.inventory={Classic:12};a.reserves={Classic:36};a.credits=2000;a.purchases=[];
+ a.weapon='Classic';a.fireAt=0;shoot(s,a,1);const m0=a.ammo;assert.ok(m0<12,'the Classic fired in the buy phase ('+m0+')');
+ assert.equal(s.command(a,{t:'buy',n:'Light Armor'}),true);assert.equal(s.command(a,{t:'sell',n:'Light Armor'}),true);assert.equal(a.ammo,m0,'selling armour does not refill the Classic');
+ assert.equal(s.command(a,{t:'buy',n:'Ghost'}),true);assert.equal(a.weapon,'Ghost');assert.equal(s.command(a,{t:'sell',n:'Ghost'}),true);assert.equal(a.weapon,'Classic');assert.equal(a.ammo,m0,'buying then selling a sidearm brings the Classic back as fired, not refilled');
+ const r0=a.reserve;s.buy=.01;s.step(.05);assert.equal(s.buy,0,'the round started');assert.equal(a.ammo,m0,'no refill at the barrier drop (magazine)');assert.equal(a.reserve,r0,'no refill at the barrier drop (reserve)');}
 console.log('Buy phase combat: humans fire and cast in the buy phase, no damage / debuff before the round starts, the shot hurts after it; used charges rebuy (not refunded); Omen teleports locked');
