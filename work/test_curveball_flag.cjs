@@ -4,7 +4,7 @@
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict');
 const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 const a=html.indexOf('let mpAltHeld = false;'),b=html.indexOf('\n{ const k0 = jKey;',a);assert(a>0&&b>a,'mpCastSelf with the alt-fire tracker missing');
-const L={},sent=[];const ctx=vm.createContext({addEventListener:(t,f)=>{(L[t]=L[t]||[]).push(f);},MP:{role:'client',hc:{}},J:{pick:'Phoenix'},mpR3:v=>v,pEye:()=>[0,1.6,0],jAim:()=>[0,0,-1],performance:{now:()=>1},mpSend:(c,m)=>sent.push(m),mpCastOut(){},Math});
+const L={},sent=[];const ctx=vm.createContext({RS:{}/* mpCastSelf hl: Skye Guiding Light hold (df60c6c) */,addEventListener:(t,f)=>{(L[t]=L[t]||[]).push(f);},MP:{role:'client',hc:{}},J:{pick:'Phoenix'},mpR3:v=>v,pEye:()=>[0,1.6,0],jAim:()=>[0,0,-1],performance:{now:()=>1},mpSend:(c,m)=>sent.push(m),mpCastOut(){},Math});
 vm.runInContext(html.slice(a,b),ctx);
 ctx.mpCastSelf('e');assert.equal(sent.pop().l,1,'plain cast curves left (FIRE)');
 L.mousedown.forEach(f=>f({button:2}));ctx.mpCastSelf('e');assert.equal(sent.pop().l,0,'alt fire held: curves right');

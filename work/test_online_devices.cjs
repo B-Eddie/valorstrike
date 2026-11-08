@@ -9,7 +9,7 @@ class Obj{constructor(){const v=(o)=>Object.assign(o,{set(x,y,z){Object.assign(t
 class Mesh extends Obj{constructor(g,m){super();this.geometry=g;this.material=m;}}class Group extends Obj{}
 class BoxGeometry extends Res{constructor(w,h,d){super({w,h,d})}}
 const shared={kjTur:new Res({n:'kjTur'}),kjBox:new Res({n:'kjBox'}),orbGeo:new Res({n:'orb'}),slowGeo:new Res({n:'slow'})},fm=new Res({n:'fireMat'});
-const live=new Set(),xv=[],c={THREE:{Mesh,Group,BoxGeometry,MeshLambertMaterial:Res},...shared,okMat:col=>new Res({col}),fireMat:()=>fm,XTMK:{r:6},XBAR:{len:10.4,segs:4,h:3,th:.4,hp:400,fort:200},
+const live=new Set(),xv=[],c={bots:[]/* netRevealClear walks the bots (df60c6c) */,THREE:{Mesh,Group,BoxGeometry,MeshLambertMaterial:Res},...shared,okMat:col=>new Res({col}),fireMat:()=>fm,XTMK:{r:6},XBAR:{len:10.4,segs:4,h:3,th:.4,hp:400,fort:200},
  xvDevice:(m,slug,h)=>{xv.push([m.userData.netDev,slug,+h.toFixed(3)]);m.userData.xvDevice={};},xvDeviceReset:m=>{m.userData.reset=1;},
  scene:{add:m=>live.add(m),remove:m=>live.delete(m)},J:{},NET:{socket:{}},MP:{me:1},allies:[{nid:2}],sgBlk:()=>false,sgWallEnd:()=>{},netSyncCb:()=>{},Map,Set,Math,Array,Number,Object,document:{getElementById:()=>null}};
 vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.sync=netSyncEffects;globalThis.clear=netClearEffects;globalThis.devs=netDevs;',c);

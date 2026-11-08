@@ -8,7 +8,7 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('ass
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),cut=(a,b)=>{const i=html.indexOf(a),j=html.indexOf(b,i);assert.ok(i>=0&&j>i,'source '+a);return html.slice(i,j);};
 const DELAY=+html.match(/DELAY: (\d+)/)[1];
 function page(){const n={running:true,MP:{st:'game',me:1,DELAY},NET:{socket:{},seq:0},bots:[],allies:[],XAG:{},FV:{},performance:{now:()=>n.now},now:0,mpClean:s=>s,mpCliKD(){},showStats(){},xAng:x=>Math.atan2(Math.sin(x),Math.cos(x)),
- yaw:0,pitch:0,ads:0,fireHeld:false,J:{pick:'Jett'},WEAP:{},Math};
+ yaw:0,pitch:0,ads:0,fireHeld:false,J:{pick:'Jett'},WEAP:{},RS:{}/* netInputMsg hg: Skye Guiding Light hold (df60c6c) */,Math};
  vm.createContext(n);vm.runInContext(cut('function mpCliSnap(','function mpCliSelf(')+'\n'+cut('function netInputMsg(','function netSyncSmokes(')+';globalThis.netInputMsg=netInputMsg;',n);return n;}
 // steady snapshots every TICK ms (link jitter J ms), tickIntervalMs as the room sends it (undefined: an old page / P2P host)
 function feed(TICK,ti,secs=6,J=0,seed=3){const n=page();let r=seed;const rnd=()=>((r=(r*16807)%2147483647)/2147483647);let pa=0;

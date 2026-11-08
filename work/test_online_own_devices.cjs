@@ -9,7 +9,7 @@ class Res{constructor(o){Object.assign(this,o||{})}dispose(){}clone(){return new
 class Obj{constructor(){const v=(o)=>Object.assign(o,{set(x,y,z){Object.assign(this,{x,y,z});return this;},setScalar(n){return this.set(n,n,n);}});this.position=v({x:0,y:0,z:0});this.scale=v({x:1,y:1,z:1});this.rotation={x:0,y:0,z:0};this.userData={};this.children=[];this.visible=true;}add(c){this.children.push(c)}}
 class Mesh extends Obj{constructor(g,m){super();this.geometry=g;this.material=m;}}class Group extends Obj{}
 const live=new Set(),P=(x,y,z)=>({x,y,z}),m=()=>{const o=new Obj();live.add(o);return o;};
-const c={THREE:{Mesh,Group,BoxGeometry:Res,MeshLambertMaterial:Res},kjTur:new Res(),kjBox:new Res(),orbGeo:new Res(),slowGeo:new Res(),okMat:()=>new Res(),fireMat:()=>new Res(),XTMK:{r:6},XBAR:{len:10.4,segs:4,h:3,th:.4,hp:400,fort:200},
+const c={bots:[]/* netRevealClear walks the bots (df60c6c) */,THREE:{Mesh,Group,BoxGeometry:Res,MeshLambertMaterial:Res},kjTur:new Res(),kjBox:new Res(),orbGeo:new Res(),slowGeo:new Res(),okMat:()=>new Res(),fireMat:()=>new Res(),XTMK:{r:6},XBAR:{len:10.4,segs:4,h:3,th:.4,hp:400,fort:200},
  xvDevice(){},xvDeviceReset(){},scene:{add:o=>live.add(o),remove:o=>live.delete(o)},NET:{socket:{}},MP:{me:1},allies:[],sgBlk:()=>false,sgWallEnd(){},netSyncCb(){},Map,Set,Math,Array,Number,Object,document:{getElementById:()=>null},
  J:{},BC:{tm:[],cw:[],cam:null,cv:false},RS:{pk:[]},drEnds:0,okRm(o){if(o&&o.m)live.delete(o.m);},cyRm(W){live.delete(W.m);W.an.forEach(o=>live.delete(o));},drEnd(){c.drEnds++;c.J.dr=null;}};
 c.drEnd=c.drEnd.bind(c);vm.createContext(c);vm.runInContext(s.slice(a,b)+';globalThis.sync=netSyncEffects;globalThis.clear=netClearEffects;globalThis.own=netOwnDevs;',c);

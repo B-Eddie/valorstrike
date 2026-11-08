@@ -8,7 +8,7 @@ class RV { constructor(x, y, z) { this.x = x; this.y = y; this.z = z; } set(x, y
 const fed = [];
 const ctx = vm.createContext({ Math: Object.assign(Object.create(Math), { random: () => 0 }), RV, botAb() {}, jOn: () => true, running: true, allies: [],
   xAgOf: (n) => n, xBUse: () => true, xBCh: () => ({ c: 1 }), xFy: () => 0, blocked: () => false, RS: { bb: [] }, xBbShootable: (o) => o,
-  rsMesh: (c, s, p) => ({ p }), XBB: { life: 3, hp: 100 }, feed: (t) => fed.push(t), XCUE: { play() {} } });
+  rsMesh: (c, s, p) => ({ p }), rsBotMesh: (p) => ({ p }) /* the Boom Bot's own mesh (df60c6c) */, XBB: { life: 3, hp: 100 }, feed: (t) => fed.push(t), XCUE: { play() {} } });
 vm.runInContext(html.slice(a, b), ctx);
 const raze = { name: 'Raze', ab: {}, g: {} }, from = { x: 0, y: 0, z: 0 };
 ctx.botAb(raze, 0.1, true, { x: 10, z: 0 }, from); // sees the enemy: remembers it
