@@ -29,15 +29,15 @@ for(const key of maps){const w=await loadWorld(assets,key);
  const keep={},RR=reach(w,key,SB,{keep});if(RR.leaks.length)fails.push(key+' reach: '+RR.leaks.length+' cells out, e.g. '+JSON.stringify(RR.leaks[0]));
  const LR=ledgeRuns(w,key,SB,keep,{per:+process.env.SBL_PER||10});if(LR.leaks.length)fails.push(key+' ledge / ability runs: '+LR.leaks.length+' out, e.g. '+JSON.stringify(LR.leaks.slice(0,2)));if(LR.runs<40)fails.push(key+': too few ledge runs ('+LR.runs+')');
  out[out.length-1]+=', reach '+RR.cells+' cells / '+RR.leaks.length+' out, '+LR.runs+' ledge / ability runs / '+LR.leaks.length+' out';}
-// buy phase abilities (user 2026-11-06 bug 4: allowed, as VALORANT): every agent's C / Q / E / X casts except the teleports (Omen's
-// Shrouded Step / From the Shadows, Chamber's Rendezvous: refused, no pendingTeleport); a cast never carries the unit out past
-// its spawn walls (1.5 s of buy-phase steps after each cast, every unit stays on its side) and never hurts anyone (buySafe)
+// buy phase abilities (the owner, 2026-11-07: the actual VALORANT buy phase, abilities.js BUY_PHASE): every agent's C / Q / E / X
+// outside the table is refused; the allowed ones (Omen's Shrouded Step, Chamber's Rendezvous included) never carry the unit out
+// past its spawn walls (1.5 s of buy-phase steps after each cast, every unit stays on its side) and never hurt anyone (buySafe)
 {const w=await loadWorld(assets,maps[0]);const s=new SpikeSimulation(w,'five',maps[0],()=>.5),u=s.add('one'),o=s.add('two');s.start(false);let n=0,ok=0;
  const side=v=>v.team===s.atk?'atk':'def',zone=v=>{const P=polylines(SB,maps[0]).filter(q=>q.side===side(v)),d=nearestSd(P,v.x,v.z);return Number.isFinite(d)?Math.sign(d):0;};
- const TP={Omen:['c','x'],Chamber:['e']};
+ const {BUY_PHASE}=await import('./src/abilities.js');
  for(const ag of ['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye','Breach','Chamber','Cypher']){u.agent=ag;for(const k of ['c','q','e','x']){u.ability={...u.ability,c:2,q:2,e:2,ult:9,cool:{}};s.buy=20;s.effects=[];u.hp=o.hp=100;u.alive=o.alive=true;const z0=zone(u),r=s.command(u,{t:'ab',k});n++;if(r)ok++;
-   if((TP[ag]||[]).includes(k)){if(r||u.pendingTeleport)fails.push('buy phase: '+ag+' '+k+' teleport not refused');}
-   for(let i=0;i<30;i++)s.step(.05);if(u.pendingTeleport)fails.push('buy phase: '+ag+' '+k+' teleport pending');const z1=zone(u);if(z0&&z1&&z0!==z1)fails.push('buy phase: '+ag+' '+k+' crossed the spawn wall');if(u.hp<100||o.hp<100||!u.alive||!o.alive)fails.push('buy phase: '+ag+' '+k+' hurt someone');u.pendingTeleport=null;u.dash=null;}}
- if(ok<20)fails.push('buy phase: only '+ok+' of '+n+' casts allowed');out.push('buy phase: '+ok+' / '+n+' ability casts allowed, teleports refused, none crossed a spawn wall or hurt anyone');}
+   if(!(BUY_PHASE[ag]||'').includes(k)){if(r||u.pendingTeleport)fails.push('buy phase: '+ag+' '+k+' not refused');}
+   for(let i=0;i<30;i++)s.step(.05);const z1=zone(u);if(z0&&z1&&z0!==z1)fails.push('buy phase: '+ag+' '+k+' crossed the spawn wall');if(u.hp<100||o.hp<100||!u.alive||!o.alive)fails.push('buy phase: '+ag+' '+k+' hurt someone');u.pendingTeleport=null;u.dash=null;}}
+ if(ok<8)fails.push('buy phase: only '+ok+' of '+n+' casts allowed');out.push('buy phase: '+ok+' / '+n+' ability casts allowed (BUY_PHASE), the rest refused, none crossed a spawn wall or hurt anyone');}
 if(fails.length){console.log('FAIL spawn walls on the server ('+fails.length+'):\n - '+fails.join('\n - '));process.exit(1);}
 console.log('test-spawn-barrier-leaks: PASS\n  '+out.join('\n  '));

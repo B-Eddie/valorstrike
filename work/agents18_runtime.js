@@ -46,6 +46,7 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
     if (k === "x") { const x1 = p[0], z1 = p[1], x2 = p[2], z2 = p[3], cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, half = Math.max(4, Math.hypot(x2 - x1, z2 - z1) / 2); J.ult = 0; const m = a18Ring(new THREE.Vector3(cx, 0, cz), Math.min(half, 60), 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); SFX.ab("updraft"); say("Cosmic Divide", 900); return; }
     if (k === "s") { // place a persistent Star, or dissipate one that is clicked (wiki Stars / Nebula-Dissipate)
       const s0 = a18StarNear(p[0], p[1], C.star.placeR);
+      if (s0 && xBpOn()) { blip(120, 0.08, "square", 0.1); return; } /* buy phase: no Dissipate */
       if (s0) { a18StarDrop(s0); a18Smoke(new THREE.Vector3(s0.x, 0, s0.z), C.star.fakeNebula, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2); A.starBack = performance.now() / 1000 + C.star.dissipateDelay; SFX.ab("updraft"); say("Dissipate", 700); return; }
       if (A.stars < 1) { blip(120, 0.08, "square", 0.1); return; }
       A.stars--; const gy = (() => { try { const g = groundAt(p[0], p[1], 0.3, typeof player !== "undefined" ? player.y : 3); return Number.isFinite(g) ? g : 0; } catch (e) { return 0; } })(); /* the marker and its activations sit on the real ground, not y=0 */
@@ -69,7 +70,7 @@ function a18Tac(k) { // true = key consumed; "no" = resources short; false = not
   if (J.pick === "Astra") {
     if (on && A18TAC.mode === "astra") {
       if (k === "c" || k === "q" || k === "e") { A18TAC.arm = A18TAC.arm === k ? null : k; A18TAC.wall = null; say(A18TAC.arm ? { c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[A18TAC.arm] + " armed · click a placed Star" : "Click places a Star · click a Star to dissipate", 900); return true; }
-      if (k === "x") { A18TAC.wall = []; A18TAC.arm = null; say("Cosmic Divide · click both ends", 900); return true; }
+      if (k === "x") { if (xBpOn()) return xBpNo("Cosmic Divide · not in the buy phase"), true; A18TAC.wall = []; A18TAC.arm = null; say("Cosmic Divide · click both ends", 900); return true; }
       return true; } // swallow other keys while the map is up
     if (k !== "x") return false;
     if (J.ult < K().u) return "no";
@@ -79,6 +80,7 @@ function a18Tac(k) { // true = key consumed; "no" = resources short; false = not
         if (A18TAC.arm) { const pts = a18StarPts(); let near = false; for (const q of pts) if (Math.hypot(q[0] - x, q[1] - z) < A18C.star.selectR) { near = true; break; }
           if (!near) { say("No Star there · click a placed Star", 900); return false; }
           const arm = A18TAC.arm; A18TAC.arm = null; a18TacSend(arm, [x, z]); say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[arm], 700); return false; }
+        if (xBpOn() && a18StarNear(x, z, A18C.star.placeR)) { say("Dissipate · not in the buy phase", 800); return false; } /* buy phase: placement only */
         a18TacSend("s", [x, z]); return false; },
       cancel: () => { if (A18TAC.mode) { A18TAC.mode = null; A18TAC.wall = null; A18TAC.arm = null; if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); } } })) { A18TAC.mode = null; return false; }
     if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); // the server gates map-placed stars on its own Astral Form state
@@ -109,12 +111,12 @@ function a18Key(code) {
   if (A.supp > 0) return no();
   if (a === "Astra" || a === "Tejo") { const r = a18Tac(k); if (r === true) return true; if (r === "no") return no(); }
   const chargeOk = k === "x" ? J.ult >= K().u : (a === "Astra" ? true : J[k] > 0); // Astra: the placed-star check inside the case is the gate, not the pool
-  if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") A.cloudOn = !A.cloudOn; else if (k === "e") A.toxOn = !A.toxOn; else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
+  if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") { A.cloudOn = !A.cloudOn; if (A.cloudOn && !A.cloudM && A.fuel > 0) A.cloudM = a18Smoke(A.cloud, 3600, C.pcloud.r, 0x3a6a2a, 0x7ac24a); } else if (k === "e") { A.toxOn = !A.toxOn; if (A.toxOn && !A.screenM && A.screenP && A.fuel > 0) A.screenM = a18Smoke(A.screenP, 3600, C.tscreen.len / 2, 0x3a6a2a, 0x7ac24a); } /* turning an emitter on (placed off in the buy phase, or after its fuel ran out) brings its cloud back */ else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
   if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; try { vyxArcRoseFlash({ x: p.x, y: p.y || 0, z: p.z }); if (A.roseH) A.roseH.end(); A.roseH = null; } catch (er) {} a18Blind(p, C.rose.blind); SFX.flash(); return true; }
   if (a === "Veto" && k === "c" && A.xcut) { try { vtxCrosscutTP({ x: P.x, y: P.y || 0, z: P.z }, { x: A.xcut.x, y: A.xcut.y || 0, z: A.xcut.z }, { caster: true }); if (A.xcutH) A.xcutH.end(); A.xcutH = null; } catch (er) {} P.x = A.xcut.x; P.z = A.xcut.z; P.y = A.xcut.y; A.xcut = 0; SFX.ab("dash"); return true; }
   if (a === "Waylay" && k === "e" && A.mark) { P.x = A.mark.x; P.y = A.mark.y; P.z = A.mark.z; A.mark = 0; J.e = 0; SFX.ab("dash"); return true; }
   if (a === "Yoru" && k === "e" && A.gate && !(A.gateTp > 0)) { A.gateTp = 1.2; say("Gatecrash", 700); return true; } /* wiki: 1.2 s total (0.5 s windup + 0.7 s arrival); the move lands in a18Tick */
-  if (a === "Neon" && k === "e" && A.gear > 0) { if (A.slides > 0) { A.slides--; A.gear = 0; J.dash = jDash(); SFX.ab("dash"); /* the slide ends High Gear (wiki); firing during it is allowed (v8.11) */ } return true; }
+  if (a === "Neon" && k === "e" && A.gear > 0) { if (A.slides > 0) { if (!xBpOn()) A.slides--; /* buy phase: the slide charge is not consumed (wiki) */ A.gear = 0; J.dash = jDash(); SFX.ab("dash"); /* the slide ends High Gear (wiki); firing during it is allowed (v8.11) */ } return true; }
   if (!chargeOk || J.cd[k] > 0) return no();
   const p = a18Aim(14), d = jAim();
   const spend = () => { if (k === "x") J.ult = 0; else if (a === "Astra") A.stars--; else J[k]--; J.cd[k] = 0.6; };
@@ -151,8 +153,8 @@ function a18Key(code) {
       return true; }
     case "Viper": { spend();
       if (k === "c") { const z = a18Zone(p, C.snake.life, C.snake.r, C.snake.rate, "Snake Bite", 0x4ad01a); z.visible = false; let gy = p.y || 0; try { const g = groundAt(p.x, p.z, 0.3, (p.y || 0) + 1); if (Number.isFinite(g)) gy = g; } catch (err) {} a18AcidPool(p.x, gy, p.z, C.snake.r, C.snake.life); }
-      else if (k === "q") { A.cloud = p; A.cloudOn = true; A.cloudM = a18Smoke(p, 3600, C.pcloud.r, 0x3a6a2a, 0x7ac24a); }
-      else if (k === "e") { A.screen = 1; A.toxOn = true; const sp = new THREE.Vector3(P.x - Math.sin(yaw) * C.tscreen.len / 2, 0, P.z - Math.cos(yaw) * C.tscreen.len / 2); A.screenM = a18Smoke(sp, 3600, C.tscreen.len / 2, 0x3a6a2a, 0x7ac24a); }
+      else if (k === "q") { A.cloud = p; if (xBpOn()) { A.cloudOn = false; A.cloudM = 0; say("Poison Cloud placed · on at round start", 800); } /* buy phase: placement only */ else { A.cloudOn = true; A.cloudM = a18Smoke(p, 3600, C.pcloud.r, 0x3a6a2a, 0x7ac24a); } }
+      else if (k === "e") { A.screen = 1; const sp = new THREE.Vector3(P.x - Math.sin(yaw) * C.tscreen.len / 2, 0, P.z - Math.cos(yaw) * C.tscreen.len / 2); A.screenP = sp; if (xBpOn()) { A.toxOn = false; A.screenM = 0; say("Toxic Screen placed · on at round start", 800); } /* buy phase: placement only */ else { A.toxOn = true; A.screenM = a18Smoke(sp, 3600, C.tscreen.len / 2, 0x3a6a2a, 0x7ac24a); } }
       else { A.pit = 1; A.pitM = a18Smoke(new THREE.Vector3(P.x, 0, P.z), 3600, C.pit.r, 0x2a5a1a, 0x6ab23a); }
       return true; }
     case "Hush": { spend();
@@ -170,7 +172,7 @@ function a18Key(code) {
     case "Neon": { spend();
       if (k === "c") { const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), C.fastlane.dist / 2, 0x3a8af0, 0.4); try { jxBind(m, neoxFastLane({ x: P.x, y: P.y || 0, z: P.z }, Math.atan2(-d.x, -d.z), C.fastlane.life), 1); } catch (e) {} a18Fx({ kind: "wallg", m, t: C.fastlane.life }); }
       else if (k === "q") { let ok = false; try { ok = !!neoxRelayBolt({ x: P.x, y: (P.y || 0) + 1.4, z: P.z }, { x: p.x, y: p.y, z: p.z }, { flyT: 0.4, radius: C.relay.r }); } catch (e) {} a18Orb(p, 0.4, () => { for (const b of a18BotsIn(p, C.relay.r)) b.blind = Math.max(b.blind || 0, C.relay.concuss); SFX.ab("cbPop", p); }, ok); }
-      else if (k === "e") { A.gear = 1; say("High Gear", 700); }
+      else if (k === "e") { if (xBpOn()) J.e++; /* buy phase: High Gear spends no energy charge (wiki; spend() took it) */ A.gear = 1; say("High Gear", 700); }
       else { A.od = C.od.life; A.stim = C.od.life; say("Overdrive", 900); }
       return true; }
     case "Waylay": { spend();
@@ -180,9 +182,9 @@ function a18Key(code) {
       else { A.haste = C.cpaths.haste; const dd = new THREE.Vector3(d.x, 0, d.z).normalize(), p0 = new THREE.Vector3(P.x + dd.x * C.cpaths.ahead, 0, P.z + dd.z * C.cpaths.ahead), m = new THREE.Mesh(new THREE.PlaneGeometry(C.cpaths.w, C.cpaths.len), new THREE.MeshBasicMaterial({ color: 0xf0c04a, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.atan2(-dd.x, -dd.z); m.rotation.order = "YXZ"; m.rotation.set(-Math.PI / 2, 0, 0); m.rotation.order = "ZXY"; m.rotation.y = 0; m.position.set(p0.x + dd.x * C.cpaths.len / 2, (typeof player !== "undefined" ? player.y : 0) + 0.1, p0.z + dd.z * C.cpaths.len / 2); m.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.atan2(-dd.x, -dd.z)); scene.add(m); try { jxBind(m, wayxConvergentPaths({ x: P.x, y: P.y || 0, z: P.z }, Math.atan2(-dd.x, -dd.z), { len: C.cpaths.len, w: C.cpaths.w, wind: C.cpaths.wind, life: 2.4 }), 1); } catch (e) {} a18Fx({ kind: "paths", m, p: p0, d: dd, t: C.cpaths.wind }); }
       return true; }
     case "Yoru": { spend();
-      if (k === "c") { let jx = null; try { yoxFakeoutSpawn(P); jx = yoxFakeoutFigure(); } catch (e) { try { xE(e); } catch (e2) {} } a18Fx({ kind: "decoy", p: new THREE.Vector3(P.x, 1, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.fakeout.life, jx, m: jx ? null : jM(smokeGeo, xSmokeM("a18decoy", 0x8a92ff, 0xc9d2ff)) }); }
+      if (k === "c") { let jx = null; try { yoxFakeoutSpawn(P); jx = yoxFakeoutFigure(); } catch (e) { try { xE(e); } catch (e2) {} } a18Fx({ kind: "decoy", p: new THREE.Vector3(P.x, 1, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), still: xBpOn() /* buy phase: stationary placement only */, t: C.fakeout.life, jx, m: jx ? null : jM(smokeGeo, xSmokeM("a18decoy", 0x8a92ff, 0xc9d2ff)) }); }
       else if (k === "q") { let jo = null; try { jo = yoxBlindsideOrb(); if (jo && jo.fx && jo.fx.objs && jo.fx.objs[0]) jo.fx.objs[0].position.copy(p); } catch (e) {} a18Orb(p, C.blindside.delay, () => { try { if (jo) yoxEnd(jo); yoxBlindsidePop(p); } catch (e) {} a18Blind(p, C.blindside.blind); }, !!jo); }
-      else if (k === "e") { A.gate = a18Aim(C.gcrash.range); try { A.gateH = yoxGatecrashAnchor(A.gate, 30); } catch (e) {} }
+      else if (k === "e") { A.gate = xBpOn() ? new THREE.Vector3(P.x, P.y || 0, P.z) : a18Aim(C.gcrash.range); /* buy phase: placed where Yoru stands */ try { A.gateH = yoxGatecrashAnchor(A.gate, 30); } catch (e) {} }
       else { A.drift = C.drift.life; try { yoxDriftEnter({ x: P.x, y: P.y, z: P.z }); A.driftV = yoxDriftVeil(C.drift.life); } catch (e) {} say("Dimensional Drift", 900); }
       return true; }
     case "Fade": { spend();
@@ -284,7 +286,7 @@ function a18Tick(dt) {
   if (A.ndy > 0) { A.ndy -= dt; if (A.ndy <= 0 && P.hp <= 0) { P.hp = 100; say("Back.", 800); } }
   if (P.hp <= 0 && J.pick === "Clove" && A.ndyT <= 0 && J.ult >= K().u) A.ndyT = C.ndy.window; else if (P.hp > 0) A.ndyT = 0;
   if (A.ndyT > 0) A.ndyT -= dt;
-  if (A.gear > 0) { A.fuel = Math.max(0, A.fuel - C.gear.drain * dt); if (A.fuel <= 0) A.gear = 0; else A.haste = Math.max(A.haste, 0.3); }
+  if (A.gear > 0) { if (!xBpOn()) A.fuel = Math.max(0, A.fuel - C.gear.drain * dt); /* buy phase: no energy drain */ if (A.fuel <= 0) A.gear = 0; else A.haste = Math.max(A.haste, 0.3); }
   else if (J.pick === "Neon" && A.fuel < C.fuel.max) A.fuel = Math.min(C.fuel.max, A.fuel + C.gear.regen * dt);
   if (J.pick === "Viper" && !A.cloudOn && !A.toxOn && A.fuel < C.fuel.max) A.fuel = Math.min(C.fuel.max, A.fuel + C.fuel.regen * dt);
   if ((A.cloudOn || A.toxOn) && A.fuel > 0) A.fuel = Math.max(0, A.fuel - C.fuel.drain * dt);
@@ -322,7 +324,7 @@ function a18Tick(dt) {
       case "armagboom": { e.age += dt; const u = Math.min(1, e.age / e.life), sc = 0.6 + u * 2.6; e.core.scale.setScalar(sc * (e.size || 1)); e.core.material.opacity = 0.6 * Math.pow(1 - u, 1.4); e.core.material.color.setHex(u < 0.35 ? 0xffc040 : u < 0.7 ? 0xff7020 : 0xb02a10); e.ring.scale.setScalar((1 + u * 4.2) * (e.size || 1)); e.ring.material.opacity = 0.8 * (1 - u); if (u >= 1) { scene.remove(e.core); scene.remove(e.ring); e.core.material.dispose(); e.ring.material.dispose(); keep = false; } break; }
       case "armagchain": { e.age += dt; const AG = C.armag; let done = true; for (let i = 0; i < AG.segs; i++) for (let j = 0; j < AG.ticks; j++) { const id = i * AG.ticks + j; if (e.fired[id]) continue; done = false; if (e.age < i * AG.gap + j * AG.tick) continue; e.fired[id] = 1; const o = new THREE.Vector3(e.p.x + e.d.x * AG.seg * i, 0, e.p.z + e.d.z * AG.seg * i); for (const b of a18StripBots(o, e.d, AG.seg, AG.w)) jHit(b, AG.dmg, "Armageddon"); /* wiki: affects allies and self (allies take a third, the server abilityDamage rule) */ { const inS = (x, z) => { const f = (x - o.x) * e.d.x + (z - o.z) * e.d.z, sd = (x - o.x) * -e.d.z + (z - o.z) * e.d.x; return f > 0 && f < AG.seg && Math.abs(sd) < AG.w / 2; }; for (const al of allies) if (al && al.alive && inS(al.g.position.x, al.g.position.z)) jHit(al, AG.dmg / 3, "Armageddon"); if (P.hp > 0 && inS(P.x, P.z)) hurt(P, AG.dmg, "Armageddon"); } for (let b = 0; b < 2; b++) { const f = (i + Math.random()) * AG.seg, sd = (Math.random() - 0.5) * (AG.w - 2), x = e.p.x + e.d.x * f - e.d.z * sd, z = e.p.z + e.d.z * f + e.d.x * sd; let gy = 0; try { const g = groundAt(x, z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(g)) gy = g; } catch (err) {} a18ArmagBoom(x, gy, z); } } if (done && e.age > AG.segs * AG.gap + AG.ticks * AG.tick) { a18ArmagFree(e.grp); keep = false; } break; }
       case "nightfall": if (e.t <= 0) { for (const b of a18StripBots(e.p, e.d, C.nightfall.dist, C.nightfall.w)) { a18DecayB(b, C.nightfall.decay); b.mark = C.nightfall.decay ? 12 : 0; } SFX.ab("cbPop", e.p); keep = false; } break;
-      case "decoy": { e.p.addScaledVector(e.d, C.fakeout.speed * dt); if (e.m) { e.m.position.set(e.p.x, 1, e.p.z); scene.add(e.m); } try { if (e.jx && e.jx.fx && e.jx.fx.objs && e.jx.fx.objs[0]) { const o = e.jx.fx.objs[0]; o.position.set(e.p.x, groundAt(e.p.x, e.p.z, 0.3, e.p.y + 1) || 0, e.p.z); o.rotation.y = Math.atan2(e.d.x, e.d.z); } } catch (er) {} if (e.t <= 0) { if (e.m) jRel(e.m); try { if (e.jx) { yoxEnd(e.jx); yoxFakeoutPop(e.p); } } catch (er) {} a18Blind(e.p, C.blindside.blind); keep = false; } break; }
+      case "decoy": { if (!e.still) e.p.addScaledVector(e.d, C.fakeout.speed * dt); if (e.m) { e.m.position.set(e.p.x, 1, e.p.z); scene.add(e.m); } try { if (e.jx && e.jx.fx && e.jx.fx.objs && e.jx.fx.objs[0]) { const o = e.jx.fx.objs[0]; o.position.set(e.p.x, groundAt(e.p.x, e.p.z, 0.3, e.p.y + 1) || 0, e.p.z); o.rotation.y = Math.atan2(e.d.x, e.d.z); } } catch (er) {} if (e.t <= 0) { if (e.m) jRel(e.m); try { if (e.jx) { yoxEnd(e.jx); yoxFakeoutPop(e.p); } } catch (er) {} a18Blind(e.p, C.blindside.blind); keep = false; } break; }
       case "seeker": { const t = e.tg; if (!t || !t.alive) { keep = false; break; } const d = [t.g.position.x - e.p.x, t.g.position.z - e.p.z], l = Math.hypot(d[0], d[1]); if (l < 0.8 || e.t <= 0) { if (e.near) t.blind = Math.max(t.blind || 0, e.near); if (e.conc) t.blind = Math.max(t.blind || 0, e.conc); keep = false; } else { e.p.x += d[0] / l * e.sp * dt; e.p.z += d[1] / l * e.sp * dt; } break; }
       case "sensor": if (e.arm > 0) e.arm -= dt; else { const t = a18BotsIn(e.p, C.sensor.r)[0]; if (t) { for (const b of a18BotsIn(e.p, C.sensor.r)) b.blind = Math.max(b.blind || 0, C.sensor.concuss); SFX.ab("cbPop", e.p); keep = false; } } if (e.t <= 0) keep = false; break;
       case "choke": { const t = a18BotsIn(e.p, C.choke.r)[0]; if (t && !e.done) { e.done = true; for (const b of a18BotsIn(e.p, C.choke.r)) { a18DecayB(b, C.choke.decay); b.hind = C.choke.slow; } SFX.ab("cbPop", e.p); keep = false; } if (e.t <= 0) keep = false; break; }
@@ -347,10 +349,11 @@ const a18Round0 = jRound; jRound = function (match) { a18Round0(match); J.medGen
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
 const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code === "KeyC" && !XABT.casting) return a18KeyJ(code); if (A18SET.has(J.pick) && typeof code === "string" && /^Key[CQEX]$/.test(code)) { /* only the ability keys reach the 18-agent kit: slot keys (1/2/3), reload and the rest fall through (a18Key read any other code as the ult) */ if (mode === "five" && FV.buy > 0 && FV.menu) return true; /* buy menu open: its keys buy, never cast (= main jKey / xEqKey); the buy phase itself allows abilities (VALORANT; user 2026-11-06) */ if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+{ const bpK0 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code) && typeof xBpBlock === "function" && xBpBlock(code[3].toLowerCase())) return true; return bpK0.apply(this, arguments); }; } // outermost: the buy phase casts only the VALORANT setup abilities (XBPA, base page; = server BUY_PHASE), placement only where listed
 // Equip release must reach this final dispatch, not the pre-A18 captured jKey. Other kits retain their prior release path.
 const a18CastKey0 = XABT.castKey; XABT.castKey = code => J.pick === "Deadlock" && code === "KeyC" ? jKey(code) : (a18CastKey0 || xEqKey0)(code);
 // USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up
-const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu)) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
+const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru" && xBpOn() && player && player.hp > 0) return xBpNo("Gatecrash · placement only in the buy phase"), true; if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu)) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
 const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt); } catch (e) { xE(e); } };
 
 // ---- AGENTS 18 ONLINE ----

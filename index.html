@@ -9317,7 +9317,7 @@ function okKey(code) {
   if (om) {
     if (code === "KeyC") {
       if (J.om || J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
-      const p = okGround(15); J.om = { t: XPAR2.step, x: p.x, z: p.z, y: xFy(p.x, p.z), m: okMark(p.x, p.z, 0x6a4cff) }; try { J.om.m.visible = false; J.om.h = omxStepMark({ x: p.x, y: xFy(p.x, p.z), z: p.z }); } catch (e) {} say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
+      const p = okGround(15); if (!xBpSide(p.x, p.z)) { J.c++; J.cd.c = 0; return xBpNo("Shrouded Step · not past the spawn wall"); } J.om = { t: XPAR2.step, x: p.x, z: p.z, y: xFy(p.x, p.z), m: okMark(p.x, p.z, 0x6a4cff) }; try { J.om.m.visible = false; J.om.h = omxStepMark({ x: p.x, y: xFy(p.x, p.z), z: p.z }); } catch (e) {} say("Shrouded Step · " + XPAR2.step + " s", 700); blip(260, 0.4, "sine", 0.15); SFX.ab("omenStep");
     }
     if (code === "KeyQ") {
       if (J.q < 1 || J.cd.q > 0) return sgNo(); J.q--; J.cd.q = 0.6;
@@ -9344,7 +9344,7 @@ function okKey(code) {
   }
   if (code === "KeyC") {
     const pend = J.nano.filter((n) => !n.on);
-    if (pend.length) { pend.forEach((n) => { n.on = true; n.t = XNANO.active; n.m.material.opacity = 0.55; n.m.scale.setScalar(XNANO.r / 2.5); kjNanoOn(n); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
+    if (pend.length && xBpOn()) { if (!(J.c >= 1)) return xBpNo("Nanoswarm · placement only in the buy phase"); } else if (pend.length) { pend.forEach((n) => { n.on = true; n.t = XNANO.active; n.m.material.opacity = 0.55; n.m.scale.setScalar(XNANO.r / 2.5); kjNanoOn(n); }); say("Nanoswarm active", 700); SFX.ab("nano", pend[0].p); return blip(700, 0.3, "square", 0.12); }
     if (J.c < 1 || J.cd.c > 0) return sgNo(); J.c--; J.cd.c = 0.6;
     const p = okGround(15); p.y = xFy(p.x, p.z) + 0.05; const m = jM(zoneGeo, nanoMat()); m.rotation.x = -Math.PI / 2; m.position.copy(p); m.scale.setScalar(0.15); scene.add(m);
     J.nano.push({ m, p, on: false, t: 0 }); say("Nanoswarm hidden · C to trigger", 900); blip(420, 0.15, "triangle", 0.12); SFX.ab("nanoSet", p);
@@ -9913,10 +9913,12 @@ function bcKey(code) {
   if (code === "KeyE") {
     if (!BC.an) {
       if (J.cd.e > 0) return no(), say("Rendezvous " + Math.ceil(J.cd.e) + " s", 700);
-      const aq = xAimPlace(XPLACE.Chamber.e[0]), m = new THREE.Mesh(ringGeo, fireMat(0xd8b04a, 0.8)); m.rotation.x = -Math.PI / 2; m.position.set(aq.x, aq.y + 0.06, aq.z); scene.add(m); jxBind(m, chxAnchorPlace({ x: aq.x, y: aq.y, z: aq.z }), 1); // at the crosshair up to 8.5 m (wiki Rendezvous), was at his feet
+      const aq = xAimPlace(XPLACE.Chamber.e[0]); if (!aq || !xBpSide(aq.x, aq.z)) return no(), say("Rendezvous · not past the spawn wall", 800);
+      const m = new THREE.Mesh(ringGeo, fireMat(0xd8b04a, 0.8)); m.rotation.x = -Math.PI / 2; m.position.set(aq.x, aq.y + 0.06, aq.z); scene.add(m); jxBind(m, chxAnchorPlace({ x: aq.x, y: aq.y, z: aq.z }), 1); // at the crosshair up to 8.5 m (wiki Rendezvous), was at his feet
       BC.an = { x: aq.x, y: aq.y, z: aq.z, m }; say("Rendezvous anchor · E within " + XPAR2.rdv + " m to return", 900); return blip(700, 0.1, "sine", 0.12);
     }
     if (Math.hypot(P.x - BC.an.x, P.z - BC.an.z) > XPAR2.rdv) return no(), say("Rendezvous · more than " + XPAR2.rdv + " m from anchor", 800);
+    if (!xBpSide(BC.an.x, BC.an.z)) return no(), say("Rendezvous · not past the spawn wall", 800);
     if (BC.rdv) return; BC.rdv = { t: XPAR2.rdvT, x: BC.an.x, y: BC.an.y || 0, z: BC.an.z, m: BC.an.m }; BC.an = null; J.cd.e = 30; SFX.tp(); say("Rendezvous", 600); // 1.3 s teleport (wiki; server pendingTeleport rendezvous)
   }
   if (code === "KeyX") {
@@ -10049,11 +10051,13 @@ function cyCageKey() {
   if (J.cd.q > 0 || player.hp <= 0) return sgNo(); J.cyc = J.cyc || [];
   const o = pEye(), d = jAim(), placed = J.cyc.filter((c) => c.landed); let best = null, ba = Infinity;
   placed.forEach((c) => { const a = cyCageAng(o, d, c); if (a < CYCG.aim && a < ba && los(o, PF_A.set(c.p.x, c.p.y + 0.2, c.p.z))) { best = c; ba = a; } });
-  if (best) { J.cd.q = 0.3; return cyCageOn(best); }
+  const bp = xBpOn(); // buy phase: placement only - a toss, never an activation
+  if (best && !bp) { J.cd.q = 0.3; return cyCageOn(best); }
   if (J.q >= 1) { J.q--; J.cd.q = 0.3; const p = o.clone().addScaledVector(d, 0.4); p.y -= 0.3;
     const m = new THREE.Mesh(xG("Box", 0.22, 0.12, 0.22), fireMat(0x3fd0c0, 0.9)); m.position.copy(p); scene.add(m);
     J.cyc.push({ p: p.clone(), v: d.clone().multiplyScalar(CYCG.speed), m, born: 0, landed: false }); blip(520, 0.08, "triangle", 0.1); say("Cyber Cage tossed · Q at it to activate", 900); cyCageNet(null); return;
   }
+  if (bp) return xBpNo("Cyber Cage · placement only in the buy phase");
   if (placed.length) { J.cd.q = 0.3; let n = placed[0], na = Infinity; placed.forEach((c) => { const a = cyCageAng(o, d, c); if (a < na) { na = a; n = c; } }); return cyCageOn(n); }
   return sgNo();
 }
@@ -10560,6 +10564,7 @@ function jRound(match) { // each round start in Retake and 5v5
   if (M.e) J.e = mode === "retake" ? M.e : match ? 1 : Math.max(1, Math.min(M.e, J.prevE | 0)); // signature: 1 free charge each round, extra charges bought (unused bought ones carry over)
   if (J.pick === "Reyna") J.q = mode === "retake" ? M.q : Math.max(1, J.q | 0); // Devour/Dismiss share Reyna's signature charges: 1 free per round
   if (J.pick === "Omen") { J.oe = 0; J.oeM = J.e; }
+  J.r0 = { c: J.c | 0, q: J.q | 0, e: J.e | 0 }; try { J.r0R = FV.you + FV.them; } catch (e) {} // charges at the round start (jBuy's round maximum)
   ["jC", "jQ", "jE", "jX"].forEach((id, i) => { const sp = $(id) && $(id).querySelector("span"); if (sp) sp.textContent = K().n[i]; }); $("xAb").setAttribute("aria-label", (J.pick || "Jett") + " abilities"); J.hs = ""; xAbIcons();
 }
 function jUlt() { if (jOn()) { const u = K().u, was = J.ult; J.ult = Math.min(u, J.ult + 1); if (was < u && J.ult >= u) SFX.ult(); } }
@@ -10572,10 +10577,33 @@ function jKill() {
   if (J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say("Tailwind ready", 700); }
   if (J.bsOn) J.bs = 5;
 }
+// Buy phase casts (the owner, 2026-11-07: the actual VALORANT buy phase; wiki.playvalorant.com/en-us/Abilities, valorant.fandom.com/wiki/
+// Abilities, fetched 2026-11-07) = server abilities.js BUY_PHASE (work/test_buy_phase_abilities.cjs keeps them equal). Only these setup
+// abilities cast while the spawn walls stand; everything else (every ultimate but Chamber's, every unlisted agent) waits for the round.
+// Placement-only ones never activate in the buy phase (Cyber Cage, Nanoswarm, Poison Cloud, Toxic Screen, Razorvine, Arc Rose, Gatecrash;
+// Fakeout stands still; Astral Form places Stars only); Neon's High Gear spends no energy / slide charge. s = Astra's map-placed Star.
+// Hush and Miks are not VALORANT agents: left as they were (every key), per the owner.
+const XBPA = { Astra: "xs", Chamber: "cqex", Cypher: "cqe", Deadlock: "q", Jett: "q", Killjoy: "cqe", Neon: "e", Omen: "c", Raze: "q", Sage: "e", Viper: "qe", Vyse: "cqe", Yoru: "ce", Hush: "cqexs", Miks: "cqexs" };
+function xBpOn() { try { return mode === "five" && !FV.dm && FV.buy > 0 && !!running; } catch (e) { return false; } }
+function xBpOk(ag, k) { const s = XBPA[ag]; return !!s && s.includes(k); }
+// a point an ability puts something at / moves the player to in the buy phase stays on the player's side of every spawn wall (= server spawnSideOk)
+function xBpSide(x, z) { try { if (!xBpOn()) return true; const C = typeof nmActive === "function" && nmActive(); if (!C || !window.SpawnBarriers || !SpawnBarriers.has(C.key)) return true; return !SpawnBarriers.crossing(C.key, player.x, player.z, x, z, null, 0); } catch (e) { return true; } }
+function xBpNo(msg) { try { sgNo(); } catch (e) {} try { say(msg || "Not in the buy phase", 900); } catch (e) {} return true; }
+// true = the key is refused for the buy phase (the outermost jKey wrapper, agents18 block); the buy menu's own keys are left to the inner wrappers
+function xBpBlock(k) {
+  if (!xBpOn() || FV.menu || !jOn() || !player || player.hp <= 0) return false;
+  const a = J.pick, A = J.a18 || {};
+  if (!xBpOk(a, k)) return xBpNo((K().n["cqex".indexOf(k)] || "Ability") + " · not in the buy phase");
+  if (a === "Viper" && ((k === "q" && A.cloud) || (k === "e" && A.screen))) return xBpNo("Placement only in the buy phase");
+  if (a === "Vyse" && k === "e" && A.rose) return xBpNo("Arc Rose · placement only in the buy phase");
+  if (a === "Yoru" && k === "e" && A.gate) return xBpNo("Gatecrash · placement only in the buy phase");
+  if (a === "Killjoy" && k === "c" && !(J.c >= 1) && (J.nano || []).some((n) => !n.on)) return xBpNo("Nanoswarm · placement only in the buy phase");
+  return false;
+}
 function jKey(code) {
   if (!jOn() || !/^Key[CQEX]$/.test(code)) return false;
-  if (mode === "five" && FV.buy > 0 && FV.menu) return true; // buy phase: abilities are usable (VALORANT), not while the buy menu is open
-  if (mode === "five" && FV.buy > 0 && ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))) { say("Teleports unlock at round start", 900); return true; } // no teleport past the spawn walls (= server castAbility)
+  if (mode === "five" && FV.buy > 0 && FV.menu) return true; // the buy menu's keys buy, never cast
+  if (xBpOn() && !xBpOk(J.pick, code[3].toLowerCase())) return xBpNo(); // buy phase: only the VALORANT setup abilities (XBPA; the outer wrapper says which)
   if (player.hp <= 0) return true;
   if (J.pick === "Phoenix") return phKey(code), true;
   if (J.pick === "Sova") return svKey(code), true;
@@ -10609,7 +10637,7 @@ function jKey(code) {
 var XBSD = { head: 150, body: 50, legs: 42.5, fan: 2.5, un: 0.45 }; var XBSB = { head: XBSD.head, body: XBSD.body, legs: XBSD.legs, rate: 6, rec: 0 }; // XBSB: a bot's Blade Storm knife as a WEAP-shaped table (wDmg / bSpread; 6 throws per second = server weapons["Blade Storm"].fireRate)
 function xBsBot(b) { return typeof xBtpK === "function" && !(typeof NET !== "undefined" && NET && NET.socket) && !b.nt && xBtpK(b) > 0; } // offline bot / ally Jett with Blade Storm knives out // Blade Storm per knife (wiki: 50 body, x3 head, x0.85 legs; = server weapons["Blade Storm"].damageRanges[0]); ALT FIRE fan 2.5 deg apart + 0.45 s burst unequip (= server BLADE_FAN_DEG / BLADE_BURST_UNEQUIP)
 function jThrow() {
-  if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0 && FV.menu)) return;
+  if (player.hp <= 0 || J.cd.x > 0 || (mode === "five" && FV.buy > 0 && (FV.menu || !xBpOk(J.pick, "x")))) return;
   J.cd.x = 1 / 6; J.bs--; kick = 1; SFX.ab("bsThrow"); // wiki Blade_Storm: Single Fire 6 per second (= server weapons["Blade Storm"].fireRate)
   ray.setFromCamera(XC0, camera); ray.far = 200;
   const hit = ray.intersectObjects(solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])))[0];
@@ -10620,7 +10648,7 @@ function jThrow() {
 // single-fire damage; kills from the burst never refill the knives; the gun comes back after the 0.45 s burst unequip (jTick, J.bsU).
 function jBurstDirs(n) { const o = []; for (let i = 0; i < n; i++) o.push((i - (n - 1) / 2) * XBSD.fan * Math.PI / 180); return o; }
 function jBurst() {
-  if (player.hp <= 0 || J.cd.x > 0 || !J.bsOn || J.bs < 1 || (mode === "five" && FV.buy > 0 && FV.menu)) return;
+  if (player.hp <= 0 || J.cd.x > 0 || !J.bsOn || J.bs < 1 || (mode === "five" && FV.buy > 0 && (FV.menu || !xBpOk(J.pick, "x")))) return;
   const n = J.bs; J.bs = 0; J.bsOn = false; J.cd.x = XBSD.un; J.bsU = XBSD.un; kick = 1; SFX.ab("bsThrow"); // off before the hits: a burst kill (jKill) cannot refill
   const tg = solids.concat(bots.filter((b) => b.alive).flatMap((b) => [b.body, b.head])), o = camera.getWorldPosition(new THREE.Vector3()), f = camera.getWorldDirection(new THREE.Vector3()), up = new THREE.Vector3(0, 1, 0); ray.far = 200;
   for (const a of jBurstDirs(n)) { ray.set(o, f.clone().applyAxisAngle(up, a)); // the server's fan: the crosshair ray turned by a about the vertical (look + a, pitch kept)
@@ -10638,7 +10666,7 @@ function jBuyHtml() {
 }
 function jBuy(k) {
   const it = K().buy.find((x) => x[0] === k); if (!it) return;
-  const p = it[2]; if (J[k] >= K().mx[k] || FV.cr < p) return;
+  const p = it[2], mx = K().mx[k], L = bLog(), R0 = J.r0 && J.r0R === FV.you + FV.them ? J.r0[k] | 0 : 0; if (J[k] >= mx || R0 + L.filter((x) => x.ab === k).length >= mx || FV.cr < p) return; // the round's maximum counts the charges it started with + the ones bought, used or not (the owner: a used charge is not bought back past it; buy / sell never makes one)
   J[k]++; if (k === "e" && J.pick === "Omen") J.oeM = J.e; FV.cr -= p; bLog().push({ ab: k, p }); sbSpend("You", p); blip(700, 0.08, "triangle", 0.15); buyRender(); xHud();
 }
 // Cloudburst projectiles: steered by the aim while C is held (the key, Valorant's hold), then falling; smoke 2.5 s where they land
@@ -10720,7 +10748,7 @@ function jTick(dt) {
     for(const key of ['walls','zones','orbs','arrows','fx','cbs'])if(Array.isArray(J[key]))J[key]=J[key].filter(e=>{if(Number.isFinite(e.t))e.t-=dt;if(e.t>0)return true;if(e.m)jRel(e.m);return false;});
     return;
   }
-  for (const k in J.cd) J.cd[k] = Math.max(0, J.cd[k] - dt);
+  { const bp = xBpOn(); for (const k in J.cd) if (!(bp && J.cd[k] > 0.7)) J.cd[k] = Math.max(0, J.cd[k] - dt); } // buy phase: a cooldown (Healing Orb 45 s, Rendezvous 30 s, ...) starts when the round starts (the owner); the 0.6 s re-press guard runs
   if (J.bsU > 0 && (J.bsU -= dt) <= 0) { J.bsU = 0; if (rw === "knife" && !J.bsOn && player.hp > 0 && !(typeof NET !== "undefined" && NET.socket)) swapW(mode === "five" && !FV.pri ? "pis" : "pri"); } // Blade Storm burst unequip done: the gun comes back (online: the server state swaps)
   if (J.dash && player.hp <= 0) J.dash = null; // a Tailwind dash ends with Jett
   if (J.tw) { J.tw.arm -= dt; if ((J.tw.t -= dt) <= 0 || player.hp <= 0) { J.tw = null; if (player.hp > 0) say("Tailwind faded", 700); } } // the 7.5 s window ran out (or Jett died): the charge is gone
@@ -13967,7 +13995,7 @@ function mpStart5() {
   const r = f0.apply(this, arguments), all = allies.concat(bots);
   for (const u of all) { const inf = MP.u5[u.name]; if (!inf) continue; u.nid = inf.nid; u.agent = inf.ag; XBA[u.name] = inf.ag; u.hum = 0; u.nt = 0; u.sq = inf.sq; }
   MP.conns.forEach((c) => { if (!c.u || c.pend) return; const u = all.find((x) => x.name === c.nm), inf = MP.u5[c.nm]; if (!u || !inf) { c.u = null; return; }
-    inf.sq++; Object.assign(u, { nt: 1, hum: 1, rp: c.id, nb: [], h4: 0, sq: inf.sq, w: c.pri || c.sec }); c.u = u; c.bl = []; c.ab.e = Math.max(1, c.ab.e | 0); });
+    inf.sq++; Object.assign(u, { nt: 1, hum: 1, rp: c.id, nb: [], h4: 0, sq: inf.sq, w: c.pri || c.sec }); c.u = u; c.bl = []; c.abU = { c: 0, q: 0, e: 0 }; c.ab.e = Math.max(1, c.ab.e | 0); });
   MP.conns.forEach((c) => { if (!c.u) return; if (nw.indexOf(c) >= 0) mpSend(c.conn, mpStartMsg5(c)); else mpSend(c.conn, { t: "rd", ld: [c.pri, c.sec], cr: mpMe5(c), b: FV.buy, atk: FV.atk ? 1 : 0 }); });
   return r; }; }
 { const b0 = fBotBuy; fBotBuy = function (n) { const c = mp5H() ? mp5Seat(n) : null; if (!c) return b0.apply(this, arguments); // a human's slot: no bot shopping
@@ -14002,7 +14030,7 @@ function mpHost5(c, u, m) { // returns true when handled
   if (m.t === "buy") { const n = String(m.n || "");
     if (!(FV.buy > 0) || !u.alive) return no(n);
     if (n.startsWith("ab:")) { const k = n.slice(3), K2 = KITS[u.agent] || KITS.Jett, it = K2 && K2.buy && K2.buy.find((x) => x[0] === k);
-      if (!it || (c.ab[k] | 0) >= ((K2.mx || {})[k] || 0) || s.cr < it[2]) return no(n);
+      if (!it || (c.ab[k] | 0) + ((c.abU && c.abU[k]) | 0) >= ((K2.mx || {})[k] || 0) || s.cr < it[2]) return no(n); // a charge used this round still counts toward its maximum
       c.ab[k] = (c.ab[k] | 0) + 1; s.cr -= it[2]; c.bl.push({ ab: k, p: it[2] }); sbSpend(c.nm, it[2]); return ok(n); }
     const it = bItem(n); if (!it || !(it[2] || WEAP[n])) return no(n); const p = it[1], a = it[2];
     if (a) { if (xArmOwn({ armor: s.arm, rgn: s.rgn }, n, a)) return no(n); const i = c.bl.findIndex((x) => x.a), e = c.bl[i]; if (s.cr + (e ? e.p : 0) < p) return no(n);
@@ -14221,12 +14249,12 @@ function mpFx(u, ag, k, o, d, auth, p, quiet) { // u: caster unit, o/d: eye + ai
 function mpHealTick(dt) { const A = MPC.hl; let w = 0; for (let i = 0; i < A.length; i++) { const h = A[i], u = h.u; if (!u.alive) continue; const n = Math.min(h.r * dt, h.l); h.l -= n; u.hp = Math.min(100, u.hp + n); if (h.l > 0.01) A[w++] = h; } A.length = w; }
 function mpCastOut(m, ex) { MP.conns.forEach((c) => { if (c.u && c !== ex) mpSend(c.conn, m); }); }
 function mpCastIn(c, u, m) { // host: a client's cast
-  const k = String(m.k || ""); if (!/^[cqex]$/.test(k) || !u || !u.alive || !u.g || (MP.m5 && FV.buy > 0 && ((c.ag === "Omen" && (k === "c" || k === "x")) || (c.ag === "Chamber" && k === "e")))) return; // buy phase: casts allowed (VALORANT), Omen's teleports locked; mpHostHit / hurt keep them harmless
+  const k = String(m.k || ""); if (!/^[cqex]$/.test(k) || !u || !u.alive || !u.g || (MP.m5 && FV.buy > 0 && !xBpOk(c.ag, k))) return; // buy phase: only the VALORANT setup abilities (XBPA); mpHostHit / hurt keep them harmless
   const ag = Object.hasOwn(KITS, c.ag) ? c.ag : xBAg(u) || "Jett", now = performance.now(), T = c.abT || (c.abT = {});
   if (now - (T[k] || -1e9) < 250) return; // key spam: ignored, the charge stays
   if (k === "x") { if (now - (c.xT || -1e9) < 8000) return; c.xT = now; } // ult points are not tracked on the host: one ult per 8 s at most
   else { const ch = MP.m5 ? c.ab : xBCh(u); let pk = k; if (ag === "Reyna" && k !== "c" && ch && !((ch[k] | 0) > 0)) pk = k === "q" ? "e" : "q"; // Devour / Dismiss share charges
-    if (!ch || !((ch[pk] | 0) > 0)) return mpSend(c.conn, { t: "abn", k, n: 0 }); ch[pk]--; }
+    if (!ch || !((ch[pk] | 0) > 0)) return mpSend(c.conn, { t: "abn", k, n: 0 }); ch[pk]--; if (MP.m5) { const U = c.abU || (c.abU = { c: 0, q: 0, e: 0 }); U[pk] = (U[pk] | 0) + 1; } }
   T[k] = now; const P = u.g.position, o = mpV(m.o, new THREE.Vector3(P.x, 1.6, P.z)); if (Math.hypot(o.x - P.x, o.z - P.z) > 3 || o.y < -1 || o.y > 12) o.set(P.x, 1.6, P.z);
   const d = mpDir(m.d, u), bo = mpBolt(m); let cp = ag === "Jett" && k === "c" && Array.isArray(m.p) ? mpV(m.p, new THREE.Vector3(NaN, 0, 0)) : null; if (cp && !(cp.distanceTo(o) < 45)) cp = null; // Cloudburst landing point (2 s of flight at most)
   MPC.bolt = bo; try { mpFx(u, ag, k, o, d, true, cp); } finally { MPC.bolt = null; }
@@ -16522,7 +16550,7 @@ const netOmenFts0=okFtsAt;okFtsAt=function(x,z){if(!(NET.socket&&MP.st==='game'&
 // Anchor placement/return have no local charge delta. Send intent before legacy optimistic movement.
 // Chamber Headhunter (Q) is the server's: each press takes one charge and swaps in a 1-round Sheriff (Q again puts it
 // away and refunds the round). The local overlay (BC.eq 'hp') only drew the HUD; online fire went to the held gun.
-const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&!(FV.buy>0&&(FV.menu||J.pick==='Omen'&&code==='KeyC'||J.pick==='Chamber'&&code==='KeyE'))/* buy phase: abilities allowed (VALORANT; server castAbility), Omen's teleport stays locked */){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Jett'&&code==='KeyE'&&netTwReady()){const d=jDashKeys();m.f=d.f;m.s=d.s;m.r=+d.r.toFixed(4);J.dash=jDash(d);NET.tw=null;NET.dashUntil=performance.now()+XPAR2.dashTime*1000+250;}/* Tailwind dash predicted at once (the server runs the same shared-motor dash from these keys / yaw) */if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
+const netAbilityKey0=jKey;jKey=function(code){if(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)&&(J.pick==='Reyna'&&['KeyC','KeyQ','KeyE','KeyX'].includes(code)||(J.pick==='Chamber'||J.pick==='Breach')&&code==='KeyE'||J.pick==='Chamber'&&code==='KeyQ'||J.pick==='Omen'&&code==='KeyC'||J.pick==='Jett'&&(code==='KeyQ'||code==='KeyE'||code==='KeyX')||J.pick==='Skye'&&code==='KeyC')){if(running&&player.hp>0&&!(FV.buy>0&&(FV.menu||!xBpOk(J.pick,code[3].toLowerCase())))/* buy phase: only the VALORANT setup abilities (XBPA = server BUY_PHASE) */){const m={t:'ab',k:code[3].toLowerCase()};if(J.pick==='Jett'&&code==='KeyE'&&netTwReady()){const d=jDashKeys();m.f=d.f;m.s=d.s;m.r=+d.r.toFixed(4);J.dash=jDash(d);NET.tw=null;NET.dashUntil=performance.now()+XPAR2.dashTime*1000+250;}/* Tailwind dash predicted at once (the server runs the same shared-motor dash from these keys / yaw) */if(J.pick==='Breach'&&code==='KeyE'&&typeof XABT!=='undefined'&&XABT.hold)m.pw=+XABT.hold.pw.toFixed(3);/* Fault Line HOLD FIRE charge */netSend(m);}return;}return netAbilityKey0.apply(this,arguments);};
 function netChamberAnchor(A,time){if(J.pick!=='Chamber')return;J.cd.e=Math.max(0,(A.cool?.e||0)-time);const a=A.anchor;if(!Array.isArray(a)){if(BC.an){scene.remove(BC.an.m);BC.an=null;}return;}if(!BC.an){const m=new THREE.Mesh(ringGeo,fireMat(0xd8b04a,.8));m.rotation.x=-Math.PI/2;scene.add(m);BC.an={m};}BC.an.x=a[0];BC.an.y=a[1];BC.an.z=a[2];BC.an.m.position.set(a[0],a[1]+.06,a[2]);}
 // Online Showstopper: the launcher's 1.4 s equip and 10 s window run on the server's clock (status ssr = equip left, ssu =
 // window left). The page counted RS.ssd / RS.sst down by its clamped frame dt (<= 0.1 s), so on a ~1 frame/s page the local
@@ -16621,8 +16649,8 @@ const netSgSl0=sgSl;sgSl=function(u,cq){if(!(NET.socket&&J.pick==='Reyna'&&netRe
 
 
 // Throw intent carries no damage, victim, position or remaining-knife claims.
-const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||(FV.buy>0&&FV.menu)||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
-const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||(FV.buy>0&&FV.menu)||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
+const netThrow0=jThrow;jThrow=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netThrow0.apply(this,arguments);if(!running||player.hp<=0||(FV.buy>0&&(FV.menu||!xBpOk(J.pick,'x')))||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=1/6;/* server Blade Storm fireRate 6 (wiki) */netSend({t:'blade'});kick=1;SFX.ab('bsThrow');};
+const netBurst0=jBurst;jBurst=function(){if(!(NET.socket&&MP.st==='game'&&(MP.m5||NET.tab)))return netBurst0.apply(this,arguments);if(!running||player.hp<=0||(FV.buy>0&&(FV.menu||!xBpOk(J.pick,'x')))||!J.bsOn||J.bs<1||J.cd.x>0)return;J.cd.x=XBSD.un;J.bsU=XBSD.un;/* server fireBladeBurst: 0.45 s burst unequip */netSend({t:'blade',alt:1});kick=1;SFX.ab('bsThrow');};
 
 // ---- PARTY MODES (modes-1, user 2026-10-26: "add more gamemodes for multiplayer and make it so you can change gamemode when in a team") ----
 // The server room is the party. Its leader (host) picks the mode and map from the Online panel while the party is in the lobby; the
@@ -17482,7 +17510,7 @@ function xEqTick(dt) {
 }
 const xEqKey0 = jKey;
 jKey = function (code) {
-  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))))) return xEqKey0.apply(this, arguments);
+  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || !xBpOk(J.pick, code[3].toLowerCase())))) return xEqKey0.apply(this, arguments); // buy phase: a key outside XBPA goes to jKey, which refuses it
   if (code === "KeyE" && J.pick === "Skye" && J.eq && J.eq.st === "steer" && RS.hk) { J.eq.st = "rec"; J.eq.t = J.eq.rec = xUneqT("e"); RS.hk.hold = false; return xEqKey0.apply(this, arguments); } // RE-USE while steering: pop the hawk
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
@@ -29651,6 +29679,7 @@ function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
     if (k === "x") { const x1 = p[0], z1 = p[1], x2 = p[2], z2 = p[3], cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, half = Math.max(4, Math.hypot(x2 - x1, z2 - z1) / 2); J.ult = 0; const m = a18Ring(new THREE.Vector3(cx, 0, cz), Math.min(half, 60), 0x9a6ff0, 0.5); a18Fx({ kind: "div", m, t: C.star.divideLife }); SFX.ab("updraft"); say("Cosmic Divide", 900); return; }
     if (k === "s") { // place a persistent Star, or dissipate one that is clicked (wiki Stars / Nebula-Dissipate)
       const s0 = a18StarNear(p[0], p[1], C.star.placeR);
+      if (s0 && xBpOn()) { blip(120, 0.08, "square", 0.1); return; } /* buy phase: no Dissipate */
       if (s0) { a18StarDrop(s0); a18Smoke(new THREE.Vector3(s0.x, 0, s0.z), C.star.fakeNebula, C.star.nebulaR, 0x7a4fd0, 0xc9a8f2); A.starBack = performance.now() / 1000 + C.star.dissipateDelay; SFX.ab("updraft"); say("Dissipate", 700); return; }
       if (A.stars < 1) { blip(120, 0.08, "square", 0.1); return; }
       A.stars--; const gy = (() => { try { const g = groundAt(p[0], p[1], 0.3, typeof player !== "undefined" ? player.y : 3); return Number.isFinite(g) ? g : 0; } catch (e) { return 0; } })(); /* the marker and its activations sit on the real ground, not y=0 */
@@ -29674,7 +29703,7 @@ function a18Tac(k) { // true = key consumed; "no" = resources short; false = not
   if (J.pick === "Astra") {
     if (on && A18TAC.mode === "astra") {
       if (k === "c" || k === "q" || k === "e") { A18TAC.arm = A18TAC.arm === k ? null : k; A18TAC.wall = null; say(A18TAC.arm ? { c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[A18TAC.arm] + " armed · click a placed Star" : "Click places a Star · click a Star to dissipate", 900); return true; }
-      if (k === "x") { A18TAC.wall = []; A18TAC.arm = null; say("Cosmic Divide · click both ends", 900); return true; }
+      if (k === "x") { if (xBpOn()) return xBpNo("Cosmic Divide · not in the buy phase"), true; A18TAC.wall = []; A18TAC.arm = null; say("Cosmic Divide · click both ends", 900); return true; }
       return true; } // swallow other keys while the map is up
     if (k !== "x") return false;
     if (J.ult < K().u) return "no";
@@ -29684,6 +29713,7 @@ function a18Tac(k) { // true = key consumed; "no" = resources short; false = not
         if (A18TAC.arm) { const pts = a18StarPts(); let near = false; for (const q of pts) if (Math.hypot(q[0] - x, q[1] - z) < A18C.star.selectR) { near = true; break; }
           if (!near) { say("No Star there · click a placed Star", 900); return false; }
           const arm = A18TAC.arm; A18TAC.arm = null; a18TacSend(arm, [x, z]); say({ c: "Gravity Well", q: "Nova Pulse", e: "Nebula" }[arm], 700); return false; }
+        if (xBpOn() && a18StarNear(x, z, A18C.star.placeR)) { say("Dissipate · not in the buy phase", 800); return false; } /* buy phase: placement only */
         a18TacSend("s", [x, z]); return false; },
       cancel: () => { if (A18TAC.mode) { A18TAC.mode = null; A18TAC.wall = null; A18TAC.arm = null; if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); } } })) { A18TAC.mode = null; return false; }
     if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) netSend({ t: "ab", k: "x" }); // the server gates map-placed stars on its own Astral Form state
@@ -29714,12 +29744,12 @@ function a18Key(code) {
   if (A.supp > 0) return no();
   if (a === "Astra" || a === "Tejo") { const r = a18Tac(k); if (r === true) return true; if (r === "no") return no(); }
   const chargeOk = k === "x" ? J.ult >= K().u : (a === "Astra" ? true : J[k] > 0); // Astra: the placed-star check inside the case is the gate, not the pool
-  if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") A.cloudOn = !A.cloudOn; else if (k === "e") A.toxOn = !A.toxOn; else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
+  if (a === "Viper" && (k === "q" && A.cloud || k === "e" && A.screen || k === "x" && A.pit)) { J.cd[k] = 0.6; if (k === "q") { A.cloudOn = !A.cloudOn; if (A.cloudOn && !A.cloudM && A.fuel > 0) A.cloudM = a18Smoke(A.cloud, 3600, C.pcloud.r, 0x3a6a2a, 0x7ac24a); } else if (k === "e") { A.toxOn = !A.toxOn; if (A.toxOn && !A.screenM && A.screenP && A.fuel > 0) A.screenM = a18Smoke(A.screenP, 3600, C.tscreen.len / 2, 0x3a6a2a, 0x7ac24a); } /* turning an emitter on (placed off in the buy phase, or after its fuel ran out) brings its cloud back */ else { A.pit = 0; if (A.pitM) { jRel(A.pitM); A.pitM = 0; } } return true; }
   if (a === "Vyse" && k === "e" && A.rose) { const p = A.rose; A.rose = 0; try { vyxArcRoseFlash({ x: p.x, y: p.y || 0, z: p.z }); if (A.roseH) A.roseH.end(); A.roseH = null; } catch (er) {} a18Blind(p, C.rose.blind); SFX.flash(); return true; }
   if (a === "Veto" && k === "c" && A.xcut) { try { vtxCrosscutTP({ x: P.x, y: P.y || 0, z: P.z }, { x: A.xcut.x, y: A.xcut.y || 0, z: A.xcut.z }, { caster: true }); if (A.xcutH) A.xcutH.end(); A.xcutH = null; } catch (er) {} P.x = A.xcut.x; P.z = A.xcut.z; P.y = A.xcut.y; A.xcut = 0; SFX.ab("dash"); return true; }
   if (a === "Waylay" && k === "e" && A.mark) { P.x = A.mark.x; P.y = A.mark.y; P.z = A.mark.z; A.mark = 0; J.e = 0; SFX.ab("dash"); return true; }
   if (a === "Yoru" && k === "e" && A.gate && !(A.gateTp > 0)) { A.gateTp = 1.2; say("Gatecrash", 700); return true; } /* wiki: 1.2 s total (0.5 s windup + 0.7 s arrival); the move lands in a18Tick */
-  if (a === "Neon" && k === "e" && A.gear > 0) { if (A.slides > 0) { A.slides--; A.gear = 0; J.dash = jDash(); SFX.ab("dash"); /* the slide ends High Gear (wiki); firing during it is allowed (v8.11) */ } return true; }
+  if (a === "Neon" && k === "e" && A.gear > 0) { if (A.slides > 0) { if (!xBpOn()) A.slides--; /* buy phase: the slide charge is not consumed (wiki) */ A.gear = 0; J.dash = jDash(); SFX.ab("dash"); /* the slide ends High Gear (wiki); firing during it is allowed (v8.11) */ } return true; }
   if (!chargeOk || J.cd[k] > 0) return no();
   const p = a18Aim(14), d = jAim();
   const spend = () => { if (k === "x") J.ult = 0; else if (a === "Astra") A.stars--; else J[k]--; J.cd[k] = 0.6; };
@@ -29756,8 +29786,8 @@ function a18Key(code) {
       return true; }
     case "Viper": { spend();
       if (k === "c") { const z = a18Zone(p, C.snake.life, C.snake.r, C.snake.rate, "Snake Bite", 0x4ad01a); z.visible = false; let gy = p.y || 0; try { const g = groundAt(p.x, p.z, 0.3, (p.y || 0) + 1); if (Number.isFinite(g)) gy = g; } catch (err) {} a18AcidPool(p.x, gy, p.z, C.snake.r, C.snake.life); }
-      else if (k === "q") { A.cloud = p; A.cloudOn = true; A.cloudM = a18Smoke(p, 3600, C.pcloud.r, 0x3a6a2a, 0x7ac24a); }
-      else if (k === "e") { A.screen = 1; A.toxOn = true; const sp = new THREE.Vector3(P.x - Math.sin(yaw) * C.tscreen.len / 2, 0, P.z - Math.cos(yaw) * C.tscreen.len / 2); A.screenM = a18Smoke(sp, 3600, C.tscreen.len / 2, 0x3a6a2a, 0x7ac24a); }
+      else if (k === "q") { A.cloud = p; if (xBpOn()) { A.cloudOn = false; A.cloudM = 0; say("Poison Cloud placed · on at round start", 800); } /* buy phase: placement only */ else { A.cloudOn = true; A.cloudM = a18Smoke(p, 3600, C.pcloud.r, 0x3a6a2a, 0x7ac24a); } }
+      else if (k === "e") { A.screen = 1; const sp = new THREE.Vector3(P.x - Math.sin(yaw) * C.tscreen.len / 2, 0, P.z - Math.cos(yaw) * C.tscreen.len / 2); A.screenP = sp; if (xBpOn()) { A.toxOn = false; A.screenM = 0; say("Toxic Screen placed · on at round start", 800); } /* buy phase: placement only */ else { A.toxOn = true; A.screenM = a18Smoke(sp, 3600, C.tscreen.len / 2, 0x3a6a2a, 0x7ac24a); } }
       else { A.pit = 1; A.pitM = a18Smoke(new THREE.Vector3(P.x, 0, P.z), 3600, C.pit.r, 0x2a5a1a, 0x6ab23a); }
       return true; }
     case "Hush": { spend();
@@ -29775,7 +29805,7 @@ function a18Key(code) {
     case "Neon": { spend();
       if (k === "c") { const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), C.fastlane.dist / 2, 0x3a8af0, 0.4); try { jxBind(m, neoxFastLane({ x: P.x, y: P.y || 0, z: P.z }, Math.atan2(-d.x, -d.z), C.fastlane.life), 1); } catch (e) {} a18Fx({ kind: "wallg", m, t: C.fastlane.life }); }
       else if (k === "q") { let ok = false; try { ok = !!neoxRelayBolt({ x: P.x, y: (P.y || 0) + 1.4, z: P.z }, { x: p.x, y: p.y, z: p.z }, { flyT: 0.4, radius: C.relay.r }); } catch (e) {} a18Orb(p, 0.4, () => { for (const b of a18BotsIn(p, C.relay.r)) b.blind = Math.max(b.blind || 0, C.relay.concuss); SFX.ab("cbPop", p); }, ok); }
-      else if (k === "e") { A.gear = 1; say("High Gear", 700); }
+      else if (k === "e") { if (xBpOn()) J.e++; /* buy phase: High Gear spends no energy charge (wiki; spend() took it) */ A.gear = 1; say("High Gear", 700); }
       else { A.od = C.od.life; A.stim = C.od.life; say("Overdrive", 900); }
       return true; }
     case "Waylay": { spend();
@@ -29785,9 +29815,9 @@ function a18Key(code) {
       else { A.haste = C.cpaths.haste; const dd = new THREE.Vector3(d.x, 0, d.z).normalize(), p0 = new THREE.Vector3(P.x + dd.x * C.cpaths.ahead, 0, P.z + dd.z * C.cpaths.ahead), m = new THREE.Mesh(new THREE.PlaneGeometry(C.cpaths.w, C.cpaths.len), new THREE.MeshBasicMaterial({ color: 0xf0c04a, transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })); m.rotation.x = -Math.PI / 2; m.rotation.z = Math.atan2(-dd.x, -dd.z); m.rotation.order = "YXZ"; m.rotation.set(-Math.PI / 2, 0, 0); m.rotation.order = "ZXY"; m.rotation.y = 0; m.position.set(p0.x + dd.x * C.cpaths.len / 2, (typeof player !== "undefined" ? player.y : 0) + 0.1, p0.z + dd.z * C.cpaths.len / 2); m.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), Math.atan2(-dd.x, -dd.z)); scene.add(m); try { jxBind(m, wayxConvergentPaths({ x: P.x, y: P.y || 0, z: P.z }, Math.atan2(-dd.x, -dd.z), { len: C.cpaths.len, w: C.cpaths.w, wind: C.cpaths.wind, life: 2.4 }), 1); } catch (e) {} a18Fx({ kind: "paths", m, p: p0, d: dd, t: C.cpaths.wind }); }
       return true; }
     case "Yoru": { spend();
-      if (k === "c") { let jx = null; try { yoxFakeoutSpawn(P); jx = yoxFakeoutFigure(); } catch (e) { try { xE(e); } catch (e2) {} } a18Fx({ kind: "decoy", p: new THREE.Vector3(P.x, 1, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.fakeout.life, jx, m: jx ? null : jM(smokeGeo, xSmokeM("a18decoy", 0x8a92ff, 0xc9d2ff)) }); }
+      if (k === "c") { let jx = null; try { yoxFakeoutSpawn(P); jx = yoxFakeoutFigure(); } catch (e) { try { xE(e); } catch (e2) {} } a18Fx({ kind: "decoy", p: new THREE.Vector3(P.x, 1, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), still: xBpOn() /* buy phase: stationary placement only */, t: C.fakeout.life, jx, m: jx ? null : jM(smokeGeo, xSmokeM("a18decoy", 0x8a92ff, 0xc9d2ff)) }); }
       else if (k === "q") { let jo = null; try { jo = yoxBlindsideOrb(); if (jo && jo.fx && jo.fx.objs && jo.fx.objs[0]) jo.fx.objs[0].position.copy(p); } catch (e) {} a18Orb(p, C.blindside.delay, () => { try { if (jo) yoxEnd(jo); yoxBlindsidePop(p); } catch (e) {} a18Blind(p, C.blindside.blind); }, !!jo); }
-      else if (k === "e") { A.gate = a18Aim(C.gcrash.range); try { A.gateH = yoxGatecrashAnchor(A.gate, 30); } catch (e) {} }
+      else if (k === "e") { A.gate = xBpOn() ? new THREE.Vector3(P.x, P.y || 0, P.z) : a18Aim(C.gcrash.range); /* buy phase: placed where Yoru stands */ try { A.gateH = yoxGatecrashAnchor(A.gate, 30); } catch (e) {} }
       else { A.drift = C.drift.life; try { yoxDriftEnter({ x: P.x, y: P.y, z: P.z }); A.driftV = yoxDriftVeil(C.drift.life); } catch (e) {} say("Dimensional Drift", 900); }
       return true; }
     case "Fade": { spend();
@@ -29889,7 +29919,7 @@ function a18Tick(dt) {
   if (A.ndy > 0) { A.ndy -= dt; if (A.ndy <= 0 && P.hp <= 0) { P.hp = 100; say("Back.", 800); } }
   if (P.hp <= 0 && J.pick === "Clove" && A.ndyT <= 0 && J.ult >= K().u) A.ndyT = C.ndy.window; else if (P.hp > 0) A.ndyT = 0;
   if (A.ndyT > 0) A.ndyT -= dt;
-  if (A.gear > 0) { A.fuel = Math.max(0, A.fuel - C.gear.drain * dt); if (A.fuel <= 0) A.gear = 0; else A.haste = Math.max(A.haste, 0.3); }
+  if (A.gear > 0) { if (!xBpOn()) A.fuel = Math.max(0, A.fuel - C.gear.drain * dt); /* buy phase: no energy drain */ if (A.fuel <= 0) A.gear = 0; else A.haste = Math.max(A.haste, 0.3); }
   else if (J.pick === "Neon" && A.fuel < C.fuel.max) A.fuel = Math.min(C.fuel.max, A.fuel + C.gear.regen * dt);
   if (J.pick === "Viper" && !A.cloudOn && !A.toxOn && A.fuel < C.fuel.max) A.fuel = Math.min(C.fuel.max, A.fuel + C.fuel.regen * dt);
   if ((A.cloudOn || A.toxOn) && A.fuel > 0) A.fuel = Math.max(0, A.fuel - C.fuel.drain * dt);
@@ -29927,7 +29957,7 @@ function a18Tick(dt) {
       case "armagboom": { e.age += dt; const u = Math.min(1, e.age / e.life), sc = 0.6 + u * 2.6; e.core.scale.setScalar(sc * (e.size || 1)); e.core.material.opacity = 0.6 * Math.pow(1 - u, 1.4); e.core.material.color.setHex(u < 0.35 ? 0xffc040 : u < 0.7 ? 0xff7020 : 0xb02a10); e.ring.scale.setScalar((1 + u * 4.2) * (e.size || 1)); e.ring.material.opacity = 0.8 * (1 - u); if (u >= 1) { scene.remove(e.core); scene.remove(e.ring); e.core.material.dispose(); e.ring.material.dispose(); keep = false; } break; }
       case "armagchain": { e.age += dt; const AG = C.armag; let done = true; for (let i = 0; i < AG.segs; i++) for (let j = 0; j < AG.ticks; j++) { const id = i * AG.ticks + j; if (e.fired[id]) continue; done = false; if (e.age < i * AG.gap + j * AG.tick) continue; e.fired[id] = 1; const o = new THREE.Vector3(e.p.x + e.d.x * AG.seg * i, 0, e.p.z + e.d.z * AG.seg * i); for (const b of a18StripBots(o, e.d, AG.seg, AG.w)) jHit(b, AG.dmg, "Armageddon"); /* wiki: affects allies and self (allies take a third, the server abilityDamage rule) */ { const inS = (x, z) => { const f = (x - o.x) * e.d.x + (z - o.z) * e.d.z, sd = (x - o.x) * -e.d.z + (z - o.z) * e.d.x; return f > 0 && f < AG.seg && Math.abs(sd) < AG.w / 2; }; for (const al of allies) if (al && al.alive && inS(al.g.position.x, al.g.position.z)) jHit(al, AG.dmg / 3, "Armageddon"); if (P.hp > 0 && inS(P.x, P.z)) hurt(P, AG.dmg, "Armageddon"); } for (let b = 0; b < 2; b++) { const f = (i + Math.random()) * AG.seg, sd = (Math.random() - 0.5) * (AG.w - 2), x = e.p.x + e.d.x * f - e.d.z * sd, z = e.p.z + e.d.z * f + e.d.x * sd; let gy = 0; try { const g = groundAt(x, z, 0.3, typeof player !== "undefined" ? player.y : 3); if (Number.isFinite(g)) gy = g; } catch (err) {} a18ArmagBoom(x, gy, z); } } if (done && e.age > AG.segs * AG.gap + AG.ticks * AG.tick) { a18ArmagFree(e.grp); keep = false; } break; }
       case "nightfall": if (e.t <= 0) { for (const b of a18StripBots(e.p, e.d, C.nightfall.dist, C.nightfall.w)) { a18DecayB(b, C.nightfall.decay); b.mark = C.nightfall.decay ? 12 : 0; } SFX.ab("cbPop", e.p); keep = false; } break;
-      case "decoy": { e.p.addScaledVector(e.d, C.fakeout.speed * dt); if (e.m) { e.m.position.set(e.p.x, 1, e.p.z); scene.add(e.m); } try { if (e.jx && e.jx.fx && e.jx.fx.objs && e.jx.fx.objs[0]) { const o = e.jx.fx.objs[0]; o.position.set(e.p.x, groundAt(e.p.x, e.p.z, 0.3, e.p.y + 1) || 0, e.p.z); o.rotation.y = Math.atan2(e.d.x, e.d.z); } } catch (er) {} if (e.t <= 0) { if (e.m) jRel(e.m); try { if (e.jx) { yoxEnd(e.jx); yoxFakeoutPop(e.p); } } catch (er) {} a18Blind(e.p, C.blindside.blind); keep = false; } break; }
+      case "decoy": { if (!e.still) e.p.addScaledVector(e.d, C.fakeout.speed * dt); if (e.m) { e.m.position.set(e.p.x, 1, e.p.z); scene.add(e.m); } try { if (e.jx && e.jx.fx && e.jx.fx.objs && e.jx.fx.objs[0]) { const o = e.jx.fx.objs[0]; o.position.set(e.p.x, groundAt(e.p.x, e.p.z, 0.3, e.p.y + 1) || 0, e.p.z); o.rotation.y = Math.atan2(e.d.x, e.d.z); } } catch (er) {} if (e.t <= 0) { if (e.m) jRel(e.m); try { if (e.jx) { yoxEnd(e.jx); yoxFakeoutPop(e.p); } } catch (er) {} a18Blind(e.p, C.blindside.blind); keep = false; } break; }
       case "seeker": { const t = e.tg; if (!t || !t.alive) { keep = false; break; } const d = [t.g.position.x - e.p.x, t.g.position.z - e.p.z], l = Math.hypot(d[0], d[1]); if (l < 0.8 || e.t <= 0) { if (e.near) t.blind = Math.max(t.blind || 0, e.near); if (e.conc) t.blind = Math.max(t.blind || 0, e.conc); keep = false; } else { e.p.x += d[0] / l * e.sp * dt; e.p.z += d[1] / l * e.sp * dt; } break; }
       case "sensor": if (e.arm > 0) e.arm -= dt; else { const t = a18BotsIn(e.p, C.sensor.r)[0]; if (t) { for (const b of a18BotsIn(e.p, C.sensor.r)) b.blind = Math.max(b.blind || 0, C.sensor.concuss); SFX.ab("cbPop", e.p); keep = false; } } if (e.t <= 0) keep = false; break;
       case "choke": { const t = a18BotsIn(e.p, C.choke.r)[0]; if (t && !e.done) { e.done = true; for (const b of a18BotsIn(e.p, C.choke.r)) { a18DecayB(b, C.choke.decay); b.hind = C.choke.slow; } SFX.ab("cbPop", e.p); keep = false; } if (e.t <= 0) keep = false; break; }
@@ -29952,10 +29982,11 @@ const a18Round0 = jRound; jRound = function (match) { a18Round0(match); J.medGen
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
 const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code === "KeyC" && !XABT.casting) return a18KeyJ(code); if (A18SET.has(J.pick) && typeof code === "string" && /^Key[CQEX]$/.test(code)) { /* only the ability keys reach the 18-agent kit: slot keys (1/2/3), reload and the rest fall through (a18Key read any other code as the ult) */ if (mode === "five" && FV.buy > 0 && FV.menu) return true; /* buy menu open: its keys buy, never cast (= main jKey / xEqKey); the buy phase itself allows abilities (VALORANT; user 2026-11-06) */ if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+{ const bpK0 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code) && typeof xBpBlock === "function" && xBpBlock(code[3].toLowerCase())) return true; return bpK0.apply(this, arguments); }; } // outermost: the buy phase casts only the VALORANT setup abilities (XBPA, base page; = server BUY_PHASE), placement only where listed
 // Equip release must reach this final dispatch, not the pre-A18 captured jKey. Other kits retain their prior release path.
 const a18CastKey0 = XABT.castKey; XABT.castKey = code => J.pick === "Deadlock" && code === "KeyC" ? jKey(code) : (a18CastKey0 || xEqKey0)(code);
 // USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up
-const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu)) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
+const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru" && xBpOn() && player && player.hp > 0) return xBpNo("Gatecrash · placement only in the buy phase"), true; if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu)) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
 const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt); } catch (e) { xE(e); } };
 
 // ---- AGENTS 18 ONLINE ----

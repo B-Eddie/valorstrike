@@ -85,15 +85,15 @@ export function reward18(u,A){/* 2-kill signature resets (wiki): Iso Double Tap,
 export function cast18(sim,u,m,o,d,push){
  const k=m.k,A=u.ability,ag=u.agent,C=A18,K=kits[ag];
  if(u.suppressUntil>sim.time)return false;
- if(ag==='Neon'&&k==='e'&&u.gearOn&&m.alt===true){if((A.slides||0)<1)return false;A.slides--;u.gearOn=false;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);A.cool.e=sim.time+.3;cast(sim,u,k,o,d,[u.x,u.y,u.z]);return true;}/* High Gear ALT FIRE: slide (wiki High_Gear: 1 charge v9.11, 2-kill reset, deactivates High Gear; Neon can fire during the slide, v8.11) */
+ if(ag==='Neon'&&k==='e'&&u.gearOn&&m.alt===true){if((A.slides||0)<1)return false;if(!(sim.buy>0))A.slides--;/* buy phase: the slide charge is not consumed (wiki) */u.gearOn=false;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);A.cool.e=sim.time+.3;cast(sim,u,k,o,d,[u.x,u.y,u.z]);return true;}/* High Gear ALT FIRE: slide (wiki High_Gear: 1 charge v9.11, 2-kill reset, deactivates High Gear; Neon can fire during the slide, v8.11) */
  // recasts / toggles that spend nothing
- if(ag==='Viper'&&k==='q'&&A.cloud){A.cloudOn=!A.cloudOn;A.cool.q=sim.time+.3;return true;}
- if(ag==='Viper'&&k==='e'&&A.screen){A.toxOn=!A.toxOn;A.cool.e=sim.time+.3;return true;}
+ if(ag==='Viper'&&k==='q'&&A.cloud){if(sim.buy>0)return false;/* buy phase: placement only */A.cloudOn=!A.cloudOn;A.cool.q=sim.time+.3;return true;}
+ if(ag==='Viper'&&k==='e'&&A.screen){if(sim.buy>0)return false;A.toxOn=!A.toxOn;A.cool.e=sim.time+.3;return true;}
  if(ag==='Viper'&&k==='x'&&A.pit){A.pit=null;sim.effects=sim.effects.filter(e=>!(e.kind==='pit'&&e.owner===u.id));A.cool.x=sim.time+.3;return true;}
- if(ag==='Vyse'&&k==='e'&&A.rose){const rp=A.rose;A.rose=null;A.e=0;A.cool.e=sim.time+.3;sim.effects=sim.effects.filter(e=>!(e.kind==='rose'&&e.owner===u.id));fx(sim,u,'flash',[...rp],.25,30,{at:sim.time+.05,blind:A18.rose.blind});cast(sim,u,k,o,d,[...rp]);return true;}
+ if(ag==='Vyse'&&k==='e'&&A.rose){if(sim.buy>0)return false;/* buy phase: placement only, no flash */const rp=A.rose;A.rose=null;A.e=0;A.cool.e=sim.time+.3;sim.effects=sim.effects.filter(e=>!(e.kind==='rose'&&e.owner===u.id));fx(sim,u,'flash',[...rp],.25,30,{at:sim.time+.05,blind:A18.rose.blind});cast(sim,u,k,o,d,[...rp]);return true;}
  if(ag==='Veto'&&k==='c'&&A.xcutReady){u.pendingTeleport={kind:'xcut',p:[...A.xcut],at:sim.time+.3};A.xcut=null;A.xcutReady=false;sim.effects=sim.effects.filter(e=>!(e.kind==='xcut'&&e.owner===u.id));cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Waylay'&&k==='e'&&A.marker){/* Refract: immune travel back (wiki) */A.cool.e=sim.time+.3;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+C.refract.travel);u.pendingTeleport={kind:'refract',p:[...A.marker],at:sim.time+C.refract.travel};A.marker=null;A.e=0;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
- if(ag==='Yoru'&&k==='e'&&A.gate){/* Gatecrash (wiki): recast teleports in 1.2 s total (0.5 s windup + 0.7 s arrival); USE (m.fk) fakes it - the same audio cue, no teleport, the anchor survives, and a 30 s decal marks the fake (v4.04) */
+ if(ag==='Yoru'&&k==='e'&&A.gate){if(sim.buy>0)return false;/* buy phase: placement only, no teleport / fake *//* Gatecrash (wiki): recast teleports in 1.2 s total (0.5 s windup + 0.7 s arrival); USE (m.fk) fakes it - the same audio cue, no teleport, the anchor survives, and a 30 s decal marks the fake (v4.04) */
   if(m.fk===1){fx(sim,u,'gatefake',[...A.gate.p],30,1.2,{at:sim.time});cast(sim,u,k,o,d,[...A.gate.p]);return true;}
   u.pendingTeleport={kind:'gatecrash',p:[...A.gate.p],at:sim.time+1.2};A.gate=null;cast(sim,u,k,o,d,[...u.pendingTeleport.p]);return true;}
  if(ag==='Astra'&&u.human){/* Astral Form (wiki Astral_Form/Stars/Cosmic_Divide): X opens the map view; a map click (k 's') places a persistent Star, or dissipates one clicked; c/q/e on the map activate the placed star nearest the click; X across two points places Cosmic Divide and exits, X alone exits */
@@ -101,12 +101,13 @@ export function cast18(sim,u,m,o,d,push){
   if(mp){const gy=sim.world.ground(mp[0],mp[2],3);mp[1]=Number.isFinite(gy)?gy:0;}/* stars and their activations sit on the map's real ground, not y=0 */
   if(k==='x'){
    if(!A.astral){if(A.ult<K.u)return false;A.astral=true;u.astralForm=true;return true;}
-   if(Array.isArray(m.p)&&m.p.length>=4&&m.p.slice(0,4).every(Number.isFinite)){const x1=Math.max(-200,Math.min(200,m.p[0])),z1=Math.max(-200,Math.min(200,m.p[1])),x2=Math.max(-200,Math.min(200,m.p[2])),z2=Math.max(-200,Math.min(200,m.p[3]));
+   if(Array.isArray(m.p)&&m.p.length>=4&&m.p.slice(0,4).every(Number.isFinite)){if(sim.buy>0)return false;/* buy phase: no Cosmic Divide */const x1=Math.max(-200,Math.min(200,m.p[0])),z1=Math.max(-200,Math.min(200,m.p[1])),x2=Math.max(-200,Math.min(200,m.p[2])),z2=Math.max(-200,Math.min(200,m.p[3]));
     A.astral=false;u.astralForm=false;A.ult=0;const cx=(x1+x2)/2,cz=(z1+z2)/2,yaw=Math.atan2(-(x2-x1),-(z2-z1)),half=Math.max(4,Math.hypot(x2-x1,z2-z1)/2);
     fx(sim,u,'divide',[cx,0,cz],C.star.divideLife,half,{yaw});cast(sim,u,k,o,d,[cx,0,cz]);return true;}
    A.astral=false;u.astralForm=false;return true;}
   if(k==='s'){if(!A.astral||!mp)return false;/* Stars place only from the Astral Form map (wiki Stars) */
    const s0=ownStarNear(sim,u,mp,C.star.placeR);
+   if(s0&&sim.buy>0)return false;/* buy phase: placement only, no Dissipate */
    if(s0){/* Dissipate (wiki Nebula): click a placed star - brief fake Nebula, the star returns after 1.25 s */
     sim.effects=sim.effects.filter(e=>e!==s0);fx(sim,u,'smoke',s0.p,C.star.fakeNebula,C.star.nebulaR);u.starBackAt=sim.time+C.star.dissipateDelay;cast(sim,u,k,o,d,s0.p);return true;}
    if(A.stars<1)return false;A.stars--;A.cool[k]=sim.time+.3;
@@ -183,7 +184,7 @@ export function cast18(sim,u,m,o,d,push){
    else if(k==='e'){u.isoShield=1;u.dtShieldAt=sim.time+C.dtap.life;}
    else{/* Kill Contract (wiki): the first enemy in the column is pulled into a walled 1v1 cell with Iso; suppress on entry, 13 s or a kill ends it */const t=enemies(sim,u).find(v=>{const q=[v.x-u.x,v.z-u.z],f=q[0]*d[0]+q[1]*d[2];return f>0&&f<C.kc.range&&Math.abs(q[0]*d[2]-q[1]*d[0])<C.kc.w/2;});if(!t)return false;duel18(sim,u,t,C);}
    cast(sim,u,k,o,d,p);return true;}
-  case 'Neon':{spend();
+  case 'Neon':{if(k==='e'&&sim.buy>0)A.cool.e=sim.time+.3;else spend();/* buy phase: High Gear spends no energy charge (wiki) */
    if(k==='c')fx(sim,u,'fastlane',[u.x,u.y,u.z],C.fastlane.life,C.fastlane.dist/2,{yaw:u.look});
    else if(k==='q'){fx(sim,u,'blast',p,.5,C.relay.r,{concuss:C.relay.concuss,at:sim.time+.4});}
    else if(k==='e'){if(u.gearOn&&m.alt===true&&(A.slides||0)>0){A.slides--;u.gearOn=false;u.dash=Motor.dash(m.f||1,0,u.look,6,.3);/* slide: ends High Gear (wiki) */}else u.gearOn=true;/* High Gear: haste while fuel lasts; ALT slides (1 charge v9.11, 2 kills reset) */}
@@ -196,9 +197,9 @@ export function cast18(sim,u,m,o,d,push){
    else{const P=C.cpaths;u.hasteUntil=sim.time+P.haste;fx(sim,u,'paths',[u.x-Math.sin(u.look)*P.ahead,u.y,u.z-Math.cos(u.look)*P.ahead],P.haste,P.len,{at:sim.time+P.wind,w:P.w,len:P.len,yaw:u.look,hinder:P.hinder});}
    cast(sim,u,k,o,d,p);return true;}
   case 'Yoru':{spend();
-   if(k==='c')fx(sim,u,'decoy',[u.x,u.y,u.z],C.fakeout.life,0,{d:[aim(u)[0],0,aim(u)[2]],speed:C.fakeout.speed,ag:u.agent});
+   if(k==='c')fx(sim,u,'decoy',[u.x,u.y,u.z],C.fakeout.life,0,{d:[aim(u)[0],0,aim(u)[2]],speed:sim.buy>0?0:C.fakeout.speed,ag:u.agent});/* buy phase: stationary placement only */
    else if(k==='q')fx(sim,u,'flash',[...p],C.blindside.delay+.2,30,{at:sim.time+C.blindside.delay,blind:C.blindside.blind});
-   else if(k==='e')A.gate={p:[...land(sim,u,C.gcrash.range)],until:sim.time+C.gcrash.life};
+   else if(k==='e')A.gate={p:sim.buy>0?[u.x,u.y,u.z]:[...land(sim,u,C.gcrash.range)],until:sim.time+C.gcrash.life};/* buy phase: placed where Yoru stands */
    else{u.driftUntil=sim.time+C.drift.life;u.invulnerableUntil=Math.max(u.invulnerableUntil||0,sim.time+C.drift.life);}
    cast(sim,u,k,o,d,p);return true;}
   case 'Fade':{spend();
@@ -301,7 +302,7 @@ export function tick18(sim,dt){
   if(u.pendingTeleport&&u.pendingTeleport.kind!=='xcut'&&T>=u.pendingTeleport.at){[u.x,u.y,u.z]=u.pendingTeleport.p;u.pendingTeleport=null;u.vy=0;}
   if(u.ndy&&T>=u.ndy.at){u.ndy=null;u.alive=true;u.hp=100;u.loading=false;}
   if(u.hushFlow&&T>=u.hushFlow.at){u.hushFlow=null;u.vy=A18.flow.speed*.5;u.levUntil=T+.6;}
-  if(u.gearOn){A.fuel=Math.max(0,A.fuel-A18.gear.drain*dt);if(A.fuel<=0)u.gearOn=false;else u.hasteUntil=Math.max(u.hasteUntil||0,T+.3);}
+  if(u.gearOn){if(!(sim.buy>0))A.fuel=Math.max(0,A.fuel-A18.gear.drain*dt);/* buy phase: no energy drain */if(A.fuel<=0)u.gearOn=false;else u.hasteUntil=Math.max(u.hasteUntil||0,T+.3);}
   else if(u.agent==='Neon'&&A.fuel<A18.fuel.max)A.fuel=Math.min(A18.fuel.max,A.fuel+A18.gear.regen*dt);
   if(u.agent==='Viper'&&!A.cloudOn&&!A.toxOn&&A.fuel<A18.fuel.max)A.fuel=Math.min(A18.fuel.max,A.fuel+A18.fuel.regen*dt);
   

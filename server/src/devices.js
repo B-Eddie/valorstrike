@@ -85,7 +85,7 @@ export function startDevice(sim,u,ty,p,push,m={}){
 // Checks before a charge is spent. Returns true/false to answer the intent, undefined to continue the cast.
 export function preCastDevice(sim,u,k){
  const A=u.ability;
- if(u.agent==='Killjoy'&&k==='c'){const dormant=sim.effects.filter(e=>e.kind==='nanoswarm'&&e.owner===u.id&&!e.armed);if(dormant.length){for(const e of dormant){e.armed=true;e.until=sim.time+DEV.nanoswarm.active;e.dmgAt=sim.time+DEV.nanoswarm.delay;e.radius=DEV.nanoswarm.radius;}A.cool.c=sim.time+.3;sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k,o:[u.x,u.y+1.6,u.z],d:fwd(u),p:dormant[0].p,ts:Math.round(sim.time*1000)});return true;}}
+ if(u.agent==='Killjoy'&&k==='c'&&!(sim.buy>0)){/* buy phase: placement only, no activation */const dormant=sim.effects.filter(e=>e.kind==='nanoswarm'&&e.owner===u.id&&!e.armed);if(dormant.length){for(const e of dormant){e.armed=true;e.until=sim.time+DEV.nanoswarm.active;e.dmgAt=sim.time+DEV.nanoswarm.delay;e.radius=DEV.nanoswarm.radius;}A.cool.c=sim.time+.3;sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k,o:[u.x,u.y+1.6,u.z],d:fwd(u),p:dormant[0].p,ts:Math.round(sim.time*1000)});return true;}}
  if(u.agent==='Raze'&&k==='q'){const own=sim.effects.filter(e=>e.kind==='blastpack'&&e.owner===u.id&&e.until>sim.time);if(own.length){for(const e of own)packBoom(sim,e);A.cool.q=sim.time+.3;sim.castEvents.push({t:'ac',i:u.id,ag:u.agent,k,o:[u.x,u.y+1.6,u.z],d:fwd(u),p:own[0].p,bp:1,ts:Math.round(sim.time*1000)});return true;}}/* Blast Pack recast: detonate (no charge) */
  if(u.agent==='Chamber'&&k==='q'){if(u.headhunter){if(u.weapon===DEV.headhunter.weapon&&u.ammo>0)A.q=Math.min(8,(A.q||0)+u.ammo);endHeadhunter(u);A.cool.q=sim.time+.3;return true;}if(u.ultWeapon)return false;}
  return undefined;

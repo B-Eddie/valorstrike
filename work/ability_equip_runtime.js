@@ -138,7 +138,7 @@ function xEqTick(dt) {
 }
 const xEqKey0 = jKey;
 jKey = function (code) {
-  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || ((J.pick === "Omen" && (code === "KeyC" || code === "KeyX")) || (J.pick === "Chamber" && code === "KeyE"))))) return xEqKey0.apply(this, arguments);
+  if (XABT.casting || !jOn() || typeof code !== "string" || !/^Key[CQEX]$/.test(code) || (mode === "five" && FV.buy > 0 && (FV.menu || !xBpOk(J.pick, code[3].toLowerCase())))) return xEqKey0.apply(this, arguments); // buy phase: a key outside XBPA goes to jKey, which refuses it
   if (code === "KeyE" && J.pick === "Skye" && J.eq && J.eq.st === "steer" && RS.hk) { J.eq.st = "rec"; J.eq.t = J.eq.rec = xUneqT("e"); RS.hk.hold = false; return xEqKey0.apply(this, arguments); } // RE-USE while steering: pop the hawk
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
