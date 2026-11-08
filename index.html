@@ -29663,7 +29663,7 @@ function a18Reset() { J.medClock=0;for(const u of [player].concat(bots,typeof al
 function a18Aim(dist) { const o = pEye(), d = jAim(); ray.set(o, d); ray.far = dist || 14; const h = ray.intersectObjects(solids)[0]; const t = h ? Math.max(0, h.distance - 0.5) : (dist || 14); const p = o.clone().addScaledVector(d, t); p.y = Math.max(0.05, p.y); return p; }
 function a18Smoke(p, dur, r, c1, c2) { const m = jM(smokeGeo, xSmokeM("a18" + (a18Smoke.n = (a18Smoke.n || 0) + 1), c1, c2)); m.position.set(p.x, (p.y || 0) + 1.7, p.z); scene.add(m); J.smokes.push({ m, p: m.position, t: dur, r: xSmk(m, r) }); SFX.smoke(); return m; }
 function a18Zone(p, life, r, rate, name, col) { const m = jM(zoneGeo, fireMat(col || 0xff5a1a, 0.55)); m.rotation.x = -Math.PI / 2; m.position.set(p.x, 0.05, p.z); m.scale.setScalar(r / 2.5); scene.add(m); J.zones.push({ m, p: p.clone(), t: life, R: 0, r0: r, rate, name }); return m; }
-function a18Fx(o) { (J.a18fx = J.a18fx || []).push(o); return o; }
+function a18Fx(o) { if (typeof o.t !== "number") o.t = 1e9; /* age / life lanes (Armageddon chain, quake / acid fx, flares) end on their own clock; t -= dt on undefined made NaN */ (J.a18fx = J.a18fx || []).push(o); return o; }
 // round reset: nothing in the agents-18 fx lane outlives the round (an Aftershock / Armageddon fireball that went off just
 // before the round ended, a pending boom / pulse that would still hit in the next buy phase). Removes every mesh an entry
 // holds and ends bound fx modules without their end-of-life callbacks (those can detonate); bots' own models are never
