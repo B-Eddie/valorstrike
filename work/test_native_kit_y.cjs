@@ -15,7 +15,7 @@ const T=require(require.resolve('three',{paths:[path.join(__dirname,'..','server
 const FLOOR=7.05;
 const src=cut('function xFy(','\nfunction okGround(')+'\n'+cut('function okMark(','\nfunction okRm(')+'\n'+cut('function okPlace(','\nfunction okMMClick(')+'\n'+cut('function xAoe(','\n// spectator follow cam')+'\n'+cut('function bcTdfField(','\nfunction bcTmField(');
 function mk(native){const objs=[],hurts=[];
- const ctx={Math,Number,Infinity,THREE:T,RV:T.Vector3,player:{x:0,y:native?FLOOR:0,z:0,hp:100},yaw:0,scene:{add:o=>objs.push(o)},allies:[],bots:[],XFF:new Set(),running:true,
+ const ctx={jxBind:(m,h)=>h/* binds a native fx handle to its mesh (df60c6c); returns the handle */,chxSlowField:()=>null/* Brimstone Sky Smoke / TDF field look (df60c6c) */,Math,Number,Infinity,THREE:T,RV:T.Vector3,player:{x:0,y:native?FLOOR:0,z:0,hp:100},yaw:0,scene:{add:o=>objs.push(o)},allies:[],bots:[],XFF:new Set(),running:true,
   okMat:()=>new T.MeshBasicMaterial(),fireMat:()=>new T.MeshBasicMaterial(),ringGeo:new T.RingGeometry(.5,.6,8),slowGeo:new T.CircleGeometry(3.5,8),BC:{sf:[]},XTDF:{r:6,life:4},SFX:{ab(){}},
   blocked:()=>false,nmActive:()=>native?{key:'stub'}:null,nmHeight:()=>FLOOR,pEye:()=>new T.Vector3(0,(native?FLOOR:0)+1.6,0),hurt:(t,n,by)=>hurts.push([t,n,by]),
   wall:false,los:(a,b)=>{if(ctx.wall)return false;const f=native?FLOOR:0;return a.y>=f-.01&&b.y>=f-.01;}};
