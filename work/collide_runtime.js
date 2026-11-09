@@ -60,15 +60,19 @@ function xcOwnBot(u) { return !(xcOnline() && (!xcHost() || u.hum)); }
 function xcBotWorld() { return { ground: () => 0, blocked: (x, z, r, y) => blocked(x, z, 0.45, y) }; } // the bot loops' own wall test (0.45 m)
 function xcOthers(u, list) { const L = []; for (const v of list) if (v !== u) L.push(xcBody(v)); const pl = xcPlayerBody(); if (pl) L.push(pl); return L; }
 // Offline bots after a sim step: each living bot, in turn, out of the others and the player.
+// lag lane 2026-11-09: xcBots ran every frame on fresh arrays (xcUnits' list + one xcOthers list per living bot); it fills
+// two reused scratch arrays instead - same units, same order (M.bodies only reads them). xcUnits / xcOthers stay as API.
+const XC_LIST = [], XC_OTH = [];
 function xcBots(dt) {
   const M = xcVF(); if (!M || !xcActive() || !(dt > 0)) return;
-  const list = xcUnits(), W = xcBotWorld();
-  for (const u of list) {
+  const list = XC_LIST, W = xcBotWorld(); list.length = 0; try { for (let i = 0; i < bots.length; i++) if (xcLive(bots[i])) list.push(bots[i]); for (let i = 0; i < allies.length; i++) if (xcLive(allies[i])) list.push(allies[i]); } catch (e) {}
+  for (let k = 0; k < list.length; k++) { const u = list[k];
     const p = u.g.position, o = u.xcO;
     if (!xcOwnBot(u) || u.rope > 0) { u.xcO = null; continue; }
     const B = xcBody(u), S = u.smMotor; B.vx = S ? S.vx : 0; B.vz = S ? S.vz : 0;
     const fresh = o && Math.hypot(p.x - o[0], p.z - o[1]) < 2; // moved more than 2 m since the last resolve (respawn, teleport): no step to undo
-    if (M.bodies(B, xcOthers(u, list), dt, W, fresh ? o[0] : null, fresh ? o[1] : null)) { p.x = B.x; p.z = B.z; if (S) { S.vx = B.vx; S.vz = B.vz; } }
+    const L = XC_OTH; L.length = 0; for (let i = 0; i < list.length; i++) if (list[i] !== u) L.push(xcBody(list[i])); const pl = xcPlayerBody(); if (pl) L.push(pl); // = xcOthers(u, list)
+    if (M.bodies(B, L, dt, W, fresh ? o[0] : null, fresh ? o[1] : null)) { p.x = B.x; p.z = B.z; if (S) { S.vx = B.vx; S.vz = B.vz; } }
     (u.xcO || (u.xcO = [0, 0]))[0] = p.x; u.xcO[1] = p.z;
   }
 }
