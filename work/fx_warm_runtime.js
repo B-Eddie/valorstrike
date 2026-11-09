@@ -78,23 +78,38 @@ function xfwReveal() { const out = []; if (typeof xRevealSources !== "function")
   try { for (const L of [bots, allies]) for (const b of L) { if (!b) continue; for (const o of xRevealSources(b)) for (const mat of mats) {
     const m = new THREE.SkinnedMesh(o.geometry, mat); m.name = "reveal-native"; m.bindMode = "detached"; m.bind(o.skeleton, o.bindMatrix); m.frustumCulled = false; m.raycast = () => {}; o.parent.add(m); out.push(m); } } } catch (e) {}
   return out; }
+var XFWP = []; // (var: read by loop() behind a typeof guard) pending warm ends (xFxWarm), run by xfwFlush from the page loop
+function xfwFlush() { while (XFWP.length) XFWP[0](); }
 function xfwMats(set) { const s = set || new Set(); scene.traverse((o) => { if (o.material) for (const m of [].concat(o.material)) if (m) s.add(m); }); return s; }
 // warm: xWarmLazy's list (the caller adds / compiles / removes it); returns the number of casts made. Runs inside xNoRng (the
 // effects' own Math.random draws must not move the match's seeded stream: bot decisions stay identical).
 function xFxWarm(warm) { let n = 0; const before = new Set(scene.children), mats0 = xfwMats(), hs = [], extra = [], ags = xfwAgents();
   const sv0 = typeof svxC !== "undefined" && svxC.anim ? svxC.anim.length : -1;
-  const T = XFW(); for (const ag of ags) for (const [fn, sig] of T[ag] || []) { if (!fn) continue;
+  const jf0 = typeof J !== "undefined" && J && Array.isArray(J.fx) ? new Set(J.fx) : null; // Sova's sparks (svxPart) go to the shared J.fx lane
+  // Phoenix's Curveball pop is shared: xCbRing (an enemy bot's Curveball-type flash, enPop / jPop) plays phxCurvePop for any
+  // agent, so it is warmed in every match (it linked 2 programs mid-match in a match without a Phoenix: bench Chamber).
+  const T = XFW(), calls = [], cbOnly = !ags.has("Phoenix") && typeof phxCurvePop === "function";
+  for (const ag of ags) calls.push(...(T[ag] || [])); if (cbOnly) calls.push([phxCurvePop, "p"]);
+  for (const [fn, sig] of calls) { if (!fn) continue;
     try { const args = sig === "@" ? [] : sig.split(",").filter(Boolean).map((a) => xfwArg(a, extra)); const h = fn.apply(null, args); n++;
       if (h && h.isObject3D) { if (!h.parent) { h.position.copy(xfwArg("p")); scene.add(h); } } else if (h && typeof h === "object") hs.push(h); } catch (e) {} }
   for (const c of scene.children) if (!before.has(c)) { c.visible = true; warm.push(c); }
   const rv = xfwReveal(); if (!n && !rv.length) return 0;
   const keep = () => {}; for (const m of xfwMats()) if (!mats0.has(m)) m.dispose = keep; // the warm effects' programs stay linked after their end()
-  (typeof queueMicrotask === "function" ? queueMicrotask : (f) => Promise.resolve().then(f))(() => xNoRng(() => { // an end() may build a fade-out (new uuids draw Math.random)
+  // the end: a microtask after the caller's compile (the loading gate's warm render still sees the warm effects), or the
+  // page loop right after xGate, whichever comes first (xfwFlush, once). The microtask alone was not enough: xGate runs the
+  // precompile inside a frame and the frame's sim steps ticked the warm effects before it (Jett's Cloudburst trail drew 27
+  // seeded Math.random values: test_warm_rng, and moved the rigs: test_ragdoll_warm). Warm effects are never ticked.
+  let ended = false; const end = () => { if (ended) return; ended = true; const i = XFWP.indexOf(end); if (i >= 0) XFWP.splice(i, 1); xNoRng(() => { // an end() may build a fade-out (new uuids draw Math.random)
     for (const h of hs) { try { if (typeof h.end === "function") h.end(); } catch (e) {} }
-    const R = XFWR(); for (const ag of ags) { try { if (R[ag]) R[ag](); } catch (e) {} }
+    const R = XFWR(); for (const ag of ags) { try { if (R[ag]) R[ag](); } catch (e) {} } if (cbOnly) { try { if (R.Phoenix) R.Phoenix(); } catch (e) {} }
     if (sv0 >= 0 && svxC.anim.length > sv0) { for (const e of svxC.anim.splice(sv0)) { try { svxDrop(e.m); } catch (er) {} } }
+    // and the J.fx entries the warm casts added (10 Sova sparks per warm: online they outlived the round reset into the buy phase)
+    if (jf0 && Array.isArray(J.fx) && J.fx.length) J.fx = J.fx.filter((f) => { if (jf0.has(f)) return true; try { jRel(f.m); } catch (e) {} return false; });
     for (const g of extra) { try { scene.remove(g); g.geometry.dispose(); } catch (e) {} }
-    for (const m of rv) { try { if (m.parent) m.parent.remove(m); } catch (e) {} } }));
+    for (const m of rv) { try { if (m.parent) m.parent.remove(m); } catch (e) {} } }); };
+  XFWP.push(end);
+  (typeof queueMicrotask === "function" ? queueMicrotask : (f) => Promise.resolve().then(f))(end);
   return n; }
 { const w0 = xWarmLazy; xWarmLazy = function () { const warm = w0.apply(this, arguments); try { xNoRng(() => xFxWarm(warm)); } catch (e) {} return warm; }; }
 // ---- END FX WARM ----
