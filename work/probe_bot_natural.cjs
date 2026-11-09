@@ -8,12 +8,12 @@
 //     start of a fresh fight for a holding bot (xbEngage ctx.off, deg; lower = pre-aimed).
 //  C. post-plant (Spike planted, attackers alive, no enemy in sight, defuse not started): attacker share of time
 //     running (> 2.5 m/s), metres walked per attacker-second, share of time still and how far from the Spike.
-//   node work/probe_bot_natural.cjs          (SEEDS=3,5,7 SECS=200 by default; each seed its own child process)
+//   node work/probe_bot_natural.cjs          (SEEDS=3,5,7 SECS=200 by default; each seed its own child process; NAT_MODE=tdm: Team Deathmatch)
 const {boot}=require('./page_harness.cjs');const {spawn}=require('child_process');
 const SECS=+(process.env.SECS||200),SEEDS=(process.env.NAT_WORKER||process.env.SEEDS||'3,5,7').split(',').map(Number);
 async function play(seed){
  const H=boot({real3:true,seed,native:true}),xe=H.xe,adv=async ms=>{for(let t=0;t<ms;t+=50){H.advance(Math.min(50,ms-t)-1e-6);await new Promise(r=>setImmediate(r));}};
- xe('window.xBotSeed='+seed+';J.pick="Jett";FV.pick="ascent";FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;startFive();true');
+ xe('window.xBotSeed='+seed+';J.pick="Jett";FV.pick="ascent";FV.srOn=0;FV.repOn=0;window.xSwift=0;xLob0=false;'+(process.env.NAT_MODE==='tdm'?'startTDM()':'startFive()')+';true');
  for(let i=0;i<300&&!xe('!!(typeof nmActive==="function"&&nmActive()&&running)');i++)await adv(200);
  if(!xe('!!nmActive()'))throw Error('native Ascent not loaded');
  xe(`(()=>{const Q=window.QNA={eng:[]};const e0=xbEngage;xbEngage=function(u,pre,ctx){try{if(ctx&&u&&u.g&&!(FV.buy>0)){Q.eng.push({off:ctx.off,hold:(u.spd||0)<.3})}}catch(e){}return e0.apply(this,arguments);};return 1})()`);
