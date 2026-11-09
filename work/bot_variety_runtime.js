@@ -395,6 +395,12 @@ function xbvPostPt(C,u,team,s,far){
  const sees=j=>{if(typeof los!=='function'||typeof RV==='undefined')return true;const n=N[j];return los(new RV(n[0],n[1]+1.5,n[2]),new RV(s.x,y+.5,s.z));},ok=j=>(!C.playable||!!C.playable[j])&&(far||sees(j));
  let p=xbvSpot(C,pt,xbvTeamTaken(team,u,far?'hide':'post'),P.rand,{rMin:0,rMax:far?5:3.5,gap:2.5,ok});if(!p&&!far)p=xbvSpot(C,[s.x,y,s.z],xbvTeamTaken(team,u,'post'),P.rand,{rMin:3,rMax:9,gap:3.5,ok});if(!p&&!far)p=xbvSpot(C,[s.x,y,s.z],xbvTeamTaken(team,u,'post'),P.rand,{rMin:3,rMax:9,gap:3.5});
  if(!far){P.postSlot=q;(XBV.polog||(XBV.polog=[])).push({k,name:u.name,ang:q.ang,r:q.r,far:q.far});if(XBV.polog.length>200)XBV.polog.shift();}return p;}
+// bots-natural: the fuse beats any defuse ('hide'): out of the Spike's sight nearby, as a player keeps the gun - where it
+// stands when that already hides it, else the nearest node within 7 m it can walk to straight that does not see the Spike
+// (and is not nearer to it), else where it stands. Was every attacker running to a spot 15 m out together for the last 7 s.
+function xbvHidePt(C,u,s){if(typeof los!=='function'||typeof RV==='undefined'||!C.nav)return null;const p=u.g.position,N=C.nav.nodes,y=s.y||p.y,sp=new RV(s.x,y+.5,s.z),ds=Math.hypot(p.x-s.x,p.z-s.z);
+ if(!los(new RV(p.x,p.y+1.5,p.z),sp))return [p.x,p.y,p.z];const c=[];for(let j=0;j<N.length;j++){const n=N[j];if(!n||(C.playable&&!C.playable[j]))continue;const d=Math.hypot(n[0]-p.x,n[2]-p.z);if(d>7||Math.abs(n[1]-p.y)>2||Math.hypot(n[0]-s.x,n[2]-s.z)<ds-1)continue;c.push([d,j]);}
+ c.sort((a,b)=>a[0]-b[0]);for(let i=0,t=0;i<c.length&&t<40;i++){const n=N[c[i][1]];if(typeof nmSegment==='function'&&!nmSegment(C,p,n))continue;t++;if(!los(new RV(n[0],n[1]+1.5,n[2]),sp))return [n[0],n[1],n[2]];}return [p.x,p.y,p.z];}
 // a defender's retake call, re-thought every 0.5 s (what this bot's team knows: attackers seen / heard near the Spike in the last 3 s)
 function xbvRetake(u,team){
  const s=FV.sp,now=performance.now(),k=xbvKey();if(u.xRet&&u.xRet.k===k&&now<u.xRet.at)return u.xRet.c;const sp={x:s.x,z:s.z},defP=!FV.atk&&player&&player.hp>0,atkL=(FV.atk?[player].concat(allies):bots).filter(v=>v&&(v===player?v.hp>0:v.alive));
@@ -416,7 +422,7 @@ if(typeof xDefOk==='function'){const do0=xDefOk;xDefOk=function(x,safe){if(!xbvS
   if(atk){if(!C||!C.meta||!C.meta.sites)return sg0.apply(this,arguments);const P=xbvPlan(u,team,true,C),k=xbvKey()+'|'+s.x+','+s.z;
    if(P.post0!==k){P.post0=k;P.post=xbvPostPt(C,u,team,s,false);P.hide=null;}
    const du=!!s.du,pp=P.postAct=BotBrain.postPlay(xbBrain(u),{left:timeLeft,defusing:du,dt:s.dt||0,eta:Math.hypot(p.x-s.x,p.z-s.z)*1.25/XBV_RUN});
-   if(pp==='stop')return x2(out,s.x,s.z);if(pp==='hide'){if(P.hide==null)P.hide=xbvPostPt(C,u,team,s,true)||false;if(P.hide)return x2(out,P.hide[0],P.hide[2]);}
+   if(pp==='stop')return x2(out,s.x,s.z);if(pp==='hide'){if(P.hide==null)P.hide=xbvHidePt(C,u,s)||xbvPostPt(C,u,team,s,true)||false;if(P.hide)return x2(out,P.hide[0],P.hide[2]);}
    return P.post?x2(out,P.post[0],P.post[2]):sg0.apply(this,arguments);}
   const R=xbvRetake(u,team);if(R.act!=='save'&&R.act!=='wait')return sg0.apply(this,arguments);
   const dx=p.x-s.x,dz=p.z-s.z,l=Math.hypot(dx,dz)||1,want=R.act==='save'?22:14;if(l>=want-1)return x2(out,p.x,p.z); // far enough: hold here
@@ -624,8 +630,8 @@ function xhpWarm(){try{
 }catch(e){NMB.sbOff=0;}}
 (window.XHK||(window.XHK=[])).push(xhpWarm);
 // re-seat target near the hold's base spot that still sees the main angle (null = stay)
-function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.position;if(r()<.4&&Math.hypot(H.bx-q0.x,H.bz-q0.z)>1.2)return [H.bx,H.bz];/* back to the first spot (only when off it: standing on it, pick another seat) */const taken=[];for(const v of team)if(v!==u&&v.alive&&v.g)taken.push([v.g.position.x,v.g.position.y,v.g.position.z]);
- const a0=H.ang&&H.ang[0];for(let t=0;t<3;t++){const q=xbvSpot(C,base,taken,r,{rMin:1.2,rMax:3.5,gap:1.8});if(!q)continue;if(!a0||los(new RV(q[0],q[1]+1.5,q[2]),new RV(a0.x,a0.y,a0.z)))return [q[0],q[2]];}return null;}
+function xhpSeat(C,u,H,team,spk){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.position;if(r()<.4&&Math.hypot(H.bx-q0.x,H.bz-q0.z)>1.2)return [H.bx,H.bz];/* back to the first spot (only when off it: standing on it, pick another seat) */const taken=[];for(const v of team)if(v!==u&&v.alive&&v.g)taken.push([v.g.position.x,v.g.position.y,v.g.position.z]);
+ const a0=H.ang&&H.ang[0];for(let t=0;t<3;t++){const q=xbvSpot(C,base,taken,r,{rMin:1.2,rMax:3.5,gap:1.8});if(!q)continue;if((!a0||los(new RV(q[0],q[1]+1.5,q[2]),new RV(a0.x,a0.y,a0.z)))&&(!spk||los(new RV(q[0],q[1]+1.5,q[2]),spk)))return [q[0],q[2]];}return null;}/* spk: a post-plant attacker's seat keeps the Spike in sight */
 {const g2=xGoal;xGoal=function(u,team,atk,out){const g=g2.apply(this,arguments);
  try{if(u&&u.xHp&&u.g&&!u.xHp.seat&&Math.hypot(u.xHp.bx-u.g.position.x,u.xHp.bz-u.g.position.z)>4.5)u.xHp=null; // left the spot (a fight, a trade, the spike, a retake took it > 4.5 m away; seats sit <= 3.5 m from the base): the hold is over, not carried along while it runs (xhpYaw would keep the old corners)
   if(!g||!xhpOn(u)||u.see>0||u.trT>0||u.blind>0||u.xHold){if(u)u.xHp=u.xHp&&u.xHp.key===xbvKey()&&g?u.xHp:null;return g;}
@@ -635,7 +641,8 @@ function xhpSeat(C,u,H,team){const r=xhpRand(u),base=[H.bx,H.by,H.bz],q0=u.g.pos
   if(!H){if(gd>1.6)return g;const B=xbBrain(u),r=xhpRand(u),now=performance.now();H=u.xHp={key:xbvKey(),bx:g[0],by:p.y,bz:g[1],seat:null,until:now+(2.5+(B?B.patience:.5)*3.5+r()*1.5)*1000,ang:null,ai:0,aiT:0,shifts:0};}
   const now=performance.now();if(!H.ang)H.ang=xhpAngles(C,p.x,p.y,p.z,atk);
   if(H.seat){if(Math.hypot(H.seat[0]-p.x,H.seat[1]-p.z)>.5)return x2(out,H.seat[0],H.seat[1]);H.seat=null;H.ang=xhpAngles(C,p.x,p.y,p.z,atk);const B=xbBrain(u),r=xhpRand(u);H.until=now+(2.5+(B?B.patience:.5)*3.5+r()*1.5)*1000;}
-  if(now>=H.until){H.until=now+1500;const q=xhpSeat(C,u,H,team);if(q&&Math.hypot(q[0]-p.x,q[1]-p.z)>.6){H.seat=q;H.shifts++;return x2(out,q[0],q[1]);}}
+  const pa=atk&&s&&s.st==='plant'&&typeof RV!=='undefined';if(pa&&now>=H.until&&(H.ppW=!H.ppW)){const B=xbBrain(u);H.until=now+(2.5+(B?B.patience:.5)*3.5)*1000;}/* bots-natural: post-plant attackers re-seat half as often (every other turn of the hold) */
+  if(now>=H.until){H.until=now+1500;const q=xhpSeat(C,u,H,team,pa?new RV(s.x,(s.y||p.y)+.5,s.z):null);if(q&&Math.hypot(q[0]-p.x,q[1]-p.z)>.6){H.seat=q;H.shifts++;return x2(out,q[0],q[1]);}}
   return x2(out,p.x,p.z);}catch(e){}return g;};}
 // the held corner's pitch: head height there (BotBrain.AIM_H.head over its floor) less the bot's own idle drop (= server holdLook)
 function xhpPitch(u,p,a){const B=xbBrain(u);if(!B)return null;return Math.atan2(a.y-BotBrain.PRE.head+BotBrain.AIM_H.head-(p.y+1.6),Math.hypot(a.x-p.x,a.z-p.z)||1)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}
@@ -734,5 +741,6 @@ if(typeof allyDie==='function'){const a0=allyDie;allyDie=function(a,by){const al
 // forces a run (a defender with under 20 s of fuse, an attacker stopping a defuse). Scoped holders keep walking as before.
 if(typeof botWalk==='function'){const bw0=botWalk;botWalk=function(u,see,d){if(!window.BotBrain||mode!=='five'||FV.dm||!u||u.scp)return bw0.apply(this,arguments);
  const sp=FV.sp,atk=allies.indexOf(u)>=0?!!FV.atk:!FV.atk,rush=!!sp&&sp.st==='plant'&&(atk?!!sp.du:(sp.t||0)<20);
+ if(atk&&sp&&sp.st==='plant'&&!sp.du&&!see&&!(u.trT>0)&&u.g&&Math.hypot(u.g.position.x-sp.x,u.g.position.z-sp.z)<20)return true;/* bots-natural: a posted attacker (Spike down, no defuse on) moves silently near it - re-seats, hiding - instead of running */
  return BotBrain.quiet({contactD:d<1e8?d:null,see:!!see,trading:u.trT>0,wide:u.pk===2||u.pk===1,carrier:!!sp&&sp.st==='carry'&&sp.c===u,rush});};}
 // ---- END BOT VARIETY ----
