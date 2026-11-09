@@ -33,9 +33,12 @@ sa='// ---- SOVA FX ----';sb='// ---- END SOVA FX ----'
 if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
 oa='// ---- OMEN FX ----';ob='// ---- END OMEN FX ----'
 if oa in s:s=s[:s.index(oa)]+s[s.index(ob)+len(ob):]
+wa='// ---- FX WARM ----';wb='// ---- END FX WARM ----'
+if wa in s:s=s[:s.index(wa)]+s[s.index(wb)+len(wb):]
 block+='\n'+(root/'work/ability_fp_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/omen_fx_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/sova_fx_runtime.js').read_text().rstrip('\n')
+block+='\n'+(root/'work/fx_warm_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/bot-brain.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/spawn-barriers.cjs').read_text().rstrip('\n'),1);ma='// ---- BOT AMMO ----';mb='// ---- END BOT AMMO ----'
 while ma in s:s=s[:s.index(ma)]+s[s.index(mb)+len(mb):]
 block+='\n'+(root/'work/bot_ammo_runtime.js').read_text().rstrip('\n');da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
