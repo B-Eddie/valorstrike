@@ -24010,15 +24010,26 @@ function svxDump() {
   for(let k=0;k<list.length;k++){const a=nodes[list[k]];for(const j of adj[list[k]])if(!f[j]&&inside(j)&&!buyCross(walls,a[0],a[2],nodes[j][0],nodes[j][2])){f[j]=1;list.push(j);}}
   return {f,list};}
  // A* inside the area; cost(i): extra metres for entering node i (a node whose capsule touches a prop), may be omitted.
+ // lag lane 2026-11-09: the buy-phase A* was the page's top allocation site (perf_match_profile Ascent 5v5: 52 % of the page's
+ // sampled heap, ~260 KB / frame in all): two Maps, a Set, an [id, score] pair per heap push and an array per destructuring
+ // swap, every time a bot's buy-phase goal changed. Now typed scratch per nav (WeakMap, as BotRoutes' repath scratch), only
+ // the touched entries reset: same pushes, pops, comparisons and tie order -> the same routes (work/test_buyroute_equivalence.cjs).
+ const buyScr=new WeakMap();
  function buyRoute(nodes,adj,area,a,b,cost){
   if(a<0||b<0||!area.f[a]||!area.f[b])return [];if(a===b)return [a];
-  const g=new Map(),prev=new Map(),done=new Set(),H=[],h=i=>Math.hypot(nodes[i][0]-nodes[b][0],nodes[i][2]-nodes[b][2]);
-  const push=(i,sc)=>{H.push([i,sc]);let k=H.length-1;while(k){const p=(k-1)>>1;if(H[p][1]<=H[k][1])break;[H[p],H[k]]=[H[k],H[p]];k=p;}};
-  const pop=()=>{const r=H[0],l=H.pop();if(H.length){H[0]=l;let k=0;for(;;){let c=k*2+1;if(c>=H.length)break;if(c+1<H.length&&H[c+1][1]<H[c][1])c++;if(H[c][1]>=H[k][1])break;[H[c],H[k]]=[H[k],H[c]];k=c;}}return r[0];};
-  g.set(a,0);push(a,h(a));
-  while(H.length){const i=pop();if(done.has(i))continue;done.add(i);if(i===b){const p=[];for(let k=b;k!=null;k=prev.get(k))p.push(k);return p.reverse();}
-   for(const j of adj[i]){if(!area.f[j]||done.has(j))continue;const c=g.get(i)+Math.hypot(nodes[i][0]-nodes[j][0],nodes[i][2]-nodes[j][2])+Math.abs(nodes[i][1]-nodes[j][1])*.2+(cost?cost(j):0);
-    if(!(g.get(j)<=c)){g.set(j,c);prev.set(j,i);push(j,c+h(j));}}}
+  const n=nodes.length;let S=buyScr.get(nodes);if(!S||S.n!==n){S={n,g:new Float64Array(n),gs:new Uint8Array(n),done:new Uint8Array(n),prev:new Int32Array(n).fill(-1),T:[],tn:0,HI:[],HS:[]};buyScr.set(nodes,S);}
+  S.tn=0;try{return buySearch(S,nodes,adj,area.f,a,b,cost);}finally{const T=S.T,gs=S.gs,done=S.done,prev=S.prev;for(let k=0;k<S.tn;k++){const i=T[k];gs[i]=0;done[i]=0;prev[i]=-1;}} // a throwing cost() leaves no stale scratch
+ }
+ // the search itself: heap and heuristic inline (no closure gets a double, so nothing is boxed per relaxed edge)
+ function buySearch(S,nodes,adj,f,a,b,cost){
+  const g=S.g,gs=S.gs,done=S.done,prev=S.prev,T=S.T,HI=S.HI,HS=S.HS,bx=nodes[b][0],bz=nodes[b][2];let hn=0,tn=0;
+  T[tn++]=a;g[a]=0;gs[a]=1;HI[0]=a;HS[0]=Math.hypot(nodes[a][0]-bx,nodes[a][2]-bz);hn=1;S.tn=tn;
+  while(hn){const i=HI[0];hn--;if(hn){HI[0]=HI[hn];HS[0]=HS[hn];let k=0;for(;;){let c=k*2+1;if(c>=hn)break;if(c+1<hn&&HS[c+1]<HS[c])c++;if(HS[c]>=HS[k])break;const ti=HI[c],ts=HS[c];HI[c]=HI[k];HS[c]=HS[k];HI[k]=ti;HS[k]=ts;k=c;}}
+   if(done[i])continue;done[i]=1;if(i===b){const p=[];for(let k=b;k>=0;k=prev[k])p.push(k);return p.reverse();}
+   const L=adj[i],ni=nodes[i],gi=g[i];
+   for(let e=0;e<L.length;e++){const j=L[e];if(!f[j]||done[j])continue;const nj=nodes[j],c=gi+Math.hypot(ni[0]-nj[0],ni[2]-nj[2])+Math.abs(ni[1]-nj[1])*.2+(cost?cost(j):0);
+    if(!(gs[j]&&g[j]<=c)){if(!gs[j]&&prev[j]<0){T[tn++]=j;S.tn=tn;}g[j]=c;gs[j]=1;prev[j]=i;
+     let k=hn++;HI[k]=j;HS[k]=c+Math.hypot(nj[0]-bx,nj[2]-bz);while(k){const q=(k-1)>>1;if(HS[q]<=HS[k])break;const ti=HI[q],ts=HS[q];HI[q]=HI[k];HS[q]=HS[k];HI[k]=ti;HS[k]=ts;k=q;}}}}
   return [];}
  // Where a planned route (node ids from spawn toward the bot's first round goal) leaves spawn: the first step that
  // crosses one of the walls -> {x, y, z, dx, dz, w} with (x, z) the crossing, w the wall and (dx, dz) the unit heading
