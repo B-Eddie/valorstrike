@@ -22,6 +22,12 @@ for(const m of ['ascent','bind','breeze','haven','lotus','split']){
  const pick=()=>nav.nodes[(rnd()*nav.nodes.length)|0],Q=[];
  for(let i=0;i<NQ;i++){const k=rnd();let x,z;if(k<0.6){const p=pick(),s=k<0.3?1:8;x=p[0]+(rnd()-.5)*s;z=p[2]+(rnd()-.5)*s;}else if(k<0.93){x=x0-30+rnd()*(x1-x0+60);z=z0-30+rnd()*(z1-z0+60);}else{const p=pick();x=Math.floor(p[0]/2)*2+(rnd()<.5?0:2);z=Math.floor(p[2]/2)*2;} // last: cell corners
   const t=rnd(),y=t<0.3?undefined:t<0.34?NaN:y0-3+rnd()*(y1-y0+6),yb=rnd()<0.5?undefined:[.35,.5,1,2][(rnd()*4)|0];Q.push([x,z,y,yb]);}
+ // lag lane 2026-11-09: far off the grid (a unit falling under Iso's Kill Contract arena sat at x 9638 / y -20310): the
+ // full-scan fallback must give the same node and stay cheap (it walked every column of every ring out to the far edge)
+ const FAR=[];for(let i=0;i<60;i++){const R=[200,1000,4000,10000][i%4],a=rnd()*Math.PI*2;FAR.push([(x0+x1)/2+Math.cos(a)*R,(z0+z1)/2+Math.sin(a)*R,i%3?-20310:undefined,i%5?undefined:2]);}
+ FAR.push([9638.42,-0.34,-20309.89],[x1+5000,(z0+z1)/2,undefined],[(x0+x1)/2,z0-8000,y0],[x0-3000,z1+3000,undefined]);
+ {const t=process.hrtime.bigint();for(const q of FAR)NEW.nmNear(B,q[0],q[1],q[2],q[3]);const us=Number(process.hrtime.bigint()-t)/1000/FAR.length;assert.ok(us<2000,m+': far off-grid nmNear '+us.toFixed(0)+' us a call');console.log(m,'far off-grid nmNear',us.toFixed(0),'us a call');}
+ Q.push(...FAR);
  const ON=[];for(const p of nav.nodes){ON.push([p[0],p[2],p[1]],[p[0],p[2]],[p[0]+.1,p[2]-.1,p[1]],[p[0],p[2],p[1]+.2,.35]);} // exact node points (duplicate positions tie)
  let diff=0;for(const q of Q.concat(ON)){const a=REF.nmNear(A,q[0],q[1],q[2],q[3]),b=NEW.nmNear(B,q[0],q[1],q[2],q[3]);if(a!==b&&diff++<3)console.log('DIFF',m,JSON.stringify(q),a,b);}
  assert.equal(diff,0,m+': grid nmNear differs from the old ring scan on '+diff+' queries');total+=Q.length+ON.length;
