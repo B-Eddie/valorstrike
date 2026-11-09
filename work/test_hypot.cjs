@@ -38,4 +38,7 @@ const bN = bytes(run(NATIVE)), bP = bytes(ctx.__run);
 console.log(`Math.hypot patch: ${n2} two- and ${n3} three-argument calls bit-identical to the engine builtin; ${bN.toFixed(1)} -> ${bP.toFixed(2)} B allocated per call`);
 // what is left is the boxed return value: a function that reads arguments.length is not inlined (rest parameters would be,
 // but could not tell hypot(x) from hypot(x, undefined), which differ); exact arity semantics are kept
-assert(bP < 24 && bP < bN / 3, 'patched Math.hypot allocates ' + bP.toFixed(2) + ' B per call (engine builtin ' + bN.toFixed(1) + ')');
+// lag lane 2026-11-09: the invariant is "at most the one boxed double per call" (a HeapNumber is 16 B; < 20 B leaves the
+// sampler's noise). The old bN / 3 ratio assumed an ~80 B builtin; Node 24's V8 builtin allocates ~48 B, so its third sat at
+// ~16.1 B, right on the patch's 16.2-16.5 B, and the test flipped run to run on the same tree (the "environmental" failure).
+assert(bP < 20 && bP < bN / 2,'patched Math.hypot allocates ' + bP.toFixed(2) + ' B per call (engine builtin ' + bN.toFixed(1) + ')');
