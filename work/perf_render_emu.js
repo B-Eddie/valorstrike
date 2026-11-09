@@ -67,7 +67,7 @@
     else if (mv !== m.version) { S.matSeen.set(m, m.version); if (S.live) S.matVerLive++; }
     const of = (o.isSkinnedMesh ? 1 : 0) | (o.isInstancedMesh ? 2 : 0) | (o.isInstancedMesh && o.instanceColor ? 4 : 0) | (o.receiveShadow && R.shadowMap && R.shadowMap.enabled === true ? 8 : 0) | (o.morphTargetInfluences ? 16 : 0) | (o.isPoints ? 32 : 0);
     let pc = PK.get(m); if (!pc || pc.v !== m.version || pc.o !== of || pc.map !== m.map || pc.env !== m.envMap) { pc = { v: m.version, o: of, map: m.map, env: m.envMap, key: progKey(m, o) }; PK.set(m, pc); } // tool overhead: a key string per draw only when the material changed
-    const key = pc.key; if (!S.progs.has(key)) { S.progs.set(key, S.frame); S.fr.prog++; if (S.live) S.progNew.push({ f: S.frame, key: key.slice(0, 160), obj: who(o), vs: m.vertexShader ? m.vertexShader.slice(0, 200) : "" }); }
+    const key = pc.key; if (!S.progs.has(key)) { S.progs.set(key, S.frame); S.fr.prog++; if (S.live) S.progNew.push({ f: S.frame, key: key.slice(0, 160), obj: who(o), vs: m.vertexShader ? m.vertexShader.slice(0, 200) : "", site: m.__site }); }
     for (let i = 0; i < SLOTS.length; i++) { const t = m[SLOTS[i]]; if (t) texUse(t); }
     if (m.uniforms) for (const k in m.uniforms) { const u = m.uniforms[k]; const v = u && u.value; if (v && v.isTexture) texUse(v); }
   }

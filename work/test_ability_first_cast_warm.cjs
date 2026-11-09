@@ -20,7 +20,7 @@ for(const a of AG){
  if(a!=='Sage')assert.ok(w.casts.length>=4&&JSON.stringify(w.casts[0])!==JSON.stringify(w.casts[w.casts.length-1]),a+': the abilities were cast (charges changed)');
  else console.log('Sage: bench casts not landed (known, open) - program / texture check only');
  if(w.prog)fail.push(a+': '+w.prog+' new program(s) on the first casts: '+JSON.stringify(w.progs));
- if(w.tex)fail.push(a+': '+w.tex+' texture upload(s) on the first casts');
+ if(w.tex)fail.push(a+': '+w.tex+' texture upload(s) on the first casts: '+JSON.stringify(w.texs||[]));
 }
 assert.deepEqual(fail,[],fail.join('\n'));
 console.log('first C / Q / E / X cast of '+AG.length+' agents: no new shader program, no texture upload');

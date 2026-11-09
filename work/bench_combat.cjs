@@ -35,10 +35,10 @@ xe(fs.readFileSync(path.join(__dirname,'..','vendor','hit-impact.js'),'utf8')+';
 xe(`xvaParse=function(buf){return new Promise((res,rej)=>{const L=new THREE.GLTFLoader();L.register(p=>({name:'EXT_texture_webp',loadTexture:()=>Promise.resolve(new THREE.Texture())}));L.parse(buf,XVA.dir,res,rej);});};true`);
 // DOM churn + THREE allocation counters (page side)
 xe(`window.__REC={on:false,obj:0,dom:0,html:0,txt:0,sty:0,lay:0,cls:0};{
- const SITES=${!!process.env.SITES};__REC.sites=new Map();const site=()=>String(new Error().stack).split('\\n').slice(3).filter(l=>!/bench_combat|page_harness|perf_render_emu/.test(l)).slice(0,${+(process.env.SDEPTH||4)}).map(l=>l.trim().replace(/^at /,'').replace(/ \\(eval at [^)]*\\)/,'').replace(/\\(?(?:file:\\/\\/)?[^()]*\\/([^\\/:()]+):(\\d+):\\d+\\)?/,'$1:$2')).join(' < ');
+ const SITES=${!!process.env.SITES},PSITES=${!!process.env.PSITES};__REC.sites=new Map();const site=()=>String(new Error().stack).split('\\n').slice(3).filter(l=>!/bench_combat|page_harness|perf_render_emu/.test(l)).slice(0,${+(process.env.SDEPTH||4)}).map(l=>l.trim().replace(/^at /,'').replace(/ \\(eval at [^)]*\\)/,'').replace(/\\(?(?:file:\\/\\/)?[^()]*\\/([^\\/:()]+):(\\d+):\\d+\\)?/,'$1:$2')).join(' < ');
  const note=(k)=>{if(!__REC.on)return;__REC.obj++;if(SITES){const s=k+' @ '+site();__REC.sites.set(s,(__REC.sites.get(s)||0)+1);}};
  for(const k of Object.keys(THREE)){const C=THREE[k];if(typeof C!=="function"||!C.prototype||!/^[A-Z]/.test(k))continue;
-  const W=class extends C{constructor(...a){super(...a);note('new '+k);}};Object.defineProperty(W,"name",{value:k});try{THREE[k]=W;}catch(e){}}
+  const W=class extends C{constructor(...a){super(...a);note('new '+k);if(PSITES&&this.isMaterial)this.__site=site();}};Object.defineProperty(W,"name",{value:k});try{THREE[k]=W;}catch(e){}}
  for(const [N,P] of [['Material',THREE.Material.prototype],['BufferGeometry',THREE.BufferGeometry.prototype],['Object3D',THREE.Object3D.prototype],['Texture',THREE.Texture.prototype]]){const c=P.clone;P.clone=function(){note(N+'.clone');return c.apply(this,arguments);};}
  const ce=document.createElement.bind(document);document.createElement=function(t){if(__REC.on)__REC.dom++;return ce(t);};
  const EP=Object.getPrototypeOf(ce('div'));const hook=(name,k,get)=>{let p=EP,d=null;while(p&&!(d=Object.getOwnPropertyDescriptor(p,name)))p=Object.getPrototypeOf(p);if(!d)return;
@@ -112,12 +112,12 @@ async function stress(rep){
  setMouse(false);
  let prof=null;if(PROF){const cp=(await post('Profiler.stop')).profile;prof=profSplit(cp,TP,cpu);}
  await new Promise(r=>setTimeout(r,5));const gcF=T.map(([a,b])=>GCE.filter(g=>g[0]<b&&g[0]+g[1]>a).reduce((t,g)=>t+g[1],0));
- xe('__REC.on=false;true');const PN=JSON.parse(xe('JSON.stringify(__PS.progNew.map(p=>p.obj+" | "+p.key.slice(0,140)))'));xe('__PS.live=false;true');
+ xe('__REC.on=false;true');const PN=JSON.parse(xe('JSON.stringify(__PS.progNew.map(p=>p.obj+" | "+p.key.slice(0,140)+(p.site?" @ "+p.site:"")))'));xe('__PS.live=false;true');
  const s=[...fr].sort((x,y)=>x-y),cs=[...cpu].sort((x,y)=>x-y),imax=fr.indexOf(s[s.length-1]);
  const d1=dom[dom.length-1],dd=(i,j)=>dom[i][j]-(i?dom[i-1][j]:0),worst=[...cpu.keys()].sort((x,y)=>cpu[y]-cpu[x]).slice(0,8).map(i=>({i,cpu:+cpu[i].toFixed(1),ms:+fr[i].toFixed(1),gc:+gcF[i].toFixed(1),prog:per[i][0],tex:per[i][1],geo:per[i][2],obj:dd(i,5),txt:dd(i,2),lay:dd(i,4)}));
  const row={agent:AGENT,rep,frames:NF,cpuP50:+pct(cs,.5).toFixed(2),cpuP99:+pct(cs,.99).toFixed(2),p50:+pct(s,.5).toFixed(2),p95:+pct(s,.95).toFixed(2),p99:+pct(s,.99).toFixed(2),max:+s[s.length-1].toFixed(2),mean:+(fr.reduce((a,b)=>a+b,0)/NF).toFixed(2),
   cpuP95:+pct(cs,.95).toFixed(2),cpuMax:+cs[cs.length-1].toFixed(2),long25:fr.filter(x=>x>25).length,gcms:+gcF.reduce((a,b)=>a+b,0).toFixed(1),gcMax:+Math.max(...gcF).toFixed(1),gcAtMax:+gcF[imax].toFixed(1),
-  casts:casts.map(x=>JSON.parse(x)),geoWho:JSON.parse(xe('JSON.stringify((__PS.geoWho||[]).slice(0,40))')),prog:E.prog,progs:PN.slice(0,12),tex:E.tex,geo:E.geo,dom:{create:d1[0],html:d1[1],text:d1[2],style:d1[3],layoutReads:d1[4]},objs:d1[5],worst,
+  casts:casts.map(x=>JSON.parse(x)),geoWho:JSON.parse(xe('JSON.stringify((__PS.geoWho||[]).slice(0,40))')),prog:E.prog,progs:PN.slice(0,12),tex:E.tex,texs:JSON.parse(xe('JSON.stringify((__PS.up||[]).filter(u=>u.live).slice(0,12).map(u=>u.who+" | "+u.n+" "+u.w+"x"+u.h))')),geo:E.geo,dom:{create:d1[0],html:d1[1],text:d1[2],style:d1[3],layoutReads:d1[4]},objs:d1[5],worst,
   J:JSON.parse(xe('JSON.stringify({c:J.c,q:J.q,e:J.e,ult:J.ult,bs:!!J.bsOn,sm:(J.smokes||[]).length,w:(J.walls||[]).length,z:(J.zones||[]).length,uc:Object.assign({},window.xBotUC||{})})')),
   hash:HASH?hash.digest('hex').slice(0,16):undefined,inj:INJ?JSON.parse(xe('JSON.stringify(typeof __INJ==="function"?__INJ():null)')):undefined,sites:process.env.SITES?JSON.parse(xe('JSON.stringify([...__REC.sites].sort((a,b)=>b[1]-a[1]).slice(0,40))')):undefined,prof};
  return row;
