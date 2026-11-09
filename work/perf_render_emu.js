@@ -37,7 +37,7 @@
       if (alloc) { if (g.alloc && !force) S.realloc.push({ f: S.frame, live: S.live, w: d.w, h: d.h, w0: g.w, h0: g.h, n: t.name || "" }); else { g.alloc = true; g.w = d.w; g.h = d.h; } }
       const bytes = Math.max(0, d.w * d.h * 4);
       if (d.w > g.w || d.h > g.h) S.grow.push({ f: S.frame, live: S.live, w: d.w, h: d.h, w0: g.w, h0: g.h, n: t.name || "", cls: img.constructor && img.constructor.name });
-      S.up.push({ who: CUR ? who(CUR) : '', k: alloc ? "texStorage+texSubImage" : "texSubImage", w: d.w, h: d.h, f: S.frame, live: S.live, n: t.name || (img.constructor && img.constructor.name) || "" });
+      S.up.push({ who: CUR ? who(CUR) : '', k: alloc ? "texStorage+texSubImage" : "texSubImage", w: d.w, h: d.h, f: S.frame, live: S.live, n: t.name || (img.constructor && img.constructor.name) || "", site: t.__site });
       S.upBytes += bytes; S.fr.tex++; S.fr.texBytes += bytes; g.sv = src.version;
       if (typeof t.onUpdate === "function") try { t.onUpdate(t); } catch (e) {}
     }
