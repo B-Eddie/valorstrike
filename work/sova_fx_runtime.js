@@ -118,15 +118,19 @@ function svxPart(geo, mat, p, t, g) {
   if (g) f.g = g;
   return m;
 }
+// a texture clone shares the original's Source (one GL texture), but three r149's Texture.copy() ends with needsUpdate = true,
+// which bumps the shared Source's version: the whole image was uploaded again on the clone's first draw - every new pooled
+// material (a 512 x 512 upload on an enemy Sova's Recon pulse mid-match; Harbor's foam per cast the same). The clone keeps
+// its own version (> 0), the Source's is put back: same pixels, already on the GPU.
 function svxMatTex(key, tex, col, op, repY) {
   return jMat(key, () => {
-    const t = tex.clone(); t.needsUpdate = true; if (repY) t.repeat.set(1, repY);
+    const v = tex.source.version, t = tex.clone(); t.source.version = v; if (repY) t.repeat.set(1, repY);
     return new THREE.MeshBasicMaterial({ map: t, color: col, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, toneMapped: false });
   });
 }
 function svxMatTexN(key, tex, col, op, repY) {
   return jMat(key, () => {
-    const t = tex.clone(); t.needsUpdate = true; if (repY) t.repeat.set(1, repY);
+    const v = tex.source.version, t = tex.clone(); t.source.version = v; if (repY) t.repeat.set(1, repY);
     return new THREE.MeshBasicMaterial({ map: t, color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false });
   });
 }
