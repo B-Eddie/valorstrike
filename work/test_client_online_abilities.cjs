@@ -99,6 +99,24 @@ Math.random=mulberry(SEED*104729+1);require('vm').runInContext(`Math.random=(${m
   for(const h of humans.splice(0))try{h.leave();}catch(e){}
   xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);
  }
+ // Cast pipeline online (ABILITY ANIM XABC + server castAnswer): the movement kit (two dash slots the server casts straight from the
+ // press, picked by slot type) presses slot 2 then slot 3 50 ms apart - both are cast by the server and each plays exactly one
+ // first-person cast animation (the second used to be dropped while the first gesture still played); an empty slot is refused
+ // with its reason; every request is answered (nothing left pending).
+ {const mover=xe('Object.keys(KITS).find(a=>ABI_M[a]&&ABI_M[a][1]==="dash"&&ABI_M[a][2]==="dash"&&(XAB_INST[a]||"").length>0)');
+  if(!mover)fail('pipeline: no movement kit');else{H.setPhase('online pipeline');
+  xe(`J.pick=${JSON.stringify(mover)};MP.name='PageQA';window.xQMap=${JSON.stringify(MAP)};MP.map=${JSON.stringify(MAP)};mpCreate(false,'five')`);
+  if(await until(()=>xe('MP.st')==='room',8000,'pipeline room')){const code=xe('MP.code');join(code,'FoeB','Sova');await until(()=>xe('(MP.room&&MP.room.pl||[]).length')===2,8000,'pipeline joined');xe('mpStart()');
+   if(await until(()=>xe('MP.st')==='game'&&xe('NET.ready'),20000,'pipeline start')){const room=cluster.room(code),sim=room.sim,u=sim.units.find(v=>v.human&&v.name===xe('MP.name'));sim.buy=0;await step(400);
+    const A=u.ability;A.q=1;A.e=1;A.cool={};const rs=sim.roundState(u);room.send([...room.sessions].find(([w,s])=>s.u===u)[0],{t:'ao',k:'c',ok:true,rs});await step(300);
+    xe('window.__pc=0;{const s=xCaStart;xCaStart=function(){__pc++;return s.apply(this,arguments);};}toast.textContent="";true');const n0=xe('XABC.n.press');
+    await tap('KeyQ',50);await tap('KeyE',50);await step(600);
+    if(!(A.q===0&&A.e===0))fail(`pipeline: server cast both slots (q ${A.q} e ${A.e})`);if(xe('__pc')!==2)fail(`pipeline: two server casts 50 ms apart -> two cast animations (got ${xe('__pc')})`);
+    if(xe('XABC.n.press')-n0!==2)fail('pipeline: both presses tracked');if(xe('XABC.pend.length')!==0)fail('pipeline: every request answered ('+xe('XABC.pend.length')+' pending)');
+    await step(1200);xe('toast.textContent="";__pc=0;true');await tap('KeyQ',50);await step(500);
+    if(!/no charges left/.test(xe('toast.textContent')))fail('pipeline: empty slot refused with its reason: "'+xe('toast.textContent')+'"');if(xe('__pc')!==0)fail('pipeline: no animation for a refused cast (or it was cut) '+xe('__pc')+' '+xe('XCA.on'));
+    if(xe('XABC.pend.length')!==0)fail('pipeline: refusal answered');}}
+  for(const h of humans.splice(0))try{h.leave();}catch(e){}xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);}}
  if(!equips)fail('no ability press equipped (equip-then-fire flow missing)');
  if(fails.length){console.error(fails.slice(0,40).join('\n'));process.exit(1);}
  console.log(`Online client abilities (page <-> in-process server, ${MAP}): ${AGENTS.length} agents x C/Q/E/X (${casts} casts, ${equips} equip -> FIRE): page charges / ult equal the server's after every cast and after the round reset, HUD labels / pips consistent, no NaN, local effects cleared at round start, no page exceptions (${((Date.now()-t0)/1000).toFixed(0)} s)`);
