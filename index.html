@@ -13170,9 +13170,15 @@ function dmLB() {
   dmUI(); const R = dmRank(), me = R.findIndex((r) => r.n === "You"), rows = R.slice(0, 5).map((r, i) => [i, r]);
   if (me >= 5) rows.push([me, R[me]]);
   if (FV.tdm) tdmTS();
-  const s = '<p class="x-dmlb__h">' + (FV.tdm ? "TDM" : "FFA") + ' · first to ' + DM.win + '</p><ol>' + rows.map(([i, r]) => '<li' + (r.n === "You" ? ' class="me"' : "") + '><span>' + (i + 1) + '</span><b>' + r.n + '</b><em>' + r.k + '</em></li>').join("") + '</ol>';
-  if (s !== DM.lbS && DM.lb) { DM.lbS = s; DM.lb.innerHTML = s; }
+  if (!DM.lb) return; // rows are built once and their text written in place (was: the whole board re-parsed from innerHTML, up to 4 times a second)
+  const L = DM.lbE && DM.lbE.root === DM.lb && DM.lbE.h.parentNode === DM.lb ? DM.lbE : dmLBInit(), txt = (el, v) => { v = String(v); if (el.textContent !== v) el.textContent = v; };
+  txt(L.h, (FV.tdm ? "TDM" : "FFA") + " · first to " + DM.win);
+  for (let j = 0; j < rows.length; j++) { const [i, r] = rows[j], E = L.rows[j] || dmLBRow(L), me = r.n === "You";
+    txt(E.s, i + 1); txt(E.b, r.n); txt(E.e, r.k); if (E.me !== me) { E.me = me; E.li.className = me ? "me" : ""; } if (E.li.style.display) E.li.style.display = ""; }
+  for (let j = rows.length; j < L.rows.length; j++) if (L.rows[j].li.style.display !== "none") L.rows[j].li.style.display = "none";
 }
+function dmLBInit() { const lb = DM.lb; lb.textContent = ""; const h = document.createElement("p"); h.className = "x-dmlb__h"; const ol = document.createElement("ol"); lb.appendChild(h); lb.appendChild(ol); return (DM.lbE = { root: lb, h, ol, rows: [] }); }
+function dmLBRow(L) { const li = document.createElement("li"), s = document.createElement("span"), b = document.createElement("b"), e = document.createElement("em"); li.appendChild(s); li.appendChild(b); li.appendChild(e); L.ol.appendChild(li); const E = { li, s, b, e, me: false }; L.rows.push(E); return E; }
 function dmTick(dt) {
   if (window.xLdOn) dt = 0; // loading screen up: clock frozen
   if (DM.over) return dmEnd();
