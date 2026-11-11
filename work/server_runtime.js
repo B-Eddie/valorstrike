@@ -150,7 +150,7 @@ function netOpenSocket(create,code,publicRoom){
    if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);netSyncSmokes(m.fx||[]);netSeatCheck(m);}return;
   }
   if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;
-  if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
+  if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}let told=false;try{if(typeof xAbcAo==='function')told=xAbcAo(m);}catch(e){}/* ABILITY ANIM cast pipeline: the confirmed cast's animation (exactly once), the refusal's reason */if(!m.ok&&!told){sgNo();say('Ability unavailable or target invalid',1000);}else if(m.ok&&J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
   if(m.t==='po'){NET.poAt=performance.now();const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}
   mpCliMsg(m);
  };

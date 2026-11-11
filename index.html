@@ -16351,7 +16351,7 @@ function netOpenSocket(create,code,publicRoom){
    if(NET.ready){mpCliMsg(m);if(m.rs)mpCliRS(m.rs);netSyncEffects(m.fx||[]);netSyncSmokes(m.fx||[]);netSeatCheck(m);}return;
   }
   if(m.t==='ac'&&m.ag==='Sage'&&m.k==='c')return;
-  if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}if(!m.ok){sgNo();say('Ability unavailable or target invalid',1000);}else if(J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
+  if(m.t==='ao'){if(m.rs)mpCliRS(m.rs);if(!m.ok&&m.k==='e'&&J.pick==='Jett'&&J.dash){J.dash=null;NET.dashUntil=0;}let told=false;try{if(typeof xAbcAo==='function')told=xAbcAo(m);}catch(e){}/* ABILITY ANIM cast pipeline: the confirmed cast's animation (exactly once), the refusal's reason */if(!m.ok&&!told){sgNo();say('Ability unavailable or target invalid',1000);}else if(m.ok&&J.pick==='Omen'&&(m.k==='x'||m.k==='c'))say(m.k==='x'?'From the Shadows · 4 s':'Shrouded Step · 1.2 s',1000);return;}
   if(m.t==='po'){NET.poAt=performance.now();const c=Number(m.c);if(Number.isFinite(c))MP.ping=Math.max(0,Math.round(performance.now()-c));return;}
   mpCliMsg(m);
  };
@@ -29546,12 +29546,51 @@ function xAbaReady(k) { // could the kit make this cast right now (pre-press sta
     if (k === "x") return J.ult >= K().u || (J.pick === "Jett" && J.bsOn); if (J.pick === "Jett" && k === "e" && (J.dash || (typeof NET !== "undefined" && NET.tw))) return true;
     return (J[k] | 0) > 0 || !!(J.pick === "Skye" && k === "c"); } catch (e) { return false; }
 }
-if (typeof netSend === "function") { const n0 = netSend; netSend = function (m) { try { if (m && m.t === "ab") { XABA.sent = m; if (m.k === "x" && J.pick === "Omen" && Array.isArray(m.p)) XABA.ftsT = typeof XPAR2 !== "undefined" && XPAR2.shadows ? XPAR2.shadows : 4; } } catch (e) {} return n0.apply(this, arguments); }; }
+// ---- cast pipeline: every ability press either casts with its animation or tells the player why it did not ----
+// Online the trusted server owns the cast. Each cast request ('ab') carries an id n that the server echoes in its answer ('ao',
+// server worker castAnswer). A press of a key the server casts straight from the press starts the quick cast at once when the
+// kit looks ready (prediction); otherwise the answer decides: ok and not yet animated -> the quick cast starts now (late, never
+// skipped); refused but animated -> the gesture is cut. Exactly one quick cast per confirmed cast (the request's entry is
+// consumed by its answer). Was: the quick cast started only if the page's pre-press guess said yes AND no earlier quick cast
+// was still playing (XCA.on): a second cast inside the 0.72 s window (the movement ability right after another cast), or a
+// press guessed wrong from a stale round state, was cast by the server with no animation.
+// Refusals: a kit that refuses a press with only its 120 Hz no-blip (no text of its own), and every server refusal, now show
+// the reason: on cooldown (s left), no charges left, ultimate not ready, buy phase, suppressed, busy, can't be used now.
+var XABC = { seq: 0, pend: [], ttl: 3000, cur: 0, nb: 0, last: null, n: { press: 0, late: 0, cut: 0, fb: 0, lost: 0 } };
+var XABC_TXT = { cooldown: "on cooldown", charges: "no charges left", ult: "ultimate not ready", buy: "not usable in the buy phase", suppressed: "suppressed", busy: "finish the current ability first", state: "can't be used right now" };
+function xAbcName(k) { try { const n = K().n, i = "cqex".indexOf(k); return (n && n[i]) || ""; } catch (e) { return ""; } }
+// pure (tests): the line shown for a refusal of slot k with reason r (cd: seconds of cooldown left)
+function xAbcText(k, r, cd) { const t = XABC_TXT[r] || XABC_TXT.state, nm = xAbcName(k), s = r === "cooldown" && cd > 0 ? t + " · " + (+cd).toFixed(1) + " s" : t; return nm ? nm + " · " + s : s; }
+// why the kit would refuse slot k now, from its own state ("" = nothing obvious: no room, no target, nothing to recast ...)
+function xAbcWhy(k) { try { if (k === "x") return J.ult < K().u ? "ult" : ""; if (J.cd && J.cd[k] > 0) return "cooldown"; if (!((J[k] | 0) > 0)) return "charges"; } catch (e) {} return ""; }
+function xAbcSay(k, r, cd) { const t = xAbcText(k, r, cd); XABC.last = { k, r, t }; XABC.n.fb++; try { sgNo(); } catch (e) {} try { say(t, 1200); } catch (e) {} return t; }
+function xAbcToast() { try { return typeof toast !== "undefined" && toast ? toast.textContent : ""; } catch (e) { return ""; } }
+// the first-person quick cast of slot k (a key the trusted server casts from the press); p: its pending request, marked animated
+function xAbaQuick(k, p) {
+  const i = "cqex".indexOf(k), ty = (ABI_M[J.pick] || ABI_M.Jett)[i]; XAF.qk = XAF.nk = k; xCaStart(XCA_T[ty] || "cast"); if ((XAB_INST[J.pick] || "").includes(k)) xInstGo(k); XABA.fpQ = (XABA.fpQ || 0) + 1;
+  if (p) { p.a = 1; XABC.cur = p.n; }
+}
+// the server's answer to a cast request -> true when the player was told why it was refused
+function xAbcAo(m) {
+  const now = performance.now(); XABC.pend = XABC.pend.filter((p) => { if (now - p.t < XABC.ttl) return true; XABC.n.lost++; return false; });
+  const i = m && Number.isSafeInteger(m.n) ? XABC.pend.findIndex((p) => p.n === m.n) : -1, p = i >= 0 ? XABC.pend.splice(i, 1)[0] : null;
+  if (m && m.ok) { if (p && p.el && !p.a && running && player && player.hp > 0 && J.pick === p.ag) { xAbaQuick(p.k, p); XABC.n.late++; } return false; }
+  if (p && p.a && XABC.cur === p.n && XCA.on) { xCaEnd(); XABC.n.cut++; } // predicted, refused: no gesture for a cast that did not happen
+  xAbcSay(m && m.k, m && typeof m.r === "string" ? m.r : "state", m && Number(m.cd)); return true;
+}
+if (typeof blip === "function") { const b0 = blip; blip = function (f, d, ty) { if (f === 120 && ty === "square") XABC.nb++; return b0.apply(this, arguments); }; } // the kits' shared refusal sound (no() / sgNo)
+if (typeof netSend === "function") { const n0 = netSend; netSend = function (m) { try { if (m && m.t === "ab") { XABA.sent = m;
+      if (!Number.isSafeInteger(m.n)) { m.n = ++XABC.seq; XABC.pend.push({ n: m.n, k: m.k, ag: J.pick, a: 1, el: 0, t: performance.now() }); if (XABC.pend.length > 32) XABC.pend.shift(); } // a: 1 = animated by its own path (equip release ...) unless the press below says otherwise
+      if (m.k === "x" && J.pick === "Omen" && Array.isArray(m.p)) XABA.ftsT = typeof XPAR2 !== "undefined" && XPAR2.shadows ? XPAR2.shadows : 4; } } catch (e) {} return n0.apply(this, arguments); }; }
 if (typeof jKey === "function") { const k0 = jKey; jKey = function (code) {
-  let pre = null; try { pre = typeof code === "string" && /^Key[CQEX]$/.test(code) && typeof NET !== "undefined" && NET.socket && running && player && player.hp > 0 ? { k: code[3].toLowerCase(), ok: xAbaReady(code[3].toLowerCase()) } : null; } catch (e) {}
+  const ab = typeof code === "string" && /^Key[CQEX]$/.test(code), k = ab ? code[3].toLowerCase() : "";
+  let pre = null, fb = null; try { pre = ab && typeof NET !== "undefined" && NET.socket && running && player && player.hp > 0 ? { k, ok: xAbaReady(k) } : null; } catch (e) {}
+  try { if (ab && running && player && player.hp > 0) fb = { r: xAbcWhy(k), cd: J.cd && J.cd[k], nb: XABC.nb, tx: xAbcToast() }; } catch (e) {}
   XABA.sent = null; const r = k0.apply(this, arguments);
-  try { const m = XABA.sent; if (pre && pre.ok && m && m.k === pre.k && !J.eq && !XCA.on && !(J.pick === "Jett" && pre.k === "x")) { // the trusted server casts it from the press: same quick cast as offline
-      const i = "cqex".indexOf(pre.k), ty = (ABI_M[J.pick] || ABI_M.Jett)[i]; XAF.qk = XAF.nk = pre.k; xCaStart(XCA_T[ty] || "cast"); if ((XAB_INST[J.pick] || "").includes(pre.k)) xInstGo(pre.k); XABA.fpQ = (XABA.fpQ || 0) + 1; } } catch (e) { XABA.err = String(e); }
+  try { const m = XABA.sent; if (pre && m && m.k === pre.k && !J.eq && !(J.pick === "Jett" && pre.k === "x")) { // the trusted server casts it from the press: same quick cast as offline
+      const p = XABC.pend.find((x) => x.n === m.n); if (p) { p.el = 1; p.a = 0; } XABC.n.press++;
+      if (pre.ok) xAbaQuick(pre.k, p); } } catch (e) { XABA.err = String(e); } // otherwise its answer starts it (xAbcAo)
+  try { if (fb && !XABA.sent && XABC.nb > fb.nb && xAbcToast() === fb.tx) xAbcSay(k, fb.r || "state", fb.cd); } catch (e) {} // the kit refused with a bare blip: say why
   XABA.sent = null; return r; }; }
 // Omen From the Shadows: the arms hold the shadow orb while the spot is picked (J.ftp), cast as the channel starts and hold it
 // through the channel (J.fts offline; online the sent cast's 4 s). Fed to the ability viewmodel as an equip state of key x.
@@ -29565,7 +29604,7 @@ function xAbaFpSus(dt) {
 }
 if (typeof xAfTick === "function") { const a0 = xAfTick; xAfTick = function (dt) { let s = null; try { s = xAbaFpSus(dt); } catch (e) { XABA.err = String(e); } if (!s || J.eq || XCA.on) return a0.apply(this, arguments); const q0 = J.eq; J.eq = s; try { return a0.apply(this, arguments); } finally { J.eq = q0; } }; }
 (window.XHK = window.XHK || []).push(() => { try { xAbaUltPoll(); } catch (e) {} });
-window.xAbilityAnim = { XABA, XABA_TY, XABA_ST, key: xAbaKey, env: xAbaEnv, type: xAbaType, tp: xAbaTp, pose: xAbaPose, end: xAbaEnd };
+window.xAbilityAnim = { XABA, XABA_TY, XABA_ST, XABC, key: xAbaKey, env: xAbaEnv, type: xAbaType, tp: xAbaTp, pose: xAbaPose, end: xAbaEnd, text: xAbcText, ao: xAbcAo };
 // ---- END ABILITY ANIM ----
 // ---- ABILITY TARGETING ----
 // Tactical-map targeting (work/ability_target_runtime.js, installed last by work/install_valorant.py).
