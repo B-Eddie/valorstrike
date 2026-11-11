@@ -204,7 +204,7 @@ function xrWarm(){const t0=performance.now();let calls=0;try{const L=(typeof XSO
 if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrWarm);else xrWarm();}return r;};}
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
- if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
+ if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);xDispModel(e.c);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
 // perf (kill cost): a built corpse re-solves at most 30 times a second (15 beyond 35 m from the camera); the skipped
 // real time is passed on, so it falls exactly as fast. At most XR_ACT.max bodies simulate at once: when a fifth body
 // drops, the oldest one that has been falling for over a second freezes where it lies (settled bodies already stop).

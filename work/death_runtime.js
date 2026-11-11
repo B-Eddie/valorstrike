@@ -83,7 +83,7 @@ function xdpDied(b, c, hand, hq) {
   let pick = online; try { pick = pick || (typeof xdOn === "function" && xdOn()); } catch (er) {}
   if (pick && e) { e.xdpW = performance.now(); e.xdpP = { x: p.x, y: p.y || 0, z: p.z }; e.xdpL = land; e.xdpHq = hq ? hq.clone() : null; } // its floor (pickup) gun may be made after the death: online the server row, offline the player's own drop (pDie's xdDrop runs after the card)
 }
-function xdpRemove(i) { const e = XDEAD[i]; if (!e) return; try { scene.remove(e.c.m); if (e.gn) { scene.remove(e.gn); xDisp(e.gn); } const j = XSOL.mx.indexOf(e.c); if (j >= 0) XSOL.mx.splice(j, 1); } catch (er) {} if (e.c === (XDP.pc && XDP.pc.xm)) XDP.pc = null; XDEAD.splice(i, 1); }
+function xdpRemove(i) { const e = XDEAD[i]; if (!e) return; try { scene.remove(e.c.m); if (e.gn) { scene.remove(e.gn); xDisp(e.gn); } xDispModel(e.c); /* the corpse's rig too, not only its weapon */ const j = XSOL.mx.indexOf(e.c); if (j >= 0) XSOL.mx.splice(j, 1); } catch (er) {} if (e.c === (XDP.pc && XDP.pc.xm)) XDP.pc = null; XDEAD.splice(i, 1); }
 function xdpClear() { for (let i = XDEAD.length - 1; i >= 0; i--) xdpRemove(i); XDP.drops.length = 0; }
 // repair_runtime's corpse lifetime asks this each frame: true = remove the corpse now
 function xdpGone(e, age) {

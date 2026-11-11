@@ -3128,6 +3128,19 @@ function xMerge(g, fz) {
   requestAnimationFrame(() => requestAnimationFrame(() => { window.xDrawCalls = { before, after: renderer.info.render.calls, merged: n, into: made }; try { console.info("[perf] merged " + n + " meshes into " + made + "; draw calls " + before + " -> " + renderer.info.render.calls); } catch (e) {} }));
 }
 function xDisp(o) { if (o) o.traverse((m) => { if (m.geometry && !m.geometry.userData.shared) m.geometry.dispose(); [].concat(m.material || []).forEach((t) => t.dispose()); }); }
+// A unit's character model leaving the game for good (its corpse removed, or dropped for a fresh one): free what the model owns -
+// its per-model materials (c.mats: the rim material and the rig's materials, built for this model alone; their textures and every
+// geometry are shared by all models of that character and kept), the rig's skeletons (their bone textures) and its animation
+// mixer (actions, property bindings), and take it off the solver list. Was: only the dropped weapon was disposed, so every death
+// orphaned a whole rig (materials, mixer, skeleton + bone texture) and the heap grew for the whole match.
+function xDispModel(c) {
+  if (!c || c.xFreed) return; c.xFreed = 1;
+  const X = c.sx; if (X && X.mx) { try { X.mx.stopAllAction(); if (X.sc) X.mx.uncacheRoot(X.sc); } catch (e) {} }
+  const sk = new Set(); if (c.m) c.m.traverse((o) => { if (o.isSkinnedMesh && o.skeleton) sk.add(o.skeleton); if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose(); });
+  for (const s of sk) try { s.dispose(); } catch (e) {}
+  for (const m of c.mats || []) try { m.dispose(); } catch (e) {}
+  try { const j = XSOL.mx.indexOf(c); if (j >= 0) XSOL.mx.splice(j, 1); } catch (e) {}
+}
 // perf pass 14: the initial map build (activate retake, set solids/boxes, freeze + merge, shadow bake) runs once, on the first mode launch, not at page load
 let xMapBuilt = false;
 function ensureMapBuilt(mapName) {
@@ -4884,7 +4897,7 @@ function xVis(dt) {
     const e = XDEAD[i]; e.t += dt; const f = Math.min(1, e.t / 0.7), c = e.c;
     if (!c.ub) { c.m.rotation.x = -1.48 * f * f; c.m.position.y = 0.12 * f; } // the CC0 rig plays a death clip instead of tipping the root
     c.aL.rotation.x = -1.25 - 1.4 * f; c.aR.rotation.x = -1.35 - 1.3 * f; c.lL.rotation.x = 0.25 * f; c.lR.rotation.x = -0.1 * f;
-    if (e.t > 3) { const o = Math.max(0, 1 - (e.t - 3)); if (c.solOwn) c.solOwn(); for (let j = 0; j < c.mats.length; j++) { c.mats[j].transparent = true; c.mats[j].opacity = o; } if (o <= 0) { scene.remove(c.m); scene.remove(e.gn); xDisp(e.gn); XDEAD.splice(i, 1); } }
+    if (e.t > 3) { const o = Math.max(0, 1 - (e.t - 3)); if (c.solOwn) c.solOwn(); for (let j = 0; j < c.mats.length; j++) { c.mats[j].transparent = true; c.mats[j].opacity = o; } if (o <= 0) { scene.remove(c.m); scene.remove(e.gn); xDisp(e.gn); xDispModel(c); XDEAD.splice(i, 1); } }
   }
 }
 // Preserve the bot's selected pre-spread direction, including body shots and utility targets. The visual layer
@@ -9189,7 +9202,7 @@ function sgKey(code) {
   }
 }
 function sgRevive(a) { if (!a || a.alive) return; a.alive = true; a.hp = 100; a.def = 0; a.cd = 1; scene.add(a.g);
-  if (a.xm) { for (let i = XDEAD.length - 1; i >= 0; i--) if (XDEAD[i].c === a.xm) XDEAD.splice(i, 1); scene.remove(a.xm.m); scene.remove(a.xm.gun); xDisp(a.xm.gun); a.xm = null; } a.xd = 0; /* fresh standing model at the death spot */ feed("Resurrection ▸ " + a.name); say(a.name + " revived", 1000); }
+  if (a.xm) { for (let i = XDEAD.length - 1; i >= 0; i--) if (XDEAD[i].c === a.xm) XDEAD.splice(i, 1); scene.remove(a.xm.m); scene.remove(a.xm.gun); xDisp(a.xm.gun); xDispModel(a.xm); a.xm = null; } a.xd = 0; /* fresh standing model at the death spot */ feed("Resurrection ▸ " + a.name); say(a.name + " revived", 1000); }
 const XDEV = { heal: 50, t: 3, te: 2.5 }; // Devour (wiki v12.02): 50 HP over 3 s, over 2.5 s in Empress (= server reyna.js DEVOUR)
 function xDevour(cap) { const t = J.emp > 0 ? XDEV.te : XDEV.t; J.hl = { tg: player, t, r: XDEV.heal / t, cap }; }
 function rySoul(b) { if (!jOn() || J.pick !== "Reyna") return; const m = new THREE.Mesh(orbGeo, fireMat(0xc04dff, 0.9)); m.scale.setScalar(1.4); m.position.set(b.g.position.x, 1.2, b.g.position.z); scene.add(m); const so = { m, p: m.position, t: 3 }; try { so.rx = reySoul(m.position, 3); if (so.rx) m.visible = false; } catch (e) {} J.so.push(so); if (J.emp > 0 && player.hp > 0) { xDevour(100); SFX.heal(); } } // Empress: Devour auto-casts on the kill and keeps the orb (as the server soulKill)
@@ -12932,7 +12945,7 @@ html.xt-nocm .x-cmb{display:none!important}
   function revive(d) { const t = d.u; DEAD.splice(DEAD.indexOf(d), 1);
     if (d.pl) { player.hp = 100; player.x = d.x; player.z = d.z; player.vx = player.vz = 0; try { if (typeof xKL !== "undefined" && xKL.on) xKLReset(); } catch (e) {} try { setScope(false); } catch (e) {} say("Sage revived you", 1400); }
     else { t.alive = true; t.hp = 100; t.def = 0; t.cd = 1; t.blind = 0; t.xdt = 0; scene.add(t.g);
-      if (t.xm) { try { for (let i = XDEAD.length - 1; i >= 0; i--) if (XDEAD[i].c === t.xm) XDEAD.splice(i, 1); scene.remove(t.xm.m); scene.remove(t.xm.gun); xDisp(t.xm.gun); } catch (e) {} t.xm = null; } t.xd = 0; }
+      if (t.xm) { try { for (let i = XDEAD.length - 1; i >= 0; i--) if (XDEAD[i].c === t.xm) XDEAD.splice(i, 1); scene.remove(t.xm.m); scene.remove(t.xm.gun); xDisp(t.xm.gun); xDispModel(t.xm); } catch (e) {} t.xm = null; } t.xd = 0; }
     feed("Resurrection ▸ " + (d.pl ? "You" : t.name)); try { SFX.ab("choir"); } catch (e) {} }
   function sageTick(u, en) { const s = u.xrs; if (!s) return; const d = s.d, dead = d.pl ? player.hp <= 0 : !d.u.alive;
     if (!u.alive || !dead || DEAD.indexOf(d) < 0 || (s.w += 0.1) > 12 || near(u, en, true, 40)) { u.xrs = null; return; }
@@ -16187,7 +16200,7 @@ function xrWarm(){const t0=performance.now();let calls=0;try{const L=(typeof XSO
 if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrWarm);else xrWarm();}return r;};}
 {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
 {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
- if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
+ if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);xDispModel(e.c);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
 // perf (kill cost): a built corpse re-solves at most 30 times a second (15 beyond 35 m from the camera); the skipped
 // real time is passed on, so it falls exactly as fast. At most XR_ACT.max bodies simulate at once: when a fifth body
 // drops, the oldest one that has been falling for over a second freezes where it lies (settled bodies already stop).
@@ -30488,7 +30501,7 @@ function xdpDied(b, c, hand, hq) {
   let pick = online; try { pick = pick || (typeof xdOn === "function" && xdOn()); } catch (er) {}
   if (pick && e) { e.xdpW = performance.now(); e.xdpP = { x: p.x, y: p.y || 0, z: p.z }; e.xdpL = land; e.xdpHq = hq ? hq.clone() : null; } // its floor (pickup) gun may be made after the death: online the server row, offline the player's own drop (pDie's xdDrop runs after the card)
 }
-function xdpRemove(i) { const e = XDEAD[i]; if (!e) return; try { scene.remove(e.c.m); if (e.gn) { scene.remove(e.gn); xDisp(e.gn); } const j = XSOL.mx.indexOf(e.c); if (j >= 0) XSOL.mx.splice(j, 1); } catch (er) {} if (e.c === (XDP.pc && XDP.pc.xm)) XDP.pc = null; XDEAD.splice(i, 1); }
+function xdpRemove(i) { const e = XDEAD[i]; if (!e) return; try { scene.remove(e.c.m); if (e.gn) { scene.remove(e.gn); xDisp(e.gn); } xDispModel(e.c); /* the corpse's rig too, not only its weapon */ const j = XSOL.mx.indexOf(e.c); if (j >= 0) XSOL.mx.splice(j, 1); } catch (er) {} if (e.c === (XDP.pc && XDP.pc.xm)) XDP.pc = null; XDEAD.splice(i, 1); }
 function xdpClear() { for (let i = XDEAD.length - 1; i >= 0; i--) xdpRemove(i); XDP.drops.length = 0; }
 // repair_runtime's corpse lifetime asks this each frame: true = remove the corpse now
 function xdpGone(e, age) {
