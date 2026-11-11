@@ -13131,7 +13131,7 @@ function dmSpot(me) { // the candidate farthest from every living enemy (small j
 function dmSpawnB(b) {
   const [x, z] = dmSpot(b); b.g.position.x = x; b.g.position.z = z;
   Object.assign(b, { hp: 100, armor: 50, alive: true, cd: 0.8 + Math.random() * 0.6, w: FV.tdm ? tdmBW() : dmBW(), pp: performance.now() + 2000, drt: 0, xTt: null, see: 0, bn: 0, xaimOn: false, smMotor: null, svx: 0, svz: 0, spd: 0, sf: 0, mv: false });
-  if (b.xr) b.xr.length = 0; tdmArmSet(b, b.w); dmUnitFxClr(b); dmLive(b);
+  if (b.xr) b.xr.length = 0; tdmArmSet(b, b.w); try { dmUnitFxClr(b); } catch (e) {} dmLive(b);
 }
 // Deathmatch / TDM have no rounds, so the round-start clear (jClear) never runs during a match: what a unit left behind with no
 // lifetime of its own - its placed turret (lives until shot down) and armed nanoswarms (until triggered) - and the never-expiring
@@ -13152,7 +13152,7 @@ function dmLive(b) {
 function dmSpawnP() {
   const [x, z] = dmSpot(player); Object.assign(player, { x, z, hp: 100, armor: 50, y: 0, vy: 0, vx: 0, vz: 0, ch: 0, st: 0, air: false }); yaw = Math.atan2(x, z); pitch = 0;
   tdmArmSet(player, tdmTier() && FV.pri && TDM_BW[tdmTier()].includes(FV.pri) ? FV.pri : FV.sec); // TDM: armour of this stage's loadout
-  DM.pp = performance.now() + 2000; DM.prt = 0; dmAmmo(); try { xKLReset(); } catch (e) {} dmUnitFxClr(player); setScope(false); updHud();
+  DM.pp = performance.now() + 2000; DM.prt = 0; dmAmmo(); try { xKLReset(); } catch (e) {} try { dmUnitFxClr(player); } catch (e) {} setScope(false); updHud();
 }
 function dmScore(by, victim) {
   DM.k[by] = (DM.k[by] || 0) + 1; DM.d[victim] = (DM.d[victim] || 0) + 1;
