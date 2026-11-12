@@ -120,6 +120,13 @@ function xEqCast(q) { // the throw leaves the hand: the kit's own cast (offline 
   try { xCaEnd(); } catch (e) {} // the equip viewmodel plays the release; the old one-shot cast gesture would replay it
   return xCaSig() !== s0 || !xEqMode(q.code); // false: the kit refused (no target / no room): Valorant keeps it in hand
 }
+// Feedback plumbing shared with ABILITY ANIM (its cast pipeline: XABC / xAbcSay; installed later, called at run time): a press the
+// equip flow cannot take now says why, a kit refusing the release with only its no-blip says why, a press kept during the throw is
+// pressed again through the whole key path (jKey) right after the release.
+function xEqBusy(code) { const k = code[3].toLowerCase(); try { if (typeof xAbcSay === "function") xAbcSay(k, "busy"); else sgNo(); } catch (e) {} }
+function xEqFb0() { try { return typeof XABC !== "undefined" ? { nb: XABC.nb, seq: XABC.seq, tx: xAbcToast() } : null; } catch (e) { return null; } }
+function xEqFb1(k, fb) { try { if (fb && XABC.seq === fb.seq && XABC.nb > fb.nb && xAbcToast() === fb.tx) xAbcSay(k, xAbcWhy(k) || "state"); } catch (e) {} } // not when a request went to the server: its answer says why
+function xEqReplay(code) { try { jKey(code); } catch (e) { try { xE(e); } catch (e2) {} } }
 function xEqTick(dt) {
   const q = J.eq; if (!q) return;
   if (!jOn() || !running || !player || player.hp <= 0 || (mode === "five" && FV.buy > 0 && (FV.menu || !xBpOk(J.pick, J.eq.k)))) { J.eq = null; return; } // buy phase: a pending equip outside XBPA (drawn as the round reset) is dropped, its charge kept
@@ -132,8 +139,7 @@ function xEqTick(dt) {
     if (!held) { if (q.dir > 0 && q.h <= XDARK.tap) { q.st = "rel"; q.t = XABT.rel; q.alt = false; } else q.st = "ready"; } return; }
   q.t -= dt; if (q.t > 0) return;
   if (q.st === "draw") { q.st = "ready"; q.t = 0; if (q.buf) { const a = q.buf === 2; q.buf = 0; xEqFire(a); } }
-  else if (q.st === "rel") { if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; } }
-  else if (q.st === "rel") { if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; } }
+  else if (q.st === "rel") { const nx = q.nx, fb = xEqFb0(); q.nx = null; if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; xEqFb1(q.k, fb); } if (nx) xEqReplay(nx); }
   else if (q.st === "rec") { J.eq = null; const w = xEqWeap(); VM.sw = VM.swT = xReeqT(q.k, w); VM.ins = 0; } // ability put away: the gun re-equips (fast / instant), no fire until it is up
 }
 const xEqKey0 = jKey;
@@ -143,8 +149,8 @@ jKey = function (code) {
   if (J.eq && J.eq.code === code && xEqHold(J.eq) === "mark" && (J.eq.st === "ready" || J.eq.st === "mark")) { if (!Number.isFinite(J.eq.md)) xDarkInit(J.eq); J.eq.st = "rel"; J.eq.t = XABT.rel; J.eq.alt = false; return true; } // Dark Cover: E again sends the smoke to the marker
   if (J.eq && J.eq.code === code && xRotKind(J.eq) && (J.eq.st === "draw" || J.eq.st === "ready")) { xRotKey(J.eq); return true; } // E again: Turret 180 deg; C again: Barrier 90 deg
   if (J.eq && J.eq.code === code && J.eq.st !== "rec") { if (J.eq.st !== "rel" && J.eq.st !== "hold") J.eq = null; return true; } // same key again: put it away
-  if (J.eq && J.eq.st === "rel") return true; // mid-throw
-  if (J.eq && J.eq.st === "hold") return true; // drawing the bow / holding: finish it first
+  if (J.eq && J.eq.st === "rel") { J.eq.nx = code; return true; } // mid-throw: another ability key is kept and pressed again the moment the throw has left the hand (xEqTick); was dropped with no feedback
+  if (J.eq && J.eq.st === "hold") { xEqBusy(code); return true; } // drawing the bow / holding: finish it first (now said; was a silent drop)
   if (player && player.hp > 0 && xEqMode(code)) { J.eq = { k: code[3].toLowerCase(), code, st: "draw", t: xEqT(code[3].toLowerCase()), d0: xEqT(code[3].toLowerCase()), alt: false, buf: 0, h: 0, bn: 0 }; fireHeld = false; try { setScope(false); } catch (e) {} return true; }
   if (J.eq) J.eq = null; // a quick-cast / recast puts away whatever was out
   const ik = code[3].toLowerCase(), inst = (XAB_INST[J.pick] || "").includes(ik) && player && player.hp > 0, s0 = inst ? xInstSig(ik) : null, ready = inst ? xInstOnline(ik) : null, r = xEqKey0.apply(this, arguments);
@@ -216,7 +222,7 @@ function xCbHintTick() {
 }
 try { const st = document.createElement("style"); st.textContent = "#xCbHint{position:fixed;left:50%;top:calc(50% + 30px);transform:translateX(-50%);display:none;gap:46px;pointer-events:none;z-index:6;font:700 11px/1 sans-serif;letter-spacing:.08em;color:#fff;text-shadow:0 0 3px #000,0 0 2px #000}#xCbHint.on{display:flex}#xCbHint span:first-child{color:#ffe7a0}#xCbHint span:last-child{color:#ffb060}";
   document.head.appendChild(st); const d = document.createElement("div"); d.id = "xCbHint"; d.innerHTML = "<span>\u25C0 L-CLICK</span><span>R-CLICK \u25B6</span>"; (document.getElementById("game") || document.body).appendChild(d); } catch (e) {}
-{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); xDarkShow(J.eq); } catch (e) { J.eq = null; } try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
+{ const t0 = jTick; jTick = function (dt) { const v = t0.apply(this, arguments); try { xEqTick(dt); xEqHud(); xBowHud(); xDarkShow(J.eq); } catch (e) { J.eq = null; try { xE(e); } catch (e2) {} } /* the equip is dropped, but reported (was silent) */ try { xInstTick(dt); } catch (e) { XABT.inst = null; } try { xCbHintTick(); } catch (e) { if (XCBH.g) XCBH.g.visible = false; } return v; }; }
 // First person: the agent's native arms draw the ability (work/ability_fp_runtime.js, ABILITY FIRST PERSON).
 // ---- Third person: others see the throw. A cast relayed for another unit (online relay / trusted-server replay, mpFx)
 // plays the rig's throw / cast one-shot (upper-body rigs) or the right-arm swing (skinned rigs), typed like the first person.

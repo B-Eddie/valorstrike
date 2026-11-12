@@ -57,3 +57,34 @@ const sk=new SpikeSimulation(W),skye=sk.add('sk','Skye'),op=sk.add('foe'),friend
 const sd=new SpikeSimulation(W),dy=sd.add('sk','Skye');sd.add('other');sd.start(false);sd.buy=0;dy.ability.c=1;sd.command(dy,{t:'ab',k:'c'});dy.alive=false;tickAbilities(sd,.1);assert.equal(sd.effects.length,0);assert.equal(dy.ability.regrowthActive,false);console.log('Regrowth stops on caster death');
 
 const ad=new SpikeSimulation(W),aimWalker=ad.add('ads','Jett');ad.add('enemy');ad.start(false);ad.buy=0;aimWalker.weapon='Vandal';let moveInputs=[];ad.motor=(u,input)=>{if(u===aimWalker)moveInputs.push(input);};ad.command(aimWalker,{t:'in',seq:1,r:0,p:0,f:1,ads:1});ad.step(.05);assert.equal(moveInputs.at(-1).speed,6.75*weapons.Vandal.runSpeedMultiplier*weapons.Vandal.adsStats.runSpeedMultiplier);aimWalker.concussUntil=10;ad.step(.05);assert.equal(moveInputs.at(-1).speed,6.75*weapons.Vandal.runSpeedMultiplier);aimWalker.concussUntil=0;aimWalker.slowUntil=10;ad.step(.05);assert.equal(moveInputs.at(-1).speed,6.75*weapons.Vandal.runSpeedMultiplier*weapons.Vandal.adsStats.runSpeedMultiplier*.35);ad.time=1;ad.step(.05);assert.equal(moveInputs.at(-1).speed,6.75*weapons.Vandal.runSpeedMultiplier*.35);console.log('Spike motor honors current-input ADS weapon speed, concuss disables ADS, slow stacks, expired input cannot retain ADS');
+// Cast refusals carry a reason (castRejectReason, sent back with the room's 'ao' answer): cooldown with the seconds left, no charges,
+// ultimate points short, not a buy-phase ability, caster not able to act. Every refused request of every kit slot names one.
+{const {castRejectReason}=await import('./src/abilities.js'),kitsJ=JSON.parse((await import('node:fs')).readFileSync(new URL('./src/kits.json',import.meta.url),'utf8')),REASONS=['state','buy','cooldown','suppressed','ult','charges'];
+ const agents=Object.keys(kitsJ),first=agents[0];
+ const t=new SpikeSimulation(W),u=t.add('caster',first);t.add('opponent');t.start(false);t.buy=0;const A=u.ability;
+ A.c=0;assert.deepEqual(castRejectReason(t,u,{t:'ab',k:'c'}),{r:'charges'},'ability slot 1 with no charge left: charges');
+ A.c=1;A.cool.c=t.time+2.5;assert.deepEqual(castRejectReason(t,u,{t:'ab',k:'c'}),{r:'cooldown',cd:2.5},'ability slot 1 on cooldown: cooldown + seconds left');
+ A.cool.c=0;A.ult=0;assert.equal(castRejectReason(t,u,{t:'ab',k:'x'}).r,'ult','ultimate short of points');
+ u.alive=false;assert.equal(castRejectReason(t,u,{t:'ab',k:'c'}).r,'state','caster down: invalid state');u.alive=true;
+ assert.equal(castRejectReason(t,u,{t:'ab',k:'z'}).r,'state','unknown slot: invalid state');
+ t.buy=10;const nb=['c','q','e','x'].find(k=>castRejectReason(t,u,{t:'ab',k}).r==='buy');assert.ok(nb,'buy phase: a slot outside the setup abilities is refused as buy');t.buy=0;
+ // every kit x slot: emptied charges / ult -> the server refuses and names a reason; on cooldown -> 'cooldown' first
+ let n=0;for(const ag of agents){const s=new SpikeSimulation(W),c=s.add('caster',ag);s.add('opponent');s.start(false);s.buy=0;
+  for(const k of ['c','q','e','x']){const B=c.ability;B.c=B.q=B.e=0;B.ult=0;const ok=s.command(c,{t:'ab',k});if(ok)continue;const R=castRejectReason(s,c,{t:'ab',k});assert.ok(REASONS.includes(R.r),`kit ${n} slot ${k}: refusal has a reason (${R.r})`);
+   B[k==='x'?'ult':k]=k==='x'?99:3;B.cool[k]=s.time+1;assert.equal(s.command(c,{t:'ab',k}),false,`kit ${n} slot ${k}: refused on cooldown`);assert.equal(castRejectReason(s,c,{t:'ab',k}).r,'cooldown',`kit ${n} slot ${k}: cooldown reason`);B.cool[k]=0;}n++;}
+ console.log(`Cast refusals carry a reason: charges / cooldown (+ s left) / ult / buy / state; ${n} kits x 4 slots refused with a named reason`);}
+// The room answers every cast request exactly once ('ao'): the request id n echoed, ok, on a refusal the reason; a request outside a live game is answered too.
+{const fs=await import('node:fs'),vm=await import('node:vm'),{createSim}=await import('./src/modes.js'),{castRejectReason}=await import('./src/abilities.js');let now=1_000_000;const FakeDate=class extends Date{static now(){return now;}};
+ const source=fs.readFileSync(new URL('./src/worker.js',import.meta.url),'utf8'),kitsJ=JSON.parse(fs.readFileSync(new URL('./src/kits.json',import.meta.url),'utf8'));
+ const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date:FakeDate,URL,performance,setInterval:()=>1,clearInterval(){},Map,JSON,Number,Object,console:{error(){},warn(){},log(){}},kits:kitsJ,castRejectReason};
+ vm.createContext(context);vm.runInContext(source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;',context);
+ const room=new context.GameRoom({waitUntil(){}},{DIRECTORY:{idFromName:()=>'',get:()=>({fetch:async()=>new Response('{}',{status:401})})}});room.advertise=()=>{};room.saveResults=async()=>{};
+ const ag=Object.keys(kitsJ)[0];room.sim=createSim(W,'tdm','ascent',()=>.5);room.sim.spawnRooms=false;const u=room.sim.add('A',ag,true,0);u.loading=false;room.sim.add('B',ag,true,1).loading=false;room.sim.start(false);room.last=now;room.code='CASTAO';
+ const ws={frames:[],send(d){this.frames.push(JSON.parse(d));},close(){}};room.sessions.set(ws,{id:'A',u,window:now,count:0,last:now,ready:true,resume:'r-A'});const A=u.ability;
+ const ask=async m=>{const n0=ws.frames.length;await room.message(ws,JSON.stringify(m));const a=ws.frames.slice(n0).filter(f=>f.t==='ao');assert.equal(a.length,1,'exactly one answer per cast request');return a[0];};
+ A.c=0;let a=await ask({t:'ab',k:'c',n:7});assert.equal(a.n,7,'request id echoed');assert.equal(a.ok,false);assert.equal(a.r,'charges','no charge: reason charges');
+ A.c=2;A.cool.c=room.sim.time+1.5;a=await ask({t:'ab',k:'c',n:8});assert.equal(a.ok,false);assert.equal(a.r,'cooldown');assert.equal(a.cd,1.5,'cooldown: seconds left');
+ A.cool.c=0;const okd=[];for(let i=0;i<4;i++){a=await ask({t:'ab',k:'c',n:9+i});okd.push(a.ok);if(!a.ok)assert.ok(['cooldown','charges','state'].includes(a.r),'rapid re-activation refusal names a reason: '+a.r);}
+ assert.ok(okd.filter(Boolean).length<=2,'no more casts than charges');
+ room.sim.phase='room';a=await ask({t:'ab',k:'q',n:20});assert.equal(a.ok,false);assert.equal(a.r,'state','outside a live game: answered, invalid state');assert.equal(a.n,20);room.sim.phase='game';
+ console.log('Cast answers: one ao per request with its id, refusals carry charges / cooldown (+ s) / state, rapid re-activation answered every time, no answer dropped outside a live game');}

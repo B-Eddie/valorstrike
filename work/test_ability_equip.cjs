@@ -347,5 +347,33 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
    xe('jUnreveal();__dt.hp=Math.min(100,__dthp);bots.concat(allies).forEach(b=>{if(b.det>1e8)b.det=0;});true');await adv(200);}}
  if(xe('XAF.err&&!/load|fetch|Request/i.test(XAF.err)?XAF.err:null'))fail('ability viewmodel error: '+xe('XAF.err'));
  if(H.errors.length>errs0)fail('page errors: '+H.errors.slice(errs0).map(e=>String(e&&e.message||e)).join(' | '));
+ // ---- input -> cast path (shared ability plumbing): every activation casts with its animation, or the player is told why ----
+ // Kits are picked by what their slots ARE (the page's own type table ABI_M and equip tables), not by name.
+ {xe(`window.__P={rel:0,relF:0,quick:0,ca:0};{const v=vmTick;vmTick=function(){const r=v.apply(this,arguments);try{if(J.eq&&J.eq.st==="rel")__P.relF=1;else if(__P.relF){__P.rel++;__P.relF=0;}if(XAF.on&&XAF.mode==="quick")__P.quick++;}catch(e){}return r;};}{const s=xCaStart;xCaStart=function(){__P.ca++;return s.apply(this,arguments);};}true`);
+  const P0=()=>xe('__P.rel=0;__P.relF=0;__P.quick=0;__P.ca=0;toast.textContent="";true'),P=()=>xe('({rel:__P.rel,quick:__P.quick,ca:__P.ca,toast:toast.textContent})');
+  const by=(cond)=>xe(`Object.keys(KITS).find(a=>ABI_M[a]&&(${cond}))`),slotName=(i)=>xe(`K().n[${i}]`);
+  const barrier=by('ABI_M[a][0]==="wall"&&XAB_EQ[a]&&XAB_EQ[a].c&&XAB_EQ[a].q'),mover=by('ABI_M[a][1]==="dash"&&ABI_M[a][2]==="dash"&&(XAB_INST[a]||"").includes("c")'),holder=by('XAB_HOLD[a]&&XAB_HOLD[a].q==="bow"&&XAB_EQ[a]&&XAB_EQ[a].c');
+  if(!barrier||!mover||!holder)fail('plumbing: kits by slot type '+JSON.stringify([!!barrier,!!mover,!!holder]));
+  else{
+  // the barrier ability pressed while ability slot 2 is mid-release (0.2 s): kept, equipped right after the throw, fires on FIRE
+  pick(barrier);await adv(200);P0();const c0=xe('J.c'),q0=xe('J.q');
+  await tap('KeyQ');await adv(Math.round(xe('xEqT("q")')*1000)+100);await click(0);await adv(60);eq(xe('J.eq&&J.eq.st'),'rel','slot 2 mid-release');await tap('KeyC',40);
+  await adv(400);eq(xe('J.q'),q0-1,'slot 2 thrown');eq(xe('J.eq&&J.eq.k'),'c','the barrier ability pressed mid-release is equipped after the throw (was dropped silently)');
+  await adv(Math.round(xe('xEqT("c")')*1000)+100);await click(0);await adv(900);eq(xe('J.c'),c0-1,'the barrier ability fires');eq(xe('__P.rel'),2,'cast -> animation: both casts played their release');
+  // cooldown / no charges: refused WITH the reason (the kit's bare no-blip before)
+  pick(barrier);xe('J.cd.q=5;true');P0();await tap('KeyQ');await adv(100);{const t=P().toast;if(!(t.includes(slotName(1))&&/on cooldown · [0-9.]+ s/.test(t)))fail('slot 2 on cooldown: feedback "'+t+'"');}eq(xe('J.eq'),null,'cooldown: nothing equipped');
+  pick(barrier);xe('J.c=0;true');P0();await tap('KeyC');await adv(100);{const t=P().toast;if(!(t.includes(slotName(0))&&/no charges left/.test(t)))fail('the barrier ability with no charge: feedback "'+t+'"');}
+  // holding an ability: another key says why it is not taken
+  pick(holder);await adv(100);P0();await tap('KeyQ');await adv(Math.round(xe('xEqT("q")')*1000)+100);H.mouse(0,true);await adv(300);eq(xe('J.eq&&J.eq.st'),'hold','slot 2 held');await tap('KeyC');
+  {const t=P().toast;if(!/finish the current ability first/.test(t))fail('key pressed while holding: feedback "'+t+'"');}H.mouse(0,false);await adv(1200);eq(xe('J.eq'),null,'held slot released and put away');
+  // the movement ability: cast -> exactly one first-person quick cast that plays
+  pick(mover);await adv(100);P0();const mq=xe('J.q');await tap('KeyQ');await adv(500);{const r=P();eq(xe('J.q'),mq-1,'the movement ability cast');eq(r.ca,1,'the movement ability: one cast animation');if(!(r.quick>=5))fail('the movement ability: first-person quick cast played '+r.quick+' frames');}
+  // rapid re-activation of a two-charge slot: second press inside the slot cooldown is refused with the reason, a later press casts, nothing stuck
+  pick(mover);xe('J.c=2;J.cd.c=0;true');await adv(100);P0();await tap('KeyC',30);await adv(30);await tap('KeyC',30);
+  {const r=P();eq(xe('J.c'),1,'rapid re-activation: first press cast');eq(r.ca,1,'rapid re-activation: one animation for the one cast');if(!/on cooldown/.test(r.toast))fail('rapid re-activation: second press refused with its reason "'+r.toast+'"');}
+  await adv(800);P0();await tap('KeyC',30);await adv(1500);{const r=P();eq(xe('J.c'),0,'rapid re-activation: a press after the cooldown casts (no stuck state)');eq(r.ca,1,'its animation');}
+  eq(xe('[XCA.on,J.eq,XABT.inst]'),[false,null,null],'no casting state left behind');
+  P0();await tap('KeyC');await adv(100);if(!/no charges left/.test(P().toast))fail('empty slot: feedback "'+P().toast+'"');}
+  eq(xe('XABA.err'),null,'cast pipeline: no runtime error');}
  if(fails.length){console.log(fails.join('\n'));process.exit(1);}console.log('ability equip: binds, migration, HUD labels, equip -> fire flow, first-person equip viewmodel, wiki equip times + windups, Sova bow charge + bounces, Fault Line hold-to-extend, Hot Hands spread, Neural Theft 18 m / 2 s + 6 s, Cyber Cage cylinder, Recon Bolt 30 m pulses, Nanoswarm 4.5 m / 1 s windup, Paranoia 25 m orb, Boom Bot 15 m / 2.5 m / 80-30 falloff / 0.6 s windup / 60 HP, Trailblazer 3.5 m / 4-2.5 s / 30 bite, Rolling Thunder 32 x 18 m strip, Hunter\'s Fury 1.76 m / 2.125 s / 6 s / 1 s reveal, Showstopper 4 / 7 m 150-30, bot Breach / Raze real ults, Turret windup / bursts / falloff / 100 degree cone / 40 m, Guiding Light blind by flight time / 0.3 s activation windup, Owl Drone / Spycam dart pings, Cloudburst flight + steering, per-ability smoke radii, kit table ok');process.exit(0);
 })().catch(e=>{console.error(e);process.exit(1);});

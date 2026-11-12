@@ -38,6 +38,31 @@ const AG=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye',
   ok(far>.25,`${ty}: a hand leaves the rest pose by ${far.toFixed(2)} m`);ok(d(r0.R,r1.R)<1e-9&&Math.abs(r1.tw)<1e-9&&Math.abs(r1.le)<1e-9,`${ty}: ends at rest`);ok(L.env(0,S.T)===0&&L.env(S.T,S.T)===0&&L.env(S.T/2,S.T)===1,`${ty}: envelope 0 -> 1 -> 0`);}
  {const w=L.key('throw',.24),r=L.key('throw',.44);ok(w.R[2]<-.1&&w.R[1]>.05,'throw wind-up: hand behind and above the shoulder');ok(r.R[2]>.45,'throw release: arm forward');}
  ok(L.key('place',.5).le>.4,'place: leans forward to set it down');ok(L.key('bow',.5).L[2]>.5,'bow: the bow arm out in front');
+ // ---- 2b. cast pipeline (pure: the installed block on a stub page; a server-cast key, its answers, local refusals) -------
+ {const C={window:{},console,Math,THREE:P.THREE,__t:1000};C.performance={now:()=>C.__t};vm.createContext(C);
+  vm.runInContext(`var J={pick:"A",c:1,q:1,e:1,ult:0,cd:{c:0,q:0,e:0,x:0}},running=true,player={hp:100},NET={socket:{}},XCA={on:false},XAF={},XABT={},XPAR2={},ABI_M={A:["dash","dash","dash","ult"]},XCA_T={dash:"buff"},XAB_INST={},toast={textContent:""},__st=0,__end=0,__sent=[],__said=[],__local=false,__own=false;
+   function K(){return {u:7,n:["slot 1","slot 2","slot 3","slot 4"]};}
+   function xCaStart(){__st++;XCA.on=true;}function xCaEnd(){__end++;XCA.on=false;}function xInstGo(){}
+   function blip(f,d,t){}const sgNo=()=>blip(120,0.08,"square",0.1);function say(t){toast.textContent=t;__said.push(t);}
+   function netSend(m){__sent.push(m);}
+   function jKey(code){const k=code[3].toLowerCase();if(__own){say("own text");sgNo();return true;}if(__local){if(J.cd[k]>0||!(J[k]>0)){sgNo();return true;}J[k]--;J.cd[k]=0.6;return true;}netSend({t:"ab",k});}`,C);
+  vm.runInContext(BLOCK,C);const g=c=>vm.runInContext(c,C),press=code=>{g(`jKey(${JSON.stringify(code)})`);const m=g('__sent[__sent.length-1]');return m&&m.n;},ans=(n,k,ok,x)=>g(`xAbcAo(${JSON.stringify(Object.assign({t:'ao',k,n,ok},x||{}))})`);
+  let n1=press('KeyQ');ok(Number.isSafeInteger(n1),'pipeline: a cast request carries an id');ok(g('__st')===1,'pipeline: predicted cast animates at the press');
+  ans(n1,'q',true);ok(g('__st')===1,'pipeline: its confirmation does not animate it again');ans(n1,'q',true);ok(g('__st')===1,'pipeline: a repeated confirmation of the same request animates nothing');
+  ok(g('XCA.on')===true,'pipeline: gesture still playing');let n2=press('KeyE');ok(g('__st')===2,'pipeline: rapid re-activation inside the gesture window animates the second cast (was dropped: !XCA.on gate)');ans(n2,'e',true);ok(g('__st')===2,'pipeline: rapid second cast confirmed: still exactly one animation each');
+  g('J.q=0;XCA.on=false;true');let n3=press('KeyQ');ok(g('__st')===2,'pipeline: stale local state (no charge seen) -> nothing at the press');ans(n3,'q',true);ok(g('__st')===3&&g('XABC.n.late')===1,'pipeline: the server confirmed it -> the animation starts on the answer (late, not skipped)');
+  g('J.e=1;true');let n4=press('KeyE');ok(g('__st')===4,'pipeline: predicted');ans(n4,'e',false,{r:'charges'});ok(g('__end')===1&&g('XABC.n.cut')===1,'pipeline: refused after the prediction -> the gesture is cut');ok(/slot 3 · no charges left/.test(g('__said[__said.length-1]')),'pipeline: refusal shows its reason (no charges): '+g('__said[__said.length-1]'));
+  let n5=press('KeyC');ans(n5,'c',false,{r:'cooldown',cd:1.5});ok(g('__said[__said.length-1]')==='slot 1 · on cooldown · 1.5 s','pipeline: cooldown refusal shows the seconds left: '+g('__said[__said.length-1]'));
+  ans(999,'c',false,{});ok(/slot 1 · can't be used right now/.test(g('__said[__said.length-1]')),'pipeline: an unknown refusal still says something (invalid state)');
+  let n6=press('KeyQ');C.__t+=4000;ans(n6+50,'q',true);ok(g('XABC.pend.length')===0&&g('XABC.n.lost')>=1,'pipeline: an unanswered request expires (no pending state left behind)');
+  // rapid burst: every press is answered; one animation per confirmed cast, one reason per refusal
+  {g('J.q=9;XCA.on=false;__st=0;__end=0;__said.length=0;true');const ns=[];for(let i=0;i<6;i++)ns.push(press('KeyQ'));const st0=g('__st');ns.forEach((n,i)=>ans(n,'q',i%2===0,i%2?{r:'cooldown',cd:.4}:{}));
+   ok(st0===6&&g('__st')===6&&g('__end')===1&&g('__said.length')===3&&g('XABC.pend.length')===0,`pipeline: 6 rapid presses -> 6 answered, 3 cast with their animation, 3 refused with a reason (only the refusal of the gesture still playing cuts it), nothing pending (st ${g('__st')} end ${g('__end')} said ${g('__said.length')})`);}
+  // offline: the kit's own refusal (bare blip) gets the reason from the slot's state; a cast or a refusal with its own text gets none
+  g('__local=true;NET.socket=null;__said.length=0;J.c=1;J.cd.c=0.4;true');press('KeyC');ok(g('__said[0]')==='slot 1 · on cooldown · 0.4 s','offline refusal on cooldown: '+g('__said[0]'));
+  g('J.cd.c=0;J.c=0;true');press('KeyC');ok(g('__said[1]')==='slot 1 · no charges left','offline refusal with no charge: '+g('__said[1]'));
+  g('J.c=1;true');press('KeyC');ok(g('__said.length')===2&&g('J.c')===0,'offline cast: no refusal line');
+  g('__own=true;__said.length=0;true');press('KeyC');ok(g('__said.length')===1&&g('__said[0]')==='own text','offline refusal with its own text: no second line');g('__own=false;true');}
  // ---- 3. third person on real rigs --------------------------------------------------------------------------------
  const {sim,T}=require('./tp_anim_sim.cjs'),grip=fs.readFileSync(path.join(__dirname,'grip_runtime.js'),'utf8');
  const gripFns="var XG_FINGERS=['Index','Middle','Ring','Pinky','Thumb'];"+grip.slice(grip.indexOf('function xgSetup('),grip.indexOf('function xgGrip('));
