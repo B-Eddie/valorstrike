@@ -16,9 +16,9 @@ const decl={};let n=0;for(const m of html.matchAll(/<script(?![^>]*\bsrc=)([^>]*
 const dup=Object.entries(decl).filter(([,v])=>v.length>1);assert.deepEqual(dup,[],'top-level names declared twice: '+JSON.stringify(dup));
 // ---- B / C: the page's own functions
 const fn=nm=>{const i=html.indexOf('\nfunction '+nm+'(');assert(i>=0,nm+' missing');let d=0,j=html.indexOf('{',i);for(;j<html.length;j++){if(html[j]==='{')d++;else if(html[j]==='}'&&!--d)break;}return html.slice(i+1,j+1);};
-const {xCapGates,xGovTick,xGovClear}=new Function(['xCapGates','xGovTick','xGovClear'].map(fn).join('\n')+'\nreturn {xCapGates,xGovTick,xGovClear};')();
+const {xCapGates,xGovTick,xGovClear,xGovRef}=new Function(['xCapGates','xGovTick','xGovClear','xGovRef'].map(fn).join('\n')+'\nreturn {xCapGates,xGovTick,xGovClear,xGovRef};')();
 const decl0=html.match(/const XGV = \{[^\n]*\};/);assert(decl0,'governor state XGV missing');
-const G0=()=>{const mk=ls=>new Function('localStorage','return '+decl0[0].slice('const XGV = '.length,-1))(ls),G=mk({getItem:()=>null});assert.equal(G.on,false,'dynamic resolution defaults OFF (user: render sharp, 1:1)');assert.equal(mk({getItem:k=>k==='vs.gov'?'1':null}).on,true,'Dynamic resolution On (vs.gov=1) remembered');return G;};
+const G0=()=>{const mk=ls=>new Function('localStorage','return '+decl0[0].slice('const XGV = '.length,-1))(ls),G=mk({getItem:()=>null});assert.equal(G.on,true,'dynamic resolution defaults ON (user, 12 Nov 2026: fix the lag and choppy game)');assert.equal(G.opt,false,'default: not an explicit opt-in (1:1 floor)');assert.equal(mk({getItem:k=>k==='vs.gov'?'0':null}).on,false,'Dynamic resolution Off (vs.gov=0) remembered');const E=mk({getItem:k=>k==='vs.gov'?'1':null});assert(E.on&&E.opt,'Dynamic resolution On (vs.gov=1) remembered as an explicit opt-in');return G;};
 const hz=r=>1000/r;
 assert.equal(xCapGates(0,hz(75)),false,'no cap');
 assert.equal(xCapGates(60,hz(60)),false,'60 cap on 60 Hz');
@@ -52,4 +52,13 @@ G.wait=12000;cur=m;G.clean=t;for(let i=0;i<Math.ceil(21000/R);i++)frame(R);asser
 G.wait=3000;G.clean=t;for(let i=0;i<Math.ceil(21000/R);i++)frame(R);assert.equal(G.wait,3000,'wait floor 3 s');
 // a 75 Hz screen at a steady 60 fps (every 5th vsync dropped = 4 frames of 13.3 + 1 of 26.7) is judged missing: the governor steps down
 G=G0();xGovClear(G,t);cur=m;t+=700;let d=false;for(let i=0;i<200&&!d;i++)d=frame(i%5===4?R*2:R)!==undefined;assert(d,'uneven 60 on 75 Hz is caught');
+// D. xGovRef: the governor judges against the fastest refresh seen. A game stuck at a steady 30 fps on a 60 Hz screen has a
+//    33 ms median rAF interval; judged against that nothing "missed" and the pixel ratio never stepped down.
+{const H=hz(60);G=G0();assert.equal(xGovRef(G,H,false,0),H,'first measurement taken');assert.equal(xGovRef(G,H*2,false,1000),H,'a slower median (steady 30 fps) does not replace the 60 Hz refresh');
+ xGovClear(G,t);cur=m;t+=700;let dn=false;for(let i=0;i<40&&!dn;i++)dn=frame2(H*2)!==undefined;function frame2(dt){t+=dt;const nx=xGovTick(G,t,dt,xGovRef(G,H*2,cur<=lo+0.001,t),cur,m,lo);if(nx!==undefined)cur=nx===Infinity?m:nx;return nx;}
+ assert(dn,'steady 30 fps on a 60 Hz screen steps the pixel ratio down');
+ assert.equal(xGovRef(G,hz(75),false,t),hz(75),'a faster refresh is taken at once');
+ // moved to a slower screen: at the floor, 5 s without reaching the old refresh -> the slower one is accepted
+ G=G0();xGovRef(G,hz(120),false,0);assert.equal(xGovRef(G,H,true,1000),hz(120),'not yet');assert.equal(xGovRef(G,H,true,5000),hz(120),'4 s: not yet');assert.equal(xGovRef(G,H,true,6100),H,'5 s at the floor: the slower refresh is accepted');
+ G=G0();xGovRef(G,hz(120),false,0);xGovRef(G,H,true,1000);xGovRef(G,H,false,3000);assert.equal(xGovRef(G,H,true,7000),hz(120),'the 5 s restart when it left the floor');}
 console.log('frame governor: OK (boot parse '+n+' scripts, cap-vs-refresh, governor steps / floor / ceiling / hysteresis)');

@@ -1840,7 +1840,7 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
   <div data-sp="v" id="xVid" role="tabpanel" aria-label="Video" hidden>
   <div class="srow x-sr"><span class="st-l">Graphics quality <b id="vGQ">HIGH</b></span><div class="seg" id="xGQ"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high" class="on">High</button></div></div>
   <div class="srow x-sr"><span class="st-l">Limit FPS</span><div class="seg" id="xFpsL"><button data-v="auto">Auto</button><button data-v="0" class="on">Off</button><button data-v="60">60</button><button data-v="120">120</button><button data-v="144">144</button></div></div>
-  <div class="srow x-sr"><span class="st-l">Dynamic resolution</span><div class="seg" id="xGov"><button data-v="1">On</button><button data-v="0" class="on">Off</button></div></div>
+  <div class="srow x-sr"><span class="st-l">Dynamic resolution</span><div class="seg" id="xGov"><button data-v="1" class="on">On</button><button data-v="0">Off</button></div></div>
   <div class="srow">Show FPS and ping<div class="seg" data-key="fps"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
   <div class="st-sl"><div class="srow"><label for="sBri">Brightness</label><b id="vBri">1.00</b></div><input type="range" id="sBri" min="50" max="150" step="1" value="100" /></div>
   <div class="srow x-sr"><span class="st-l">Resolution</span><div class="seg" id="xRes"><button data-v="std">Standard</button><button data-v="retina" class="on">Native (sharp)</button></div></div>
@@ -12226,10 +12226,25 @@ const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res ===
 // (the quality preset / render scale the user chose stays the ceiling; floor XGV.floor of it, never under 0.5 CSS px);
 // after XGV.wait ms without a miss it steps back up 10%. Hysteresis: a step down within 2.5 s of a step up doubles the
 // wait before the next step up (up to 60 s), a long clean run halves it again (down to 3 s). Runs only in a live,
-// uncovered, unpaused match; off when a lower FPS limit gates rendering; OFF by default (renders the sharp 1:1 ceiling); vs.gov = "1" turns it on (Video: Dynamic res).
+// uncovered, unpaused match; off when a lower FPS limit gates rendering.
+// ON by default (user, 12 Nov 2026: "fix the lag and choppy game" - M1, 2880x1800 native: 27-50 fps with half the frames
+// dropped; ~1.2x: a steady 59): it starts at the sharp native ceiling and only steps down while vsyncs are being dropped,
+// and by default never below 1 render pixel per CSS pixel (the "1:1" floor). vs.gov = "0" (Video: Dynamic resolution Off)
+// pins the ceiling; an explicit On (vs.gov = "1") or Render scale Auto may go down to XGV.floor of the ceiling (>= 0.5).
+// The refresh the governor judges against is the FASTEST measured one (xGovRef): the median rAF interval of a game stuck
+// at a steady 30 fps on a 60 Hz screen is 33 ms, which read as "a 30 Hz screen, nothing missed" and never stepped down.
 let xAdPR = Infinity, xAdT = performance.now(), xAdN = 0; // xAdPR: the governor's pixel ratio (Infinity = the ceiling)
-const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") === "1"; } catch (e) { return false; } })(), /* OFF by default (user: render sharp, 1:1): only vs.gov = "1" (Video: Dynamic resolution On) turns it on */ floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0 };
-const xPRFloor = (m) => Math.min(m, Math.max(0.5, m * XGV.floor));
+const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") !== "0"; } catch (e) { return true; } })(), /* ON by default; vs.gov = "0" (Video: Dynamic resolution Off) pins the native ceiling */ opt: (() => { try { return localStorage.getItem("vs.gov") === "1"; } catch (e) { return false; } })(), /* explicit On: may go under 1:1 CSS px */ ref: 0, refT: 0, floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0 };
+const xPRFloor = (m) => Math.min(m, Math.max(XGV.opt || XS.scale === "auto" ? 0.5 : 1, m * XGV.floor)); // default: never under 1 render px per CSS px
+// The display refresh the governor judges against (pure): the fastest median rAF interval seen. A slower one replaces it
+// only after 5 s at the floor pixel ratio without reaching it (the window moved to a slower screen; at the floor there is
+// nothing left to step down anyway), after which the governor climbs back up against the new refresh.
+function xGovRef(G, ms, atFloor, now) {
+  if (!(G.ref > 0) || ms < G.ref) { G.ref = ms; G.refT = 0; }
+  else if (atFloor && ms > G.ref * 1.3) { if (!G.refT) G.refT = now; else if (now - G.refT > 5000) { G.ref = ms; G.refT = 0; } }
+  else G.refT = 0;
+  return G.ref;
+}
 const xPR = () => { const m = xPRMax(); return (XGV.on || XS.scale === "auto") ? Math.max(xPRFloor(m), Math.min(m, xAdPR)) : m; };
 function xGovReset(now) { xGovClear(XGV, now); }
 function xGovClear(G, now) { G.f.fill(0); G.misses = 0; G.clean = now; G.hold = now + 600; } // after a resize / pause / load the next frames are not representative
@@ -12249,9 +12264,10 @@ function xAdapt() {
   const now = performance.now(), dt = now - (XGV.last || now); XGV.last = now; xAdN++;
   if (now - xAdT >= 2000) { xAdN = 0; xAdT = now; }
   if (!(XGV.on || XS.scale === "auto")) { if (xAdPR !== Infinity) { xAdPR = Infinity; resize(); } return; }
+  xGovRef(XGV, XRF.ms, false, now); // menus / lobby frames count too: they show the screen's real rate
   let live = false; try { live = running && !paused && !document.hidden && !window.xLdOn && !xCov(); } catch (e) {}
   const cap = XS.cap === "auto" ? 0 : +XS.cap; if (!live || xCapGates(cap, XRF.ms) || dt > 250) { xGovReset(now); return; } // gated by a lower FPS limit, or a stall (tab switch, GC of a load): not judged
-  const m = xPRMax(), nx = xGovTick(XGV, now, dt, XRF.ms, xPR(), m, xPRFloor(m));
+  const m = xPRMax(), lo = xPRFloor(m), cur = xPR(), nx = xGovTick(XGV, now, dt, xGovRef(XGV, XRF.ms, cur <= lo + 0.001, now), cur, m, lo);
   if (nx !== undefined) { xAdPR = nx; resize(); }
 }
 document.addEventListener("visibilitychange", () => {
@@ -12343,7 +12359,7 @@ function xRemake() { // anti-aliasing can only be set when a renderer is made, s
   renderer = r; xBind(r.domElement); xApplyShadows(); resize(); applyBright(); xPC = false; // new context: precompile again
 }
 xSeg("xFpsL", (v) => { XS.cap = v; try { localStorage.setItem("vs.cap", v); } catch (e) {} });
-xSeg("xGov", (v) => { XGV.on = v === "1"; try { localStorage.setItem("vs.gov", v); } catch (e) {} xAdPR = Infinity; xGovReset(performance.now()); xSegOn("xGov", v); resize(); }); // frame governor (xAdapt)
+xSeg("xGov", (v) => { XGV.on = XGV.opt = v === "1"; try { localStorage.setItem("vs.gov", v); } catch (e) {} xAdPR = Infinity; xGovReset(performance.now()); xSegOn("xGov", v); resize(); }); // frame governor (xAdapt)
 try { xSegOn("xGov", XGV.on ? "1" : "0"); } catch (e) {}
 xSeg("xRes", (v) => { XS.res = v; xVidSave(); resize(); });
 xSeg("xRsc", (v) => { XS.scale = v; xAAMem.rs = v; try { localStorage.setItem("vs.rs", v); } catch (e) {} xRscSync(); resize(); });
