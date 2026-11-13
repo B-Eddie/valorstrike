@@ -45,7 +45,7 @@
   XCR.reason = function (p) {
     if (!p) return null;
     if (p.fatal) { var f = p.fatal; return f.type === 'webglcontextlost' ? 'graphics context lost (WebGLContextLost) during ' + f.stage : f.type + ': ' + f.d + ' (' + f.stage + ')'; }
-    if (p.inMatch && !p.clean) return 'the page closed or reloaded during ' + (p.stage || 'the match') + ' (the browser may have run out of memory)';
+    if (p.inMatch && !p.clean && !p.left) return 'the page closed or reloaded during ' + (p.stage || 'the match') + ' (the browser may have run out of memory)';
     return null;
   };
   XCR.text = function (p) { p = p || XCR.prev; try { return JSON.stringify(p, null, 1); } catch (e) { return String(p); } };
@@ -92,7 +92,11 @@
     XCR.log('error', m + ' @ ' + at + (st ? ' :: ' + st : '') + (/^Script error\.?$/.test(String(e && e.message)) ? ' [muted cross-origin]' : ''), true);
   }, true);
   G.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; if (r && (r.name === 'AbortError')) return; XCR.log('unhandledrejection', r, true); });
-  G.addEventListener('pagehide', function () { XCR.log('pagehide', XCR.rec.stage, false); });
+  // A tab the player closed, reloaded or navigated away from mid-match fires pagehide; a tab the OS / browser killed does
+  // not. Only the second is a crash: the first showed "the browser may have run out of memory" on the next visit (user,
+  // 12 Nov 2026: shown on opening the site). pageshow (back from the back/forward cache) clears the mark.
+  G.addEventListener('pagehide', function () { XCR.rec.left = 1; XCR.log('pagehide', XCR.rec.stage, false); });
+  G.addEventListener('pageshow', function (e) { if (e && e.persisted && XCR.rec.left) { XCR.rec.left = 0; save(); } });
   // ---- the note on the next menu load ----
   XCR.note = function () {
     var p = XCR.prev, why = XCR.reason(p), d = G.document; if (!why || !d || !d.body || d.getElementById('xCrNote')) return null;
@@ -270,7 +274,7 @@ body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the s
 #fps{left:12px;top:12px;font-size:12px;display:none;background:rgba(15,25,35,.7);padding:4px 8px;white-space:pre}
 #rot{display:none;position:fixed;inset:0;z-index:100;background:var(--ink);flex-direction:column;align-items:center;justify-content:center;gap:16px;font-size:22px;font-weight:800;text-align:center;padding:30px}
 #rot svg{width:64px;height:64px}
-@media (orientation:portrait) and (max-width:820px){#rot{display:flex}}html.portrait-ok #rot{display:none!important} /* row 7: the player chose to play in portrait (touch layout fits portrait) */
+@media (orientation:portrait) and (max-width:820px){html:has(#lobby[style*="display: none"]) #rot,html:has(#lobby[style*="display:none"]) #rot{display:flex}} /* landing redesign: the lobby lays out in portrait; the notice is for the match */html.portrait-ok #rot{display:none!important} /* row 7: the player chose to play in portrait (touch layout fits portrait) */
 @media(max-width:800px){.modes{grid-template-columns:1fr 1fr}#lobby{padding:20px}.info{grid-template-columns:1fr}}
 /* shared HUD + pause (Retake, Operator Duel) */
 #timer,#score,#hp,#ammo{display:none!important}
@@ -1452,6 +1456,75 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 @media(max-width:820px),(max-height:500px){#lobby .x-lnav button:not(.x-np) .x-nl{display:none}}
 #lobby .x-news .x-tag{align-self:flex-start;color:#ece8e1;background:#0f1923;padding:4px 8px}
 #lobby .x-foot{color:rgba(236,232,225,.66)}
+/* ---- landing redesign (12 Nov 2026: "less wordy, looks vibe coded"): one headline, one Play, missions, a one-line footer ---- */
+#lobby .x-lb{position:relative;grid-template-columns:minmax(0,560px) minmax(0,1fr) minmax(0,300px);padding:0 clamp(16px,3vw,48px) 16px}
+#lobby .x-lb::after{content:"";position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(180deg,rgba(15,25,35,0),rgba(15,25,35,.55) 55%,rgba(15,25,35,.92));pointer-events:none;z-index:0}
+#lobby .x-bar{margin:0 calc(-1*clamp(16px,3vw,48px));padding:0 clamp(16px,3vw,48px);background:linear-gradient(180deg,rgba(15,25,35,.92),rgba(15,25,35,.6));border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+#lobby .x-stage,#lobby .x-hero,#lobby .x-msc,#lobby .x-foot{position:relative;z-index:1}
+#lobby .x-ib{border:0;border-radius:50%;background:rgba(236,232,225,.08)}
+#lobby .x-ib:hover,#lobby .x-ib:focus-visible{background:rgba(236,232,225,.18)}
+#lobby .x-lvb{border:0;border-radius:50%;background:var(--x-red);color:#0f1923;min-width:28px;height:28px;padding:0 6px;font-size:12px}
+#lobby .x-av{border-radius:50%}
+#lobby .x-mt span{display:none}
+#lobby .x-lnav #playBtn.x-np{display:none} /* one Play: the hero's (it opens the same panel; the panel has START) */
+#lobby .x-lnav{justify-content:flex-start}
+#lobby .x-hero{grid-area:news;align-self:end;display:flex;flex-direction:column;align-items:flex-start;gap:20px;padding-bottom:clamp(8px,4vh,48px);min-width:0}
+#lobby .x-hero h1{margin:0;font:800 clamp(30px,3.9vw,60px)/1 var(--x-f);letter-spacing:-.02em;color:var(--x-ink);text-wrap:balance;text-shadow:0 2px 24px rgba(15,25,35,.6)}
+#lobby .x-hnew{display:inline-flex;align-items:center;gap:10px;max-width:100%;min-height:32px;padding:4px 12px 4px 4px;background:rgba(15,25,35,.6);border:1px solid var(--x-line);border-radius:999px;color:var(--x-ink);font:500 13px/1 var(--x-f);cursor:pointer;transition:border-color .15s,background .15s}
+#lobby .x-hnew b{padding:5px 9px;border-radius:999px;background:var(--x-red);color:#0f1923;font:700 11px/1 var(--x-f);letter-spacing:.08em;text-transform:uppercase}
+#lobby .x-hnew span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lobby .x-hnew svg{width:14px;height:14px;flex:none;opacity:.7;transition:transform .15s}
+#lobby .x-hnew:hover,#lobby .x-hnew:focus-visible{border-color:rgba(236,232,225,.5);background:rgba(15,25,35,.85)}
+#lobby .x-hnew:hover svg{transform:translateX(3px)}
+#lobby .x-hcta{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
+#lobby .x-hplay{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 44px 0 36px;background:var(--x-red);border:0;border-radius:999px;color:#0f1923;font:800 18px/1 var(--x-f);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 28px rgba(255,70,85,.35);transition:transform .15s,filter .15s,box-shadow .15s}
+#lobby .x-hplay svg{width:18px;height:18px}
+#lobby .x-hplay:hover,#lobby .x-hplay:focus-visible{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 12px 32px rgba(255,70,85,.45);outline:none}
+#lobby .x-hplay:focus-visible{outline:2px solid var(--x-ink);outline-offset:3px}
+#lobby .x-hplay:active{transform:none}
+#lobby .x-hget{min-height:44px;padding:0 4px;background:none;border:0;color:var(--x-dim);font:600 14px/1 var(--x-f);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(236,232,225,.3);text-underline-offset:5px;transition:color .15s}
+#lobby .x-hget:hover,#lobby .x-hget:focus-visible{color:var(--x-ink);text-decoration-color:var(--x-red)}
+#lobby .x-msc{max-width:300px;padding:16px 18px;gap:14px;background:rgba(15,25,35,.6);border:1px solid var(--x-line);border-radius:14px;margin-bottom:clamp(8px,4vh,48px)}
+#lobby .x-msc h3{font:600 12px/1 var(--x-f);letter-spacing:.1em;color:var(--x-dim)}
+#lobby .x-msc ul{gap:14px}
+#lobby .x-msc li{font:500 14px/1.2 var(--x-f);gap:6px 8px}
+#lobby .x-msc li b{font:500 12px/1.4 var(--x-f);color:var(--x-dim);font-variant-numeric:tabular-nums}
+#lobby .x-msc li i{height:3px;border-radius:2px;overflow:hidden}
+#lobby .x-msc li small{font-size:11px;color:var(--x-red)}
+#lobby .x-foot{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 12px;margin:0;font:400 12px/1.4 var(--x-f);color:rgba(236,232,225,.55)}
+#lobby .x-cred{position:relative}
+#lobby .x-cred summary{list-style:none;cursor:pointer;color:rgba(236,232,225,.75);text-decoration:underline;text-underline-offset:3px;padding:6px 2px}
+#lobby .x-cred summary::-webkit-details-marker{display:none}
+#lobby .x-cred summary:hover,#lobby .x-cred summary:focus-visible{color:var(--x-ink)}
+#lobby .x-cred p{position:absolute;right:50%;transform:translateX(50%);bottom:calc(100% + 6px);width:min(420px,calc(100vw - 32px));margin:0;padding:14px 16px;background:#0f1923;border:1px solid var(--x-line);border-radius:12px;text-align:left;font:400 12px/1.5 var(--x-f);color:var(--x-dim);box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:9}
+@media(max-width:1100px){#lobby .x-lb{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,260px);column-gap:16px}}
+@media(max-width:820px),(max-height:500px){
+#lobby .x-lb{grid-template-columns:minmax(0,1fr);grid-template-rows:56px clamp(220px,42vh,400px) auto auto 1fr;grid-template-areas:"nav" "stage" "news" "ms" "foot";row-gap:20px;padding:0 16px 20px;min-height:100%}
+#lobby .x-lb::after{height:70%}
+#lobby .x-foot{align-self:end}
+#lobby .x-bar{margin:0 -16px;padding:0 8px;background:rgba(15,25,35,.92)}
+#lobby .x-hero{align-self:start;padding-bottom:0;gap:16px}
+#lobby .x-msc{max-width:none;margin-bottom:0}
+#lobby #xAgent{display:block;max-height:none}
+}
+@media(max-width:560px){
+#lobby .x-lnav{justify-content:space-between}
+#lobby .x-acct{gap:8px}
+#lobby .x-hero{align-items:stretch}
+#lobby .x-hero .x-hnew{align-self:flex-start}
+#lobby .x-hcta{flex-direction:column;align-items:stretch;gap:4px}
+#lobby .x-hplay{width:100%}
+#lobby .x-hget{align-self:center}
+}
+/* a phone in landscape: headline left, agent right, both in the first screen */
+@media(max-height:500px) and (min-width:600px){
+#lobby .x-lb{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:56px minmax(220px,calc(100vh - 76px)) auto auto;grid-template-areas:"nav nav" "news stage" "ms ms" "foot foot";column-gap:16px}
+#lobby .x-hero{align-self:center}
+#lobby .x-hero h1{font-size:clamp(28px,9vh,40px)}
+#lobby .x-hplay{min-height:48px}
+}
+#lobby .x-q:not([hidden]){background:#0f1923} /* opaque: the landing's text showed through the play panel */
+@media(prefers-reduced-motion:reduce){#lobby .x-hplay,#lobby .x-hnew svg{transition:none}}
 .srow .seg button{min-height:44px}
 .srow .sw button{min-width:44px;min-height:44px}
 /* notch: the lobby content stays inside the safe area (viewport-fit=cover); its background still fills the screen */
@@ -1476,23 +1549,22 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
     </div>
   </header>
   <div class="x-stage"><canvas id="xAgent" aria-label="Your agent, drag to turn"></canvas></div>
-  <aside class="panel x-news" aria-label="News">
-    <p class="x-tag"><b>New</b> Update · 20 Oct</p>
-    <h3>What's new</h3>
-    <p>Surf Utopia, ladders, 12 agents, Haven.</p>
-    <button class="lnk" data-open="mPatch">See what's new</button>
-    <hr />
-    <p class="x-tag">Community</p>
-    <h3>Discord</h3>
-    <p>Coming soon - patch notes, bug reports and people to play with in every online mode.</p>
-    <div class="x-row2"><button class="lnk" id="discBtn">Discord: coming soon</button><span hidden><span class="dotg"></span> — online · — members</span></div>
-    <div class="x-row2"><button class="x-get" data-open="mApp">Get app</button></div>
-  </aside>
+  <section class="x-hero" aria-labelledby="xHeroH">
+    <button class="x-hnew" data-open="mPatch"><b>New</b><span>Surf Utopia, ladders, Haven</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <h1 id="xHeroH">Tactical 5v5.<br>In your browser.</h1>
+    <div class="x-hcta">
+      <button class="x-hplay" id="heroPlay"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>Play</button>
+      <button class="x-hget" data-open="mApp">Get the app</button>
+    </div>
+    <button id="discBtn" hidden></button>
+  </section>
   <aside class="x-msc" aria-labelledby="hLobMs">
     <h3 id="hLobMs">Daily missions</h3>
     <ul id="xLobMs"></ul>
   </aside>
-  <p class="x-foot">Fan project. Not affiliated with or endorsed by Riot Games. VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animations retargeted from Quaternius (CC0). See models/valorant/SOURCES.md.</p>
+  <footer class="x-foot"><span>Fan project. Not affiliated with Riot Games.</span>
+    <details class="x-cred"><summary>Credits</summary><p>VALORANT models, textures and native animations © Riot Games, sourced via Kingdom Archives. Original map scenes from the community Blender ports by Cracker646. Movement animations retargeted from Quaternius (CC0). See models/valorant/SOURCES.md.</p></details>
+  </footer>
   </div>
   <section class="x-q" id="xQueue" aria-label="Queue" hidden>
   <button class="x-qx" id="xqClose" aria-label="Close play panel">×</button>
@@ -1604,6 +1676,7 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
       if (q.hidden) { q.hidden = false; var t = q.querySelector(".x-qtabs .on"); try { if (t) t.focus(); q.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (e) {} }
       else start();
     });
+    document.getElementById("heroPlay").addEventListener("click", function () { if (q.hidden) document.getElementById("playBtn").click(); }); // the landing's own Play opens the same panel
     document.getElementById("xqClose").addEventListener("click", function () { q.hidden = true; });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !q.hidden) q.hidden = true; });
     // map picker: only applied to the 5v5 flow once a tile has been chosen
@@ -2501,7 +2574,7 @@ const SFX = {
   low() { if (!sOk() || !sCap("low", 2, 0.04)) return; sTn(0.012, 4200, 3600, 0.03, "triangle", 0.035); }, // low-mag tick: quiet, high, layered over each shot at ≤20%
   empty() { if (!sOk() || !sCap("dry", 1, 0.25)) return; /* dry fire: at most once per 0.25 s */ sNz(0, 0.018, "bandpass", 3800, 3000, 0.32, 0, 6); sTn(0, 2000, 1300, 0.018, "square", 0.05); sNz(0.03, 0.015, "bandpass", 2400, 2000, 0.14, 0, 6); },
   knife() { if (!sOk()) return; sNz(0, 0.18, "bandpass", 700, 4500, 0.35, 0, 1.5); },
-  knifeHeavy() { if (!sOk()) return; sNz(0, 0.3, "bandpass", 420, 2600, 0.45, 0.02, 1.2); sTn(0.12, 140, 70, 0.08, "sine", 0.18); }, // heavy stab: longer, lower whoosh + a thud at the thrust (qa-37)
+  knifeHeavy() { if (!sOk()) return; sNz(0, 0.3, "bandpass", 420, 2600, 0.45, 0, 1.2); sTn(0.12, 140, 70, 0.08, "sine", 0.18); }, // heavy stab: longer, lower whoosh + a thud at the thrust (qa-37)
   at(p, w) { // bot / ally shots: 3D-panned by direction (pooled HRTF panners); past 30 m a delayed, muffled distant-echo tail. Voices: me 4 + gun 6 + echo 2 = 12 max
     if (!sOk() || !p) return; const P = sCap("gun", 6, 0.15); if (!P) return; const n = sPanP(P, p, 6); this.gun(w, n, 0.8);
     const d = camera ? Math.hypot(camera.position.x - p.x, camera.position.z - p.z) : 0;
@@ -5070,7 +5143,9 @@ function loop() {
   try { xVis(rt); } catch (e) { xE(e); }
   try { xSolTick(rt); } catch (e) { xE(e); }
   try { if (xBmHold()) return; } catch (e) { xE(e); } // gpu lane step 5: buy menu open in the offline buy phase -> the world behind it redraws at most 10 fps
+  try { xGpuBegin(); } catch (e) {}
   try { renderer.render(scene, camera); } catch (e) { xE(e); }
+  try { xGpuEnd(); } catch (e) {}
 }
 const XTK = { defs: [], pool: [], pt: new THREE.Vector3(), aim: new THREE.Vector3(), mv: new THREE.Vector3(), q: new THREE.Vector3() }; // perf pass 9: tick scratch
 function xDget(i, x, z, t) { const f = XTK.pool[i] || (XTK.pool[i] = { x: 0, z: 0, eye: new THREE.Vector3(), t: null }); f.x = x; f.z = z; f.t = t; XTK.defs.push(f); return f; }
@@ -12250,15 +12325,59 @@ function xGovReset(now) { xGovClear(XGV, now); }
 function xGovClear(G, now) { G.f.fill(0); G.misses = 0; G.clean = now; G.hold = now + 600; } // after a resize / pause / load the next frames are not representative
 // One governor frame (pure: state G, the frame's interval dt, the measured refresh, current / ceiling / floor pixel ratio).
 // Returns the new governor pixel ratio (Infinity = back at the ceiling) when it steps, else undefined.
-function xGovTick(G, now, dt, refreshMs, cur, m, lo) {
+function xGovTick(G, now, dt, refreshMs, cur, m, lo, gpu) {
   if (now < G.hold) return;
   const miss = dt > refreshMs * 1.5 ? 1 : 0; G.misses += miss - G.f[G.fi]; G.f[G.fi] = miss; G.fi = (G.fi + 1) % G.win; if (miss) G.clean = now;
-  if (G.misses >= G.missN && cur > lo + 0.001) {
-    if (now - G.up < 2500) G.wait = Math.min(60000, G.wait * 2); // stepped up into a miss: wait longer before trying again
-    G.down = now; G.steps++; xGovClear(G, now); return Math.max(lo, Math.round((cur - m * 0.1) * 100) / 100); }
+  // GPU headroom (lag, 12 Nov 2026: "when im shot at or when characters use abilities the fps goes down from 60 -> ~25"):
+  // judged on misses alone the governor sat at the last level that did not drop vsyncs in a CALM scene, with nothing to
+  // spare: the overdraw of a fight / ability on top of it dropped to half rate until 4 misses per 10% step had walked it
+  // down (measured, M1 @2x, 20 full-screen blended layers appearing: 47-50 fps and 80-115 ms frames for ~3 s), and 3 clean
+  // seconds later it climbed back to the edge for the next fight. gpu.ms is the measured GPU time of the world render
+  // (xGpuEnd: 80th percentile of the last ~1 s; gpu.pk its peak over the last 8 s). Calibrated on that machine against
+  // dropped vsyncs at 1.2x / 1.6x / 2x: the reading grows linearly with load up to about the frame budget B and vsyncs
+  // start to drop at ~1.25 B (frames overlap in the pipeline). So: over B it steps down BEFORE frames drop, as many
+  // 10% steps at once (up to 3) as bring the predicted reading under 0.9 B; it steps up only when the next level is
+  // predicted (from the 8 s peak) to stay under 0.78 B, so a level a fight pushed it off is not climbed back to while
+  // the view is as heavy. Prediction: half of the reading scales with pixel-ratio^2 (measured ~7 ms fixed of 14.5 at 2x:
+  // 2.9 M triangles do not get cheaper with resolution). Misses still step down, except when the GPU is clearly idle
+  // (< 0.6 B: a CPU hitch - a lower resolution would not have helped).
+  // B: gpu.bud, the refresh that has held as the median for 1.5 s (xAdapt), when slower than refreshMs - the fastest
+  // median ever seen can be a burst of catch-up frames (13.9 ms measured on a 60 Hz screen), harmless for the 1.5x miss
+  // test but not as a budget.
+  const g = gpu && gpu.ms > 0 ? gpu.ms : 0, B = g && gpu.bud > refreshMs ? gpu.bud : refreshMs, k = 0.5 * g / (cur * cur), st = m * 0.1;
+  if ((g > B || (G.misses >= G.missN && !(g && g < B * 0.6))) && cur > lo + 0.001) {
+    if (now - G.up < (g ? 30000 : 2500)) G.wait = Math.min(60000, G.wait * 2); // stepped up into a miss: wait longer before trying again
+    let n = 1; if (g > B) while (n < 3 && g - k * (cur * cur - (cur - n * st) * (cur - n * st)) > B * 0.9) n++;
+    G.down = now; G.steps++; xGovClear(G, now); return Math.max(lo, Math.round((cur - n * st) * 100) / 100); }
   if (cur < m - 0.001 && now - G.clean > G.wait && now - G.down > G.wait) {
-    const nx = Math.round((cur + m * 0.1) * 100) / 100; G.up = now; G.steps++; xGovClear(G, now); return nx >= m - 0.001 ? Infinity : nx; }
+    const nx = Math.round((cur + st) * 100) / 100, to = Math.min(nx, m);
+    if (g && Math.max(g, gpu.pk || 0) + k * (to * to - cur * cur) > B * 0.78) return; // no headroom for the next level
+    G.up = now; G.steps++; xGovClear(G, now); return nx >= m - 0.001 ? Infinity : nx; }
   if (now - G.clean > 20000 && G.wait > 3000) { G.wait = Math.max(3000, G.wait / 2); G.clean = now; }
+}
+// GPU time of the world render (EXT_disjoint_timer_query_webgl2; Chrome / Edge, absent in Safari / Firefox: the governor
+// then judges misses alone; not judged for 6 s after a load / menu / stall - uploads and first draws read 30-50 ms). One TIME_ELAPSED query around renderer.render per frame, read back a few frames later;
+// XGQ.ms = 80th percentile of the last <= 64 frames (0 until 24 are in), XGQ.pk = its peak over the last 8 s.
+const XGQ = { gl: null, ext: null, q: [], cur: null, skip: 0, a: new Float32Array(64), b: new Float32Array(64), i: 0, n: 0, k: 0, ms: 0, pk: 0, pkT: 0, bud: 0, bn: 0, hold: 0, t0: 0 };
+function xGpuClear() { const Q = XGQ; Q.n = Q.i = Q.k = 0; Q.ms = Q.pk = 0; Q.skip = Q.q.length + (Q.cur ? 1 : 0); Q.t0 = performance.now() + 700; } // after a resolution step: queries still in flight measured the old one, and the first frames on the new drawing buffer read 25+ ms (they stepped it down again, to the floor)
+function xGpuBegin() {
+  const Q = XGQ; if (!(XGV.on || XS.scale === "auto")) return;
+  const gl = renderer.getContext();
+  if (Q.gl !== gl) { Q.gl = gl; Q.q.length = 0; Q.cur = null; xGpuClear(); Q.ext = gl.createQuery ? gl.getExtension("EXT_disjoint_timer_query_webgl2") : null; }
+  if (!Q.ext || Q.cur || Q.q.length >= 4 || gl.isContextLost()) return;
+  Q.cur = gl.createQuery(); if (Q.cur) gl.beginQuery(Q.ext.TIME_ELAPSED_EXT, Q.cur);
+}
+function xGpuEnd() {
+  const Q = XGQ, gl = Q.gl, e = Q.ext; if (!e) return;
+  if (Q.cur) { if (renderer.getContext() === gl) { gl.endQuery(e.TIME_ELAPSED_EXT); Q.q.push(Q.cur); } Q.cur = null; }
+  while (Q.q.length && gl.getQueryParameter(Q.q[0], gl.QUERY_RESULT_AVAILABLE)) {
+    const q = Q.q.shift(), ms = gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6; gl.deleteQuery(q);
+    if (Q.skip > 0) { Q.skip--; continue; }
+    if (performance.now() < Q.t0) continue;
+    if (gl.getParameter(e.GPU_DISJOINT_EXT) || !(ms > 1 && ms < 250)) continue; // < 1 ms: nothing drawn (gated / covered frame)
+    Q.a[Q.i] = ms; Q.i = (Q.i + 1) % 64; if (Q.n < 64) Q.n++;
+    if (++Q.k % 8 === 0 && Q.n >= 24) { const v = Q.b.subarray(0, Q.n); v.set(Q.a.subarray(0, Q.n)); v.sort(); Q.ms = v[Math.floor(Q.n * 0.8)]; const now = performance.now(); if (Q.ms >= Q.pk || now - Q.pkT > 8000) { Q.pk = Q.ms; Q.pkT = now; } }
+  }
 }
 function xAdapt() {
   const now = performance.now(), dt = now - (XGV.last || now); XGV.last = now; xAdN++;
@@ -12266,9 +12385,10 @@ function xAdapt() {
   if (!(XGV.on || XS.scale === "auto")) { if (xAdPR !== Infinity) { xAdPR = Infinity; resize(); } return; }
   xGovRef(XGV, XRF.ms, false, now); // menus / lobby frames count too: they show the screen's real rate
   let live = false; try { live = running && !paused && !document.hidden && !window.xLdOn && !xCov(); } catch (e) {}
-  const cap = XS.cap === "auto" ? 0 : +XS.cap; if (!live || xCapGates(cap, XRF.ms) || dt > 250) { xGovReset(now); return; } // gated by a lower FPS limit, or a stall (tab switch, GC of a load): not judged
-  const m = xPRMax(), lo = xPRFloor(m), cur = xPR(), nx = xGovTick(XGV, now, dt, xGovRef(XGV, XRF.ms, cur <= lo + 0.001, now), cur, m, lo);
-  if (nx !== undefined) { xAdPR = nx; resize(); }
+  if (!(XGQ.bud > 0) || XRF.ms < XGQ.bud * 0.97) { if (++XGQ.bn > 90) { XGQ.bud = XRF.ms; XGQ.bn = 0; } } else XGQ.bn = 0; // GPU budget: a refresh that has held for 1.5 s
+  const cap = XS.cap === "auto" ? 0 : +XS.cap; if (!live || xCapGates(cap, XRF.ms) || dt > 250) { xGovReset(now); xGpuClear(); XGQ.hold = now + 6000; return; } // gated by a lower FPS limit, or a stall (tab switch, GC of a load): not judged
+  const m = xPRMax(), lo = xPRFloor(m), cur = xPR(), nx = xGovTick(XGV, now, dt, xGovRef(XGV, XRF.ms, cur <= lo + 0.001, now), cur, m, lo, now > XGQ.hold ? XGQ : null);
+  if (nx !== undefined) { xAdPR = nx; xGpuClear(); resize(); }
 }
 document.addEventListener("visibilitychange", () => {
   try { if (typeof ac !== "undefined" && ac) { if (document.hidden) { const p = ac.suspend(); if (p && p.catch) p.catch(() => {}); } else audKick(true); } } catch (e) {} // a refused resume (iOS) is retried on the next tap, never thrown

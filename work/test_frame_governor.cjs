@@ -61,4 +61,21 @@ G=G0();xGovClear(G,t);cur=m;t+=700;let d=false;for(let i=0;i<200&&!d;i++)d=frame
  // moved to a slower screen: at the floor, 5 s without reaching the old refresh -> the slower one is accepted
  G=G0();xGovRef(G,hz(120),false,0);assert.equal(xGovRef(G,H,true,1000),hz(120),'not yet');assert.equal(xGovRef(G,H,true,5000),hz(120),'4 s: not yet');assert.equal(xGovRef(G,H,true,6100),H,'5 s at the floor: the slower refresh is accepted');
  G=G0();xGovRef(G,hz(120),false,0);xGovRef(G,H,true,1000);xGovRef(G,H,false,3000);assert.equal(xGovRef(G,H,true,7000),hz(120),'the 5 s restart when it left the floor');}
-console.log('frame governor: OK (boot parse '+n+' scripts, cap-vs-refresh, governor steps / floor / ceiling / hysteresis)');
+// E. GPU headroom (user, 12 Nov 2026: "when im shot at or when characters use abilities the fps goes down from 60 -> ~25"):
+//    with the world render's measured GPU time (gpu.ms) the governor steps down before a vsync drops (reading over the
+//    budget), several levels at once when one is not enough, does not climb to a level predicted over 78% of the budget
+//    (judged on the 8 s peak), and ignores misses while the GPU is clearly idle (a CPU hitch).
+{const H=hz(60),run=(G,cur,gpu,frames,dt)=>{let out;for(let i=0;i<frames&&out===undefined;i++){t+=dt||H;out=xGovTick(G,t,dt||H,H,cur,m,lo,gpu);}return out;};
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:14.5,pk:14.5,bud:H},600),undefined,'2x at 14.5 ms of 16.7: holds the native ceiling');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:17.2,pk:17.2,bud:H},5),1.6,'reading over the budget: down to the level predicted under 90% of it, with no vsync dropped yet');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:32,pk:32,bud:H},5),1.4,'a heavy burst: three steps at once');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,1.4,{ms:20,pk:20,bud:H},5),lo,'never below the floor');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,1.6,{ms:12.1,pk:12.1,bud:H},900),undefined,'1.6x at 12.1 ms: the next level is predicted over 78% of the budget, no step up');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,1.6,{ms:9,pk:15,bud:H},900),undefined,'a fight in the last 8 s (peak) blocks the step up');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,1.6,{ms:9,pk:9,bud:H},900),1.8,'headroom: steps back up after the clean wait');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:6,pk:6,bud:H},60,H*2),undefined,'misses with an idle GPU (CPU hitch): resolution kept');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:13,pk:13,bud:H},60,H*2),1.8,'misses with a busy GPU still step down');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:14.5,pk:14.5,bud:H},5,undefined)===undefined&&(()=>{let o;for(let i=0;i<5&&o===undefined;i++){t+=H;o=xGovTick(G,t,H,hz(72),2,m,lo,{ms:14.5,pk:14.5,bud:H});}return o;})(),undefined,'a spurious faster "fastest refresh" (13.9 ms on a 60 Hz screen) is not the GPU budget');
+ G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,null,5,H*2),1.8,'no timer query (Safari / Firefox): misses alone, as before');
+ assert(/EXT_disjoint_timer_query_webgl2/.test(html)&&/xGpuBegin\(\); \} catch \(e\) \{\}\n  try \{ renderer\.render\(scene, camera\)/.test(html),'the world render is timed');}
+console.log('frame governor: OK (boot parse '+n+' scripts, cap-vs-refresh, governor steps / floor / ceiling / hysteresis / GPU headroom)');

@@ -37,7 +37,7 @@
   XCR.reason = function (p) {
     if (!p) return null;
     if (p.fatal) { var f = p.fatal; return f.type === 'webglcontextlost' ? 'graphics context lost (WebGLContextLost) during ' + f.stage : f.type + ': ' + f.d + ' (' + f.stage + ')'; }
-    if (p.inMatch && !p.clean) return 'the page closed or reloaded during ' + (p.stage || 'the match') + ' (the browser may have run out of memory)';
+    if (p.inMatch && !p.clean && !p.left) return 'the page closed or reloaded during ' + (p.stage || 'the match') + ' (the browser may have run out of memory)';
     return null;
   };
   XCR.text = function (p) { p = p || XCR.prev; try { return JSON.stringify(p, null, 1); } catch (e) { return String(p); } };
@@ -84,7 +84,11 @@
     XCR.log('error', m + ' @ ' + at + (st ? ' :: ' + st : '') + (/^Script error\.?$/.test(String(e && e.message)) ? ' [muted cross-origin]' : ''), true);
   }, true);
   G.addEventListener('unhandledrejection', function (e) { var r = e && e.reason; if (r && (r.name === 'AbortError')) return; XCR.log('unhandledrejection', r, true); });
-  G.addEventListener('pagehide', function () { XCR.log('pagehide', XCR.rec.stage, false); });
+  // A tab the player closed, reloaded or navigated away from mid-match fires pagehide; a tab the OS / browser killed does
+  // not. Only the second is a crash: the first showed "the browser may have run out of memory" on the next visit (user,
+  // 12 Nov 2026: shown on opening the site). pageshow (back from the back/forward cache) clears the mark.
+  G.addEventListener('pagehide', function () { XCR.rec.left = 1; XCR.log('pagehide', XCR.rec.stage, false); });
+  G.addEventListener('pageshow', function (e) { if (e && e.persisted && XCR.rec.left) { XCR.rec.left = 0; save(); } });
   // ---- the note on the next menu load ----
   XCR.note = function () {
     var p = XCR.prev, why = XCR.reason(p), d = G.document; if (!why || !d || !d.body || d.getElementById('xCrNote')) return null;

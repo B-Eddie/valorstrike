@@ -97,6 +97,11 @@ const rec=s=>JSON.parse(s.get('vs.crash'));
    const [copy,close]=n.children.filter(c=>c.tagName==='button');assert.equal(copy.textContent,'Copy');await copy.onclick();assert(/"stage": "map-upload"/.test(B.win.clip),'Copy puts the JSON report on the clipboard');
    close.onclick();assert.equal(B.doc.getElementById('xCrNote'),null,'dismissed');
    const C=page(S);assert.equal(C.doc.getElementById('xCrNote'),null,'shown once: the next load carries the previous page only'); }
+ { // the player closed / reloaded the tab mid-match (pagehide fired): not a crash, no "ran out of memory" note (user, 12 Nov 2026)
+   const S=new Map();const A=page(S);A.X.begin('5v5 ascent');A.X.stage('playable');A.win.fire('pagehide',{});
+   const B=page(S);assert.equal(B.doc.getElementById('xCrNote'),null,'a tab the player left mid-match shows no crash note');
+   const S2=new Map();const A2=page(S2);A2.X.begin('5v5 ascent');A2.X.stage('playable');A2.win.fire('pagehide',{});A2.win.fire('pageshow',{persisted:true});
+   assert(page(S2).doc.getElementById('xCrNote'),'back from the bfcache, then killed: still reported'); }
  { const S=new Map();const A=page(S);A.X.begin('TDM ascent');const cv=A.doc.createElement('canvas');cv.getContext('webgl').getExtension('WEBGL_lose_context').loseContext();
    const B=page(S);assert(/Last match ended: graphics context lost \(WebGLContextLost\)/.test(B.doc.getElementById('xCrNote').children[0].textContent)); }
  { const S=new Map();const A=page(S);A.X.begin('TDM ascent');A.X.stage('playable');A.lobby.style.display='flex';A.X.poll();assert.equal(rec(S).clean,true,'back on the menu after playing: clean');
