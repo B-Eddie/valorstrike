@@ -51,7 +51,7 @@ for(const map of ['ascent','split']){const W=await loadWorld(assets,map),P=W.pla
   assert(hits>50&&hits<3900,`blocked cases mixed (${hits})`);
   sim.effects=[{kind:'smoke',p:far,until:99},{kind:'barrier',hp:0,until:99,p:far,yaw:0},{kind:'barrier',hp:800,until:5,p:far,yaw:0}];/* none live: every call walks the whole list */
   const free=Q.filter(([x,z,r,y])=>!B.blocked(x,z,r,y,1.8));const qa=free.map(q=>q.slice());
-  const bw=alloc(i=>wb(...qa[i%qa.length],1.8),20000,20000),bb=alloc(i=>B.blocked(...qa[i%qa.length],1.8),20000,20000),d=bw-bb;
+  const mw=()=>alloc(i=>wb(...qa[i%qa.length],1.8),20000,20000),bw0=mw(),bb=alloc(i=>B.blocked(...qa[i%qa.length],1.8),20000,20000),bw=Math.min(bw0,mw()),d=bw-bb;/* the wrapper is measured before and after the map query and the lower one counts: the first window can still carry ~13 B a call of warm-up (seen on Split once world.blocked remembered its answers); a real per-call closure shows in both */
   out.push(`${map}: world.blocked barrier check ${d.toFixed(1)} B/call`);assert(d<8,`${map}: SpikeSimulation world.blocked allocates ${d.toFixed(1)} B per call on top of the map query (the effects.some closure), bound 8`);}
  // 4) wireRoundState: the same wire JSON, without the per-object closures / entries arrays
  {const sim=new SpikeSimulation(W,'five',map,()=>.5);for(const n of ['a','b','c','d','e','f','g','h','i','j'])sim.add(n);sim.start(false);for(let k=0;k<40;k++)sim.step(.05);

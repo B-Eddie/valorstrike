@@ -106,6 +106,20 @@ export function fastBVH(bvh){
  const cap=(n32,f,u16,u32)=>{const n16=n32*2;if(u16[n16+15]===0xFFFF){const off=u32[n32+6],e=off+u16[n16+14],yb=C.yb,x0=C.x0,x1=C.x1,z0=C.z0,z1=C.z1,y1=C.y1;
    for(let i=off;i<e;i++){const i3=i*3,a=ia[i3]*3,b=ia[i3+1]*3,c=ia[i3+2]*3,ay=pa[a+1],by=pa[b+1],cy=pa[c+1];if(Math.max(ay,by,cy)<=yb)continue;
     const ax=pa[a],bx=pa[b],cx=pa[c],az=pa[a+2],bz=pa[b+2],cz=pa[c+2];if(Math.min(ax,bx,cx)>x1||Math.max(ax,bx,cx)<x0||Math.min(az,bz,cz)>z1||Math.max(az,bz,cz)<z0||Math.min(ay,by,cy)>y1)continue;
+    /* plane reject (net lane, 13 Nov 2026): both ends of the capsule's segment on one side of the triangle's plane and farther from it than
+       the limit (+ 1e-9) -> every point of the triangle is farther than the limit from the segment, so the exact test below cannot pass.
+       In dense spots (a corner of Ascent B main) most triangles whose box overlaps the capsule's are such far planes: 60 us a query. */
+    {const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx-ax,vy=cy-ay,vz=cz-az,nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,d0=nx*(C.sx-ax)+ny*(C.sy-ay)+nz*(C.sz-az),d1=nx*(C.ex-ax)+ny*(C.ey-ay)+nz*(C.ez-az);
+     if(d0*d1>0){const m=(C.lim+1e-9)*(C.lim+1e-9)*(nx*nx+ny*ny+nz*nz);if(d0*d0>m&&d1*d1>m)continue;}}
+    /* plan reject: the segment is vertical (blocked's capsule axis), so the distance to the triangle is at least the distance, seen from above,
+       from the axis to the triangle's outline. Outside the outline and farther than the limit (+ 1e-9) from all three edges -> cannot pass. */
+    if(C.sx===C.ex&&C.sz===C.ez){const px=C.sx,pz=C.sz,L=(C.lim+1e-9)*(C.lim+1e-9);
+     const e1x=bx-ax,e1z=bz-az,e2x=cx-bx,e2z=cz-bz,e3x=ax-cx,e3z=az-cz,q1x=px-ax,q1z=pz-az,q2x=px-bx,q2z=pz-bz,q3x=px-cx,q3z=pz-cz;
+     const s1=e1x*q1z-e1z*q1x,s2=e2x*q2z-e2z*q2x,s3=e3x*q3z-e3z*q3x;
+     if(!(s1>=0&&s2>=0&&s3>=0||s1<=0&&s2<=0&&s3<=0)){
+      let l=e1x*e1x+e1z*e1z,t=l>0?(q1x*e1x+q1z*e1z)/l:0;t=t<0?0:t>1?1:t;let dx=q1x-e1x*t,dz=q1z-e1z*t;
+      if(dx*dx+dz*dz>L){l=e2x*e2x+e2z*e2z;t=l>0?(q2x*e2x+q2z*e2z)/l:0;t=t<0?0:t>1?1:t;dx=q2x-e2x*t;dz=q2z-e2z*t;
+       if(dx*dx+dz*dz>L){l=e3x*e3x+e3z*e3z;t=l>0?(q3x*e3x+q3z*e3z)/l:0;t=t<0?0:t>1?1:t;dx=q3x-e3x*t;dz=q3z-e3z*t;if(dx*dx+dz*dz>L)continue;}}}}
     P[0]=ax;P[1]=ay;P[2]=az;P[3]=bx;P[4]=by;P[5]=bz;P[6]=cx;P[7]=cy;P[8]=cz;triSegSq();if(Math.sqrt(P[35])<C.lim)return true;}return false;}
   const l=n32+8,r=u32[n32+6];
   if(!(C.x1<f[l]||C.x0>f[l+3]||C.y1<f[l+1]||C.y0>f[l+4]||C.z1<f[l+2]||C.z0>f[l+5])&&cap(l,f,u16,u32))return true;
