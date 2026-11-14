@@ -18,14 +18,16 @@ import {Simulation} from './src/simulation.js';
 const source=fs.readFileSync('src/worker.js','utf8'),code=source.slice(source.indexOf('export class GameRoom')).replace('export class','class')+';globalThis.GameRoom=GameRoom;';
 const W={map:{attacker:[0,0,0],defender:[0,0,-10],sites:{A:[0,0,0]}},nav:{nodes:[[0,0,0],[0,0,-10]],adj:[[1],[0]]},playable:[0,1],near:(x,z)=>z<-5?1:0,ground:()=>0,blocked:()=>false,ray:()=>Infinity};
 const q=(a,p)=>{const s=[...a].sort((x,y)=>x-y);return s.length?s[Math.min(s.length-1,Math.floor(p*s.length))]:0;};
-async function run({legacy,hz=40,secs=40,freeze=true,gap=22,seed=7,strict=false}){
+async function run({legacy,hz=40,secs=40,freeze=true,gap=22,seed=7,strict=false,wobble=0,ct=false}){
  let r=seed;const rnd=()=>((r=(r*16807)%2147483647)/2147483647);
  // the modelled clock: ev = real time the current event started, obs = last time shown to the script (never goes back)
  let ev=1_000_000,obs=ev,nextId=1,pin=Infinity;const timers=new Map();
  const clamp=()=>{let c=Infinity;for(const t of timers.values())if(t.when<c)c=t.when;return c;};
- const now=()=>{obs=Math.max(obs,Math.min(ev,clamp(),pin));return Math.floor(obs);};
+ const base=()=>{obs=Math.max(obs,Math.min(ev,clamp(),pin));return obs;};
+ // wobble: the object's clock wanders against real time (deployed: ~250 ms within seconds); timers keep the model's own domain
+ const now=()=>{const b=base();return Math.floor(b+wobble*Math.sin(2*Math.PI*(b-1_000_000)/4000));};
  const FakeDate=class extends Date{static now(){return now();}};
- const setI=(f,ms)=>{const id=nextId++;timers.set(id,{f,ms:Math.floor(ms),when:now()+Math.floor(ms)});return id;},clearI=id=>{timers.delete(id);};
+ const setI=(f,ms)=>{const id=nextId++;timers.set(id,{f,ms:Math.floor(ms),when:base()+Math.floor(ms)});return id;},clearI=id=>{timers.delete(id);};
  const context={DurableObject:class{constructor(ctx,env){this.ctx=ctx;this.env=env;}},crypto:globalThis.crypto,Date:FakeDate,URL,performance,setInterval:setI,clearInterval:clearI,Map,JSON,Number,Object,kits:JSON.parse(fs.readFileSync('src/kits.json','utf8'))};
  vm.createContext(context);vm.runInContext(code,context);
  const room=new context.GameRoom({waitUntil(){}},hz===40?{}:{TICK_HZ:String(hz)});room.advertise=()=>{};room.saveResults=async()=>{};room.sim=new Simulation(W);room.sim.start(false);
@@ -40,11 +42,12 @@ async function run({legacy,hz=40,secs=40,freeze=true,gap=22,seed=7,strict=false}
   if(at>=nextFreeze){busy=nextFreeze+40+rnd()*260;nextFreeze=busy+300+rnd()*1200;} // a 40-300 ms freeze every 0.3-1.5 s
   ev=Math.max(ev,at,busy);
   if(tFire<=nextMsg){const t=timers.get(tid);lastFire=ev;obs=Math.max(obs,Math.min(ev,t.when));/* a timer callback sees its own deadline */
-   if(strict)pin=t.when;/* strict: a timer callback never sees past its own deadline, even after clearing itself */t.f();pin=Infinity;if(timers.get(tid)===t)t.when=obs+t.ms;/* an interval still alive is re-armed from the time its callback observed */}
-  else{nextMsg+=1000/60+(rnd()*2-1)*2;s.last=now();await room.message(ws,JSON.stringify({t:'in',seq:++seq,r:0,p:0,f:1,s:0}));room.pump();}
+   if(strict)pin=t.when;/* strict: a timer callback never sees past its own deadline, even after clearing itself */t.f();pin=Infinity;if(timers.get(tid)===t)t.when=obs+t.ms;/* (re-armed interval) *//* an interval still alive is re-armed from the time its callback observed */}
+  else{nextMsg+=1000/60+(rnd()*2-1)*2;s.last=now();await room.message(ws,JSON.stringify({t:'in',seq:++seq,r:0,p:0,f:1,s:0,...(ct?{ct:Math.round(ev-777_000)}:{})}));/* ct: the page's clock (true rate, its own origin) */room.pump();}
  }
  const simMs=(room.sim.time-sim0)*1000,realMs=ev-t0;
- return {lag,frames,simMs,realMs,fps:frames.length/(realMs/1000),pumped:room.metrics.pumped||0,p50:q(lag,.5),p95:q(lag,.95),max:q(lag,1)};
+ const sp=[...lag].sort((a,b)=>a-b),spread=sp[Math.floor(sp.length*.95)]-sp[Math.floor(sp.length*.05)];
+ return {spread,lag,frames,simMs,realMs,fps:frames.length/(realMs/1000),pumped:room.metrics.pumped||0,p50:q(lag,.5),p95:q(lag,.95),max:q(lag,1)};
 }
 const out=[];
 for(const hz of [40,60]){
@@ -64,7 +67,20 @@ for(const strict of [false,true]){
  assert.ok(calm.fps>hz*.95&&calm.fps<hz*1.03,'calm room: about '+hz+' snapshots/s: '+calm.fps);
  assert.ok(calm.p95<=1000/hz+2,'calm room on time: '+calm.p95);
  let one=0;for(let i=1;i<calm.frames.length;i++)if(Math.abs(calm.frames[i][1]-calm.frames[i-1][1]-1000/hz)<.01)one++;
- assert.ok(one/(calm.frames.length-1)>.97,'calm room: one step per frame: '+one+'/'+(calm.frames.length-1));
+ /* ticks ride 60 Hz inputs (worker.js arm / pump), so a few frames carry two 1/hz steps (60 inputs into 40 steps); stamps stay exact */
+ assert.ok(one/(calm.frames.length-1)>.9,'calm room: one step per frame: '+one+'/'+(calm.frames.length-1));
  assert.ok(Math.abs(calm.simMs-calm.realMs)<=1000/hz+1,'calm room: sim time == real time');
 }}
+// 2) the object's clock wanders +-150 ms over 4 s (as measured on the deployed worker): stepping by it runs the room up to ~24 % fast
+//    or slow and stamps wander with it; timed by the pages' input timestamps (ct) the stamps follow real time
+for(const hz of [40,60]){
+ const off=await run({legacy:false,hz,freeze:false,wobble:150}),on=await run({legacy:false,hz,freeze:false,wobble:150,ct:true}),fz=await run({legacy:false,hz,wobble:150,ct:true});
+ out.push(`${hz} Hz wandering clock: stamp spread ${off.spread.toFixed(0)} ms by the object's clock, ${on.spread.toFixed(0)} ms by page time (${fz.spread.toFixed(0)} ms with freezes), ${on.fps.toFixed(1)} frames/s`);
+ assert.ok(off.spread>150,'the model reproduces the wander: '+off.spread);
+ assert.ok(on.spread<=1000/hz+12,'page-timed stamps follow real time: spread '+on.spread);
+ assert.ok(Math.abs(on.simMs-on.realMs)<=1000/hz+2,'page-timed sim time == real time: '+on.simMs.toFixed(0)+' / '+on.realMs.toFixed(0));
+ assert.ok(on.fps>hz*.95&&on.fps<hz*1.05,'page-timed room keeps its rate: '+on.fps);
+ assert.ok(fz.spread<=2*1000/hz+40,'with freezes too: spread '+fz.spread);
+ assert.ok(on.frames.every((f,i)=>!i||f[1]>on.frames[i-1][1]),'serverTime strictly increases');
+}
 console.log('late timers ok: '+out.join('; '));
