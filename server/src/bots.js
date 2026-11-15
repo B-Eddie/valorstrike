@@ -2,7 +2,7 @@ import BotRoutes from '../../vendor/bot-routes.cjs';
 import BotBrain from '../../vendor/bot-brain.cjs';
 import SpawnBarriers from '../../vendor/spawn-barriers.cjs';
 import {blockedNodes,path} from './path.js';
-import {hyp2} from './hyp.js';/* perf3: Math.hypot bit for bit without the builtin's per-call array (variedPath's cached-route check runs per bot per tick) */
+import {hyp2,hyp3} from './hyp.js';/* perf3: Math.hypot bit for bit without the builtin's per-call array (variedPath's cached-route check runs per bot per tick) */
 // Server-authoritative bot personalities. Every bot gets a deterministic seed (its name, id and the map), its own
 // random stream, a role profile and per-bot jittered traits, so bots under identical conditions still move,
 // aim, peek, route and use utility differently, while the same bot replays identically (stable tests).
@@ -70,10 +70,10 @@ export function flankNode(sim,u,target){
 // Routes: the A* route is re-routed once per goal through BotRoutes.route (lanes seeded by bot, round and goal, cost
 // added where teammates already walk) and followed from that cache until the goal moves more than 6 m, the bot leaves
 // it, or the round changes. At most two re-routes per simulation tick; past that a bot keeps the plain route this tick.
-export function variedPath(sim,u,start,goal,find,keep){
- const W=sim.world,N=W.nav.nodes,round=sim.round||0,c=u.vroute;
- if(c&&c.round===round&&c.team===u.team&&N[c.goal]&&N[goal]&&hyp2(N[c.goal][0]-N[goal][0],N[c.goal][2]-N[goal][2])<6&&Math.abs(N[c.goal][1]-N[goal][1])<2){
-  let k=c.path.indexOf(start,c.i);if(k<0){const q=N[start];for(let j=c.i;j<Math.min(c.path.length,c.i+14);j++){const n=N[c.path[j]];if(hyp2(n[0]-q[0],n[2]-q[2])<2.5&&Math.abs(n[1]-q[1])<1.2){k=j;break;}}}
+export function variedPath(sim,u,start,goal,find,keep,view){
+ const W=view||sim.world/* bots-human-2: a bot's own nav view (TDM: without the spawn rooms it cannot enter) */,N=W.nav.nodes,round=sim.round||0,c=u.vroute;
+ if(c&&c.round===round&&c.team===u.team&&(c.W||sim.world)===W&&N[c.goal]&&N[goal]&&hyp2(N[c.goal][0]-N[goal][0],N[c.goal][2]-N[goal][2])<6&&Math.abs(N[c.goal][1]-N[goal][1])<2){
+  let k=c.path.indexOf(start,c.i);if(k<0){const q=N[start];let bd=2.5;for(let j=c.i;j<Math.min(c.path.length,c.i+14);j++){const n=N[c.path[j]],d=hyp2(n[0]-q[0],n[2]-q[2]);if(d<bd&&Math.abs(n[1]-q[1])<1.2){bd=d;k=j;}}}/* bots-human-2: the route node nearest it, not the first within 2.5 m - that was often one behind a bot walking straight between the nodes (steerPoint), and the route restarted there: a turn back, then forward again at the next repath */
   if(k>=0&&k<c.path.length-1){c.i=k;return c.path.slice(k);}
  }
  const base=find(W,start,goal);if(base.length<4)return base;
@@ -81,7 +81,7 @@ export function variedPath(sim,u,start,goal,find,keep){
  const bl=blockedNodes(W),inBase=new Set(base),allowed=W.allowed,peers=[];
  for(const v of sim.units)if(v!==u&&v.alive&&v.team===u.team&&v.vroute&&v.vroute.round===round)peers.push({path:v.vroute.path.slice(v.vroute.i)});
  const r=BotRoutes.route(W.nav,base,u.name+'|'+u.id+'|'+sim.map+'|'+round+'|'+goal,peers,i=>(!allowed||allowed.has(i))&&(!bl[i]||inBase.has(i)),null);
- u.vroute={goal,round,team:u.team,path:r,i:0};sim.routeStats&&sim.routeStats.push(r);return r.slice();
+ u.vroute={goal,round,team:u.team,path:r,i:0,W};sim.routeStats&&sim.routeStats.push(r);return r.slice();
 }
 // A fresh route starts at the nav node nearest the bot, which is often one it has just walked past: walking back to it
 // and then forward again was the back-and-forth of bug 7 (every repath, 0.8-1.7 s). Leading nodes the bot is already
@@ -271,12 +271,17 @@ function oldHold(sim,u,P){const W=sim.world,M=W.map,sp=u.team===sim.atk?M.defend
  const y0=BotBrain.cornerPick(HOLD_ANG,HOLD_DEP,h),y1=y0==null?null:y0+BotBrain.preAimErr(P.brain,P.r)*.4;/* lane-adad: inside the bot's own view only */return y1!=null&&Math.abs(BotBrain.wrapA(y1-(u.look||0)))<=BotBrain.SENSE.fov/2?y1:null;}
 function routeLook(sim,u){const W=sim.world,R=u.route,N=W.nav&&W.nav.nodes;if(!R||!R.length||!N)return null;const pts=[[u.x,u.y,u.z]];
  for(let i=0;i<R.length&&pts.length<12;i++){const n=N[R[i]];if(n)pts.push(n);}
- const c=BotBrain.routeCorner(pts,eyeVis(W,u));if(!c)return null;u.routeP=Math.atan2(c[1]-BotBrain.PRE.head+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),Math.hypot(c[0]-u.x,c[2]-u.z)||1)+BotBrain.idlePitch(persona(sim,u).brain)-Math.atan2(BotBrain.AIM_H.head-1.6,15);/* bug 8: head height on that corner (ramps, stairs), not level */return Math.atan2(u.x-c[0],u.z-c[2]);}
+ const c=BotBrain.routeCorner(pts,eyeVis(W,u));if(!c)return null;u.routePt=c;u.routeP=Math.atan2(c[1]-BotBrain.PRE.head+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),Math.hypot(c[0]-u.x,c[2]-u.z)||1)+BotBrain.idlePitch(persona(sim,u).brain)-Math.atan2(BotBrain.AIM_H.head-1.6,15);/* bug 8: head height on that corner (ramps, stairs), not level */return Math.atan2(u.x-c[0],u.z-c[2]);}
 export function cornerLook(sim,u,heading,turned){const W=sim.world;if(!W||!W.ray||!Number.isFinite(heading))return null;const mv=Math.hypot(u.vx||0,u.vz||0)>.8||u.input&&(u.input.forward||u.input.side);u.lookP=null;if(!mv){u.corner=null;return turned?null:holdLook(sim,u);}/* turned: this tick's think aimed the bot itself (an ult / ability / corpse / held sound): the hold does not turn it away */u.hold=null;
- if(u.corner&&sim.time<u.corner.t+.25&&Math.abs(BotBrain.wrapA(u.corner.h-heading))<.5){u.lookP=u.corner.p??null;return u.corner.y;}
- {const r=routeLook(sim,u);if(r!=null&&Math.abs(BotBrain.wrapA(r-heading))<1.3){u.corner={t:sim.time,h:heading,y:r,p:u.routeP};u.lookP=u.routeP;return r;}}
+ // bots-human-2: the corner it checks is a spot in the world, kept CORNER.hold s while it lies within 1.3 rad of its way (the
+ // yaw follows that spot as the bot walks, not a fixed yaw); a re-pick within CORNER.same rad of it keeps it (BotBrain.VIEW.corner).
+ const C0=u.corner;if(C0&&C0.pt&&sim.time<C0.t+CORNER.hold){const y=Math.atan2(u.x-C0.pt[0],u.z-C0.pt[2]);if(Math.abs(BotBrain.wrapA(y-heading))<1.3&&hyp2(C0.pt[0]-u.x,C0.pt[2]-u.z)>1.2){u.lookP=C0.pt.length>2&&C0.p!=null?C0.p:null;return y;}}
+ {const r=routeLook(sim,u);if(r!=null&&Math.abs(BotBrain.wrapA(r-heading))<1.3)return keepCorner(sim,u,heading,r,u.routePt,u.routeP);}
  CR_ANG.length=CR_DEP.length=0;const o=[u.x,u.y+1.5-(u.ch||0),u.z];for(let i=-6;i<=6;i++){const a=heading+i*.21;CR_ANG.push(a);const d=W.ray(o,[-Math.sin(a),0,-Math.cos(a)],40);CR_DEP.push(Number.isFinite(d)?d:40);}
- const y=BotBrain.cornerPick(CR_ANG,CR_DEP,heading);u.corner={t:sim.time,h:heading,y};return y;}
+ const y=BotBrain.cornerPick(CR_ANG,CR_DEP,heading);if(y==null){u.corner=null;return null;}let dd=40,bo=9;for(let i=0;i<CR_ANG.length;i++){const e=Math.abs(BotBrain.wrapA(CR_ANG[i]-y));if(e<bo){bo=e;dd=CR_DEP[i];}}dd=Math.max(2,Math.min(dd,15));return keepCorner(sim,u,heading,y,[u.x-Math.sin(y)*dd,u.y+1.5,u.z-Math.cos(y)*dd],null);}
+const CORNER=BotBrain.VIEW.corner;
+// a new corner pick (yaw y, its spot pt, pitch p): within CORNER.same of the corner it holds -> that one stays, its clock restarts
+function keepCorner(sim,u,heading,y,pt,p){const C0=u.corner;if(C0&&C0.pt&&Math.abs(BotBrain.wrapA(Math.atan2(u.x-C0.pt[0],u.z-C0.pt[2])-y))<CORNER.same&&hyp2(C0.pt[0]-u.x,C0.pt[2]-u.z)>1.2){C0.t=sim.time;C0.h=heading;u.lookP=C0.p??null;return Math.atan2(u.x-C0.pt[0],u.z-C0.pt[2]);}u.corner={t:sim.time,h:heading,y,pt,p};u.lookP=p??null;return y;}
 // Pre-aim a heard / remembered spot's corner (bug lane 2026-11-03, = offline xpaCorner, lane-preaim): the enemy comes into
 // view where its way to the bot leaves cover, not at the raw spot of a sound behind a wall. The nav route from the bot to
 // the spot, walked back from the spot: the first point in the bot's eye line (BotBrain.pathCorner); none fits -> the raw
@@ -287,8 +292,55 @@ function contactCorner(sim,u,c,P){const W=sim.world;if(!W||!W.ray||typeof W.near
  const key=s*N.length+e,K=u.pcK;if(K&&K.key===key&&K.id===c.id)return K.pt;let pt=null;
  try{const R=s===e?[s]:path(W,s,e);if(R&&R.length&&R[R.length-1]===e){const pts=[[u.x,u.y,u.z]];for(let i=1;i<R.length;i++)pts.push(N[R[i]]);pts.push([c.x,c.y??N[e][1],c.z]);pt=BotBrain.pathCorner(pts,eyeVis(W,u));}}catch(err){pt=null;}
  u.pcK={key,id:c.id,pt,o:pt?BotBrain.preAimErr(P.brain,BotBrain.rng(BotBrain.hash((u.name||'')+'|pre|'+key))):0};return pt;}
-export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||u.fdgOn/* turning away from a flash (spike.js flashDodge) */||u.lookOwn===sim.time/* lane-adad: this tick's think aimed the bot itself - shooting down enemy utility (spike.js shootUtility) or lining up an ult on a corpse / remembered enemy (spike.js botUlt face) - so the idle view (hold / route / contact pre-aim) must not turn it away: the hold flicked a Turret shooter 0.032 rad off the device every other tick (a 12 m Turret survived the magazine), and the contact corner undid a Sage's turn onto a body every tick (Resurrection never cast) */||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain;
- let want=u.look;const c=u.mem&&BotBrain.memBest(u.mem,sim.time,u.x,u.z,BotBrain.SENSE.glance),cd=c?Math.hypot(c.x-u.x,c.z-u.z):0;
- if(c&&cd>.8&&cd<45){const k=contactCorner(sim,u,c,P);if(k){const kd=Math.hypot(k[0]-u.x,k[2]-u.z)||1;want=Math.atan2(u.x-k[0],u.z-k[2])+(u.pcK.o||0);u.pitch=Math.atan2(k[1]-(u.y+1.6-(u.ch||0)),kd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}else{want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);}u.viewAt=c.id;u.corner=null;}else{u.viewAt=null;const k=cornerLook(sim,u,want,Math.abs(BotBrain.wrapA(u.look-L0))>1e-4);if(k!=null){want=k;if(Number.isFinite(u.lookP))u.pitch=u.lookP;}}
- if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(B,L0,want,dt,u.turnSt||(u.turnSt={v:0})).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
+// bots-human-2 (BotBrain.glance / urgent / calm): the contact its eyes go to is one that matters to it - while it runs, a sound
+// VIEW.hear m or nearer, an enemy it saw, nothing far behind its own way (shift-walking or standing, every sound counts) - and
+// its eyes stay on it VIEW.hold s unless another is much nearer. Corners (its way, a held angle, a known enemy's way in) are
+// pre-aimed at its own hand speed; looking at a sound that has no corner to it goes at its calm pace. Was: the freshest contact
+// within 45 m - any gunshot nearby - at full flick speed, swapped with every new sound.
+export function botView(sim,u,L0,dt){if(u.human||!u.alive||u.sawTarget||u.occl/* a fight held through an occlusion (Simulation.botOccluded) aims itself */||u.fdgOn/* turning away from a flash (spike.js flashDodge) */||u.lookOwn===sim.time/* lane-adad: this tick's think aimed the bot itself - shooting down enemy utility (spike.js shootUtility) or lining up an ult on a corpse / remembered enemy (spike.js botUlt face) - so the idle view (hold / route / contact pre-aim) must not turn it away: the hold flicked a Turret shooter 0.032 rad off the device every other tick (a 12 m Turret survived the magazine), and the contact corner undid a Sage's turn onto a body every tick (Resurrection never cast) */||!u.input||!Number.isFinite(L0)||!(dt>0))return;const P=persona(sim,u),B=P.brain,now=sim.time;
+ // the way it walks (world): this tick's move input - on the steps between two thinks (40 / 60 Hz rooms) that input is
+ // already expressed in the view, so u.look is the view there, not the way; was: the corner picks of those steps were made
+ // round the view itself and held it, halving every off-fight turn
+ const f0=u.input.forward||0,s0=u.input.side||0,sp=hyp2(u.vx||0,u.vz||0),moving=sp>.8||!!(f0||s0),running=moving&&!u.input.walk&&!u.input.duck,turned=Math.abs(BotBrain.wrapA(u.look-L0))>1e-4;let hx=u.vx||0,hz=u.vz||0,hdg=u.look;
+ if(f0||s0){const wx=-Math.sin(u.look)*f0+Math.cos(u.look)*s0,wz=-Math.cos(u.look)*f0-Math.sin(u.look)*s0;hdg=Math.atan2(-wx,-wz);if(sp<=.8){hx=wx;hz=wz;}}
+ let want=hdg,urg=false,pace=0;/* 1: a look at a sound with no corner to it (BotBrain.calm) */const hold=u.holdUntil>now&&u.holdC!=null;/* a DM holder's eyes stay on the corner it holds (simulation.js botUnseen) */
+ const c=u.mem&&BotBrain.glance(u.mem,now,u.x,u.z,{moving:running/* shift-walking / crouching it is careful: every sound counts (the filter is for running) */,hx,hz,cur:hold?u.holdC:u.viewAt,since:hold?now:u.viewSince}),cd=c?hyp2(c.x-u.x,c.z-u.z):0;
+ if(c){if(u.viewAt==null||String(c.id)!==String(u.viewAt)){u.viewSince=now;u.viewUrg=BotBrain.urgent(c,now,cd);}urg=!!u.viewUrg&&now-u.viewSince<1.2;const k=hold&&u.holdK&&String(c.id)===String(u.holdC)?u.holdK:contactCorner(sim,u,c,P);if(k){const kd=hyp2(k[0]-u.x,k[2]-u.z)||1;want=Math.atan2(u.x-k[0],u.z-k[2])+(u.pcK&&u.pcK.o||0);u.pitch=Math.atan2(k[1]-(u.y+1.6-(u.ch||0)),kd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.corner=null;}
+  else if(wallAhead(sim,u,c.x,c.z,4)){urg=false;want=cornerWant(sim,u,hdg,turned,want);}/* no corner to watch and a wall right in front of it that way: its own way, not the wall (bots-human-2) */
+  else{pace=1;want=Math.atan2(u.x-c.x,u.z-c.z);u.pitch=Math.atan2((c.y??u.y)+BotBrain.AIM_H.head-(u.y+1.6-(u.ch||0)),cd)+BotBrain.idlePitch(B)-Math.atan2(BotBrain.AIM_H.head-1.6,15);u.corner=null;}u.viewAt=c.id;}
+ else{u.viewAt=null;u.viewUrg=false;want=cornerWant(sim,u,hdg,turned,want);}
+ if(!Number.isFinite(want))return;const L=u.look,V=BotBrain.wrapA(BotBrain.turnStep(pace&&!urg?BotBrain.calm(B):B,L0,want,dt,u.turnSt||(u.turnSt={v:0})).yaw),f=u.input.forward||0,s=u.input.side||0;u.look=V;
  if(f||s){const wx=-Math.sin(L)*f+Math.cos(L)*s,wz=-Math.cos(L)*f-Math.sin(L)*s;u.input.forward=-Math.sin(V)*wx-Math.cos(V)*wz;u.input.side=Math.cos(V)*wx-Math.sin(V)*wz;}}
+// The corner a remembered contact would come round, seen from the bot (contactCorner) - a DM holder holds it (simulation.js botUnseen).
+export function holdCorner(sim,u,c){return contactCorner(sim,u,c,persona(sim,u));}
+// the corner check's yaw (cornerLook) as the view's want, its pitch with it; else want as it was
+function cornerWant(sim,u,hdg,turned,want){const k=cornerLook(sim,u,hdg,turned);if(k==null)return want;if(Number.isFinite(u.lookP))u.pitch=u.lookP;return k;}
+// A wall within d m of the bot's eye toward (x, z) (level): looking that way would stare at it.
+const WA_O=[0,0,0],WA_D=[0,0,0];
+function wallAhead(sim,u,x,z,d){const W=sim.world;if(!W||!W.ray)return false;const dx=x-u.x,dz=z-u.z,l=hyp2(dx,dz);if(l<.3)return false;WA_O[0]=u.x;WA_O[1]=u.y+1.6-(u.ch||0);WA_O[2]=u.z;WA_D[0]=dx/l;WA_D[1]=0;WA_D[2]=dz/l;const m=Math.min(d,l),r=W.ray(WA_O,WA_D,m);return Number.isFinite(r)&&r<m-.05;}
+// Steering along a route like a player (bots-human-2): toward the farthest of the next AHEAD.n route nodes within AHEAD.r m it
+// can walk to straight - every route node before it within AHEAD.band m of that line and on its own level (AHEAD.dy), a clear
+// capsule-wide line (clearLine) - so it runs straight down a corridor and takes a corner close, instead of tracing the 0.75 m
+// nav grid node by node; plus its lane: a lateral offset (P.jitter m) that drifts with the distance it has run (one swing per
+// AHEAD.lane m). Was: the next node, offset by sin(node id x 1.7) - a new random side at every node, a visible weave (server DM:
+// median 10 deg, p90 21 deg of heading change every 0.1 s of off-fight running). Returns [x, z] into out; u.ahead = metres of
+// straight run to the steering node (hops need a clear straight).
+const AHEAD={n:8,r:7,band:.65,dy:.5,lane:42,side:.4,calm:2,tries:3};
+// a capsule-wide clear line from (x, y, z) to t: rays at knee and chest height down the middle and at knee / hip height
+// along both of the body's sides (a thin ray slipped past a prop corner the 0.43 m capsule then wedged on: Haven TDM)
+const CL_O=[0,0,0],CL_D=[0,0,0],CL_H=[.4,0,1.2,0,.45,1,.45,-1,1,1,1,-1];/* height, side pairs */
+function clearLine(W,x,y,z,t){if(!W.ray)return true;const dx=t[0]-x,dy=t[1]-y,dz=t[2]-z,L=hyp3(dx,dy,dz);if(L<.05)return true;const l2=hyp2(dx,dz)||1,sx=-dz/l2*AHEAD.side,sz=dx/l2*AHEAD.side;CL_D[0]=dx/L;CL_D[1]=dy/L;CL_D[2]=dz/L;
+ for(let i=0;i<CL_H.length;i+=2){const s=CL_H[i+1];CL_O[0]=x+sx*s;CL_O[1]=y+CL_H[i];CL_O[2]=z+sz*s;if(W.ray(CL_O,CL_D,L)<L)return false;}return true;}
+export function steerPoint(sim,u,P,R,lane,out){const W=sim.world,N=W.nav.nodes,o=out||[0,0],x=u.x,y=u.y,z=u.z;let k=0;
+ const ox=u.odoX??x,oz=u.odoZ??z,step=hyp2(x-ox,z-oz);u.odo=(u.odo||0)+(step<3?step:0);u.odoX=x;u.odoZ=z;
+ const exact=sim.time-(u.escapeUntil??-1e9)<AHEAD.calm;/* just escaped a wedge: the route's own nodes for a while, no cut */
+ const i0=0;/* the route's head (routeAhead already dropped the nodes it is past) */
+ let rays=AHEAD.tries;/* line tests per call (6 rays each): bounded, the room's tick budget */
+ for(let j=exact?i0:Math.min(R.length-1,i0+AHEAD.n);j>i0&&!k&&rays>0;j--){const t=N[R[j]];if(!t||Math.abs(t[1]-y)>AHEAD.dy)continue;const dx=t[0]-x,dz=t[2]-z,L2=dx*dx+dz*dz;if(L2>AHEAD.r*AHEAD.r||L2<.25)continue;let ok=true;
+  for(let i=i0;i<j&&ok;i++){const q=N[R[i]];if(!q||Math.abs(q[1]-y)>AHEAD.dy){ok=false;break;}const ax=q[0]-x,az=q[2]-z,s=Math.max(0,Math.min(1,(ax*dx+az*dz)/L2)),ex=ax-dx*s,ez=az-dz*s;if(ex*ex+ez*ez>AHEAD.band*AHEAD.band)ok=false;}
+  if(ok){rays--;if(clearLine(W,x,y,z,t))k=j;}}
+ const n=N[R[k||i0]],tx=n[0]-x,tz=n[2]-z,l=hyp2(tx,tz)||1;u.ahead=k?l:0;
+ const j=lane?P.jitter*Math.min(1,l/1.5)*Math.sin(u.odo*Math.PI*2/AHEAD.lane+P.jitterPhase):0;o[0]=n[0]-tz/l*j;o[1]=n[2]+tx/l*j;
+ if(k&&Math.abs(j)>.05){AH_P[0]=o[0];AH_P[1]=n[1];AH_P[2]=o[1];if(!clearLine(W,x,y,z,AH_P)){o[0]=n[0];o[1]=n[2];}}/* its lane would clip a door frame: the route's own line */
+ return o;}
+const AH_P=[0,0,0];

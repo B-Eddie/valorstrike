@@ -26,6 +26,14 @@ export class TdmSimulation extends SpikeSimulation{
  // Reuse the per-unit collision view. The closure still reads current room state and base blockers.
  motor(u,input,dt){const W=this.world;if(!this.spawnRooms)return super.motor(u,input,dt);this.roomMotorViews??=new WeakMap();let view=this.roomMotorViews.get(u);if(!view||Object.getPrototypeOf(view)!==W){view=Object.create(W);view.blocked=(x,z,r,y,h)=>roomBlocked(this,u,x,z,r,y)||W.blocked(x,z,r,y,h);this.roomMotorViews.set(u,view);}this.world=view;try{return super.motor(u,input,dt);}finally{this.world=W;}}
  fire(u){if(this.spawnRooms&&inRoom(this,u))return false;return super.fire(u);}
+ // Bots route round the spawn rooms they cannot walk into (bots-human-2): the enemy room always, their own once they have
+ // left it (roomBlocked, as the motor's view above). Was: a roam spot, a heard enemy or a route inside a room walked the bot
+ // into the room's invisible edge until the stuck watch teleported it (Haven TDM, 150 s: one bot 36 teleports at one room).
+ // A world view per (team, left its room): its own allowed set and nav object (path.js keeps a fast A* state per nav).
+ navView(u){if(!this.spawnRooms||!u||u.human)return this.world;const W=this.world,k=u.team+(u.roomLeft?'L':''),C=this.navViews||(this.navViews={}),c=C[k];if(c&&c.W===W&&c.src===W.allowed)return c.V;
+  const N=W.nav.nodes,A=[roomAnchor(this,1-u.team)];if(u.roomLeft)A.push(roomAnchor(this,u.team));const allowed=new Set();
+  for(const i of W.allowed){const p=N[i];let ok=true;for(const a of A)if(Math.abs(p[1]-a[1])<TDM_ROOM.height&&hyp2(p[0]-a[0],p[2]-a[2])<TDM_ROOM.radius+.8){ok=false;break;}if(ok)allowed.add(i);}
+  const V=Object.create(W);V.allowed=allowed;V.nav=Object.create(W.nav);V.playable=(W.playable||[]).filter(i=>allowed.has(i));C[k]={W,src:W.allowed,V};return V;}
  bot(u){if(!u.human&&this.botUlt(u)){u.lookOwn=this.time;return;}/* ultimates (spike.js botUlt) */return Simulation.prototype.bot.call(this,u);}
  release(){}
  command(u,m){if(m?.t==='ab'){if(this.phase!=='game'||this.spawnRooms&&inRoom(this,u))return false;const A=u.ability,r=castAbility(this,u,m);if(r&&m.k==='x'&&A&&!(A.ult>0)){A.tp=0;A.tdUlt=0;}return r;}

@@ -517,6 +517,20 @@ function xbMem(u){return u.xMem||(u.xMem=BotBrain.memNew());}
 function xbId(t){return t===player?'player':(t&&t.name)||'?';}
 function xbLive(id){if(id==='player')return !!player&&player.hp>0;for(const L of [bots,allies])for(const u of L)if(u&&u.name===id)return !!u.alive;return false;}
 function xbSeen(u,t,x,y,z){if(!window.BotBrain||!u)return;BotBrain.memNote(xbMem(u),xbId(t),x,y||0,z,xbNow(),'seen');}
+// Object permanence (bots-human-2, BotBrain.SIGHT; = the server's Simulation.bot / botOccluded): u fights unit t. While it
+// sees t (see, t at x / y / z) its last sighting and t's motion are kept (u.xLs); a sighting after an occlusion somewhere that
+// motion did not lead (a jiggle back to the edge, an enemy that turned round, another enemy) starts the fight over (u.see = 0:
+// a new reaction and flick, xbEngage). Unseen: for the bot's own SIGHT.keep window after it lost t (t alive, u in a fight, not
+// blinded) -> where t's last seen motion carries it ([x, z]), else null - the base loops keep the fight going on that spot
+// (crosshair xbView, strafe xFight) and never shoot it (their fire needs a fresh sighting). Before, every frame out of sight
+// ended the fight: a bot re-reacted (200-350 ms) to every glimpse of an enemy crossing a railing or a box edge.
+const XB_KP=[0,0];
+function xbKeep(u,t,see,x,y,z){if(!window.BotBrain||!u||!u.g)return null;const B=xbBrain(u);if(!B)return null;const now=xbNow();let L=u.xLs;
+ if(see&&t){if(u.xOcc&&!(L&&L.u===t&&BotBrain.sightSame(L,now,x,z,Math.hypot(x-u.g.position.x,z-u.g.position.z))))u.see=0;u.xOcc=0;
+  if(!L||L.u!==t||now-L.t>.3)L=u.xLs={u:t,t:now,x,y,z,vx:0,vz:0};else{const dt=now-L.t;if(dt>1e-3){const k=Math.min(1,dt*10);L.vx+=((x-L.x)/dt-L.vx)*k;L.vz+=((z-L.z)/dt-L.vz)*k;}L.t=now;L.x=x;L.y=y;L.z=z;}return null;}
+ const live=!!L&&!!L.u&&(L.u===player?player.hp>0:L.u.alive!==false&&!(L.u.hp<=0));
+ if(!live||!(u.see>0)||u.blind>0||now-L.t>BotBrain.sightKeep(B)){u.xOcc=0;return null;}
+ u.xOcc=1;u.bn=0;/* the trigger is let go: the burst ends with its target gone (= the server's botOccluded); xFight is not ready to fire meanwhile, so its strafe goes on */return BotBrain.sightAt(L,now,XB_KP);}
 function xbBest(u,age){if(!window.BotBrain||!u||!u.xMem||!u.g)return null;const m=u.xMem;for(const id in m.c)if(!xbLive(id))delete m.c[id];const p=u.g.position;return BotBrain.memBest(m,xbNow(),p.x,p.z,age);}
 function xbGlance(u){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.glance:0);if(!c)return null;const p=u.g.position,d=Math.hypot(c.x-p.x,c.z-p.z);return d>.8&&d<45?c:null;}
 function xbFaceTo(u,want,dt){const B=xbBrain(u);if(!B||!u.g)return null;return BotBrain.turnStep(B,u.g.rotation.y,want,dt,u.xTurnSt||(u.xTurnSt={v:0})).yaw;}
@@ -535,7 +549,10 @@ function xbNoFoe(b,dt){if(!b||!b.g||!b.alive||!running)return;const p=b.g.positi
  if(typeof botStep==='function')botStep(b,dt,Math.hypot(p.x-x0,p.z-z0),false,b.spd);b.cd-=dt;}
 // out of a fight in Deathmatch / TDM: the freshest contact (BotBrain.SENSE.hunt s), else a spawn point 15 m+ away (new one
 // on arrival or after 15 s); other modes keep their own goals.
-function xbHunt(u,tg,out){const c=xbBest(u,window.BotBrain?BotBrain.SENSE.hunt:0);if(c)return x2(out,c.x,c.z);const p=u.g.position,now=xbNow();
+// bots-human-2: committed to the enemy it goes after (BotBrain.hunt = the server's botUnseen), not the latest sound, and a
+// heard spot it reached with nobody there is passed over until news of that enemy comes in.
+function xbHuntC(u){if(!window.BotBrain||!u||!u.xMem||!u.g)return null;const m=u.xMem;for(const id in m.c)if(!xbLive(id))delete m.c[id];const p=u.g.position,c=BotBrain.hunt(m,xbNow(),p.x,p.z,u.xHuntId);u.xHuntId=c?c.id:null;return c;}
+function xbHunt(u,tg,out){const c=xbHuntC(u);if(c)return x2(out,c.x,c.z);const p=u.g.position,now=xbNow();
  if(mode==='five'&&FV.dm&&typeof dmPts==='function'){let r=u.xRoam;if(!r||Math.hypot(r[0]-p.x,r[1]-p.z)<2.5||now>(u.xRoamT||0)){const P=dmPts()||[];r=null;for(let k=0;k<12&&P.length;k++){const q=P[Math.floor(Math.random()*P.length)];if(Math.hypot(q[0]-p.x,q[1]-p.z)>=15){r=q;break;}}if(!r&&P.length)r=P[0];u.xRoam=r;u.xRoamT=now+15;}if(r)return x2(out,r[0],r[1]);}
  return x2(out,tg.x,tg.z);}
 // what an unsighted bot knows of the nearest threat for its peek / creep logic: [dx, dz, dist] toward the freshest contact,

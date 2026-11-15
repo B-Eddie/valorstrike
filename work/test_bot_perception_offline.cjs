@@ -25,7 +25,7 @@ for(const w of ['s = (typeof xbInView !== "function" || xbInView(b, f.x - p.x, f
  '(typeof xbLosNow !== "function" || xbLosNow(from, eye) || ((b.xSe = false), (b.xTh = 0), (b.bn = 0), false))',
  'if (d < td && (typeof xbInView !== "function" || xbInView(a, q.x - p.x, q.z - p.z, d)))',
  '(typeof xbLosNow !== "function" || xbLosNow(from, XTK.q.set(tg.g.position.x, (tg.g.position.y || 0) + 1.5, tg.g.position.z)) || ((a.xTg = null), (a.xTh = 0), false))',
- 'if (typeof xbHunt === "function") [gx, gz] = xbHunt(b, tg, XG_V);','xPeekMove(b, dt, kd, kx, kz, vx, vz)','botWalk(b, see, kd)','xPeekMove(a, dt, apd, apx, apz, vx, vz)',
+ 'if (typeof xbHunt === "function") [gx, gz] = xbHunt(b, tg, XG_V);','xPeekMove(b, dt, kd, kx, kz, vx, vz)','botWalk(b, see || keep, kd)'/* bots-human-2: a fight held through a moment out of sight (keep, xbKeep) walks as a fight */,'xPeekMove(a, dt, apd, apx, apz, vx, vz)',
  'const y = typeof xbFaceTo === "function" ? xbFaceTo(u, t, dt) : null;',
  'botAb(b, dt, see, see || typeof xbAbKnown !== "function" ? tg : xbAbKnown(b), from);','else botAb(a, dt, false, typeof xbAbKnown === "function" ? xbAbKnown(a) : null, from);','d < (typeof xbEarR === "function" ? xbEarR() : 25)','botStep(b, dt, Math.hypot(p.x - bx0, p.z - bz0), b.cr || b.wk, b.spd);'/* footsteps by distance (shared motor footfall): crouching / walking bots pass quiet and never reach SFX.step */])assert(html.includes(w),'wired: '+w);
 let now=0,rnd=7;const R=()=>{rnd=(rnd*16807)%2147483647;return rnd/2147483647;};const calls={los:0,losRaw:0};

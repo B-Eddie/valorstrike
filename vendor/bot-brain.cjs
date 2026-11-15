@@ -421,7 +421,9 @@
  // to), at most RESPOND.push answer a gunshot by pushing it (one at a time per team), at most RESPOND.rotate defenders
  // rotate on information (the nearest rotation-eligible ones, after their own 1.5-4 s delay); everyone else holds their
  // area. A second trader takes the killer's spot GAP m to the side (a trade, not a two-man clump).
- const RESPOND={trade:2,push:1,rotate:2,gap:GAP,delay:[1.5,4],follow:3.6,pass:4};
+ // follow 4.5 (bots-human-2; was 3.6): with routes walked straight and no node-to-node weave or walk-backs (steerPoint) a rush
+ // column no longer stretched by itself and ran ~4 m nose to tail (Bind rush rounds 3.7-4.0 m vs 4.7-5.2 m); players keep ~5 m.
+ const RESPOND={trade:2,push:1,rotate:2,gap:GAP,delay:[1.5,4],follow:4.5,pass:4};
  // list: [{id, d}] -> Set of the ids of the `max` nearest (ties by id, so the pick is stable).
  function nearest(list,max){return new Set(list.slice().sort((a,b)=>a.d-b.d||(a.id<b.id?-1:a.id>b.id?1:0)).slice(0,Math.max(0,max)).map(c=>c.id));}
  // k-th trader's spot: the killer's position pushed GAP m sideways (alternating sides) from the line trader -> killer.
@@ -785,5 +787,92 @@
  // presses X); a different call or none restarts it. st {k, at} per bot; rnd() draws the delay (called once per new call).
  function ultReady(st,t,want,rnd){if(!st)return false;if(!want){st.k=null;return false;}
   if(st.k!==want){st.k=want;const r=typeof rnd==='function'?rnd():.5;st.at=t+ULTX.delay[0]+clamp(r,0,1)*(ULTX.delay[1]-ULTX.delay[0]);return false;}return t>=st.at;}
- return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner,HOLD,holdCorners,holdNext};
+ // ==== Playing like a person, not a script (bots-human-2, user 2026-11-15: "make them play more like humans instead of like
+ // bots"). Measured on all-bot matches (server DM Ascent, 18 bot-minutes; the page's offline DM) before these: ====
+ // ---- Object permanence ----
+ // A player who loses sight of the enemy it is fighting for a moment - the enemy runs past a post or a railing, behind a box
+ // edge, or the player's own strafe takes it behind one - keeps its eyes where that enemy's motion says it is and keeps the
+ // fight going: when the enemy shows again it fires, no new reaction. Before, every tick out of sight ended the fight, so each
+ // glimpse cost a fresh 200-350 ms reaction and flick: 55 % of server sightings lasted < 0.3 s and half the gaps were
+ // < 0.5 s - two bots crossing a railing ran at each other for 2.5 s without a shot.
+ // SIGHT.keep: this bot's window (s) for holding a fight through an occlusion (under the 0.5 s of the glimpse rule: a 100 ms
+ // glimpse every 0.6 s is still never shot); SIGHT.lead: the last seen motion is carried on at most this long; a re-sighting
+ // within SIGHT.near[0] + SIGHT.near[1] x distance m of that carried-on spot is the same fight. An enemy that shows up
+ // elsewhere - a jiggle peeker back at the edge it pulled away from, one that turned round - is a surprise: a new fight (the
+ // re-peek reaction on a held angle, repeek(), still applies). The bot never shoots while it cannot see (the callers).
+ const SIGHT={keep:[.24,.4],lead:.4,near:[.6,.025]};
+ function seeded(P,salt){return rng((((P&&P.seed)>>>0)^salt)>>>0);}
+ function sightKeep(P){if(P&&P._sk!=null)return P._sk;const r=seeded(P,0x0b5e7a1d),k=SIGHT.keep[0]+r()*(SIGHT.keep[1]-SIGHT.keep[0]);if(P)P._sk=k;return k;}
+ // L {t, x, z, vx, vz}: the last sighting -> [x, z] where the enemy should be at time t (its motion carried on)
+ function sightAt(L,t,out){const o=out||[0,0],e=clamp(t-L.t,0,SIGHT.lead);o[0]=L.x+(L.vx||0)*e;o[1]=L.z+(L.vz||0)*e;return o;}
+ const SA_=[0,0];
+ function sightSame(L,t,x,z,dist){if(!L)return false;const p=sightAt(L,t,SA_);return Math.hypot(x-p[0],z-p[1])<=SIGHT.near[0]+SIGHT.near[1]*(dist||0);}
+ // ---- Where the eyes go off-fight ----
+ // A player on its way keeps the crosshair on its own way (the next corner it clears) and turns to a sound only when the sound
+ // matters to it: one VIEW.hear m or nearer, any while it stands and listens, an enemy it saw. A fight behind walls across
+ // the map is noted (memory, hunting), not stared at while it runs somewhere else; nor does a moving player look back more
+ // than VIEW.back rad off its way at anything farther than VIEW.close m but an enemy it saw VIEW.seen s ago. Once its eyes are
+ // on a contact they stay VIEW.hold s unless another is VIEW.swap x as far. Looking at a sound that has no corner to watch goes
+ // at VIEW.calm x its flick speed and acceleration (calm(P): it looks, it does not snap); corners - of its way, a held angle, a
+ // known enemy's way in - are pre-aimed as players do, at its own hand speed. Before (server DM): the view went to the freshest
+ // contact within 45 m - every nearby gunshot - at full flick speed: 4-6 % of calm time turning faster than 6 rad/s, 7-11 % of
+ // running spent looking more than 90 deg off its way.
+ // VIEW.corner: a corner it checks is a spot it keeps corner.hold s (its yaw following that spot as it walks), then re-picks
+ // (server bots.js cornerLook); a re-pick within corner.same rad keeps the old spot. A longer hold went stale on a moving bot:
+ // where its route leaves sight moves as it walks (pre-aim at first sight while moving 44 -> 26 % within 10 deg at 0.6 s).
+ const VIEW={calm:[.4,.55],hear:20,back:1.75,close:8,seen:1.5,hold:.8,swap:.6,near:12,corner:{hold:.25,same:0}};
+ function calmK(P){if(P&&P._ck!=null)return P._ck;const r=seeded(P,0x6c1a5e11),k=VIEW.calm[0]+r()*(VIEW.calm[1]-VIEW.calm[0]);if(P)P._ck=k;return k;}
+ // the same hand at a slower pace (rate and acceleration x k): a derived personality for turnStep, cached per pace
+ function paced(P,key,k){if(!P)return P;const c=P['_'+key];if(c)return c;const a=turnAcc(P),C=Object.assign({},P,{turn:(P.turn||10)*k});C._acc=a*k;C['_'+key]=C;return P['_'+key]=C;}
+ function calm(P){return paced(P,'calm',calmK(P));}
+ // m: memory; ctx {moving, hx, hz: unit direction it moves (world x / z), cur: the contact id it watches, since: when its eyes
+ // went there, maxD} -> the contact to look at, or null
+ function glance(m,now,px,pz,ctx){if(!m)return null;ctx=ctx||{};let best=null,bs=Infinity,cur=null;const mv=!!ctx.moving,hl=Math.hypot(ctx.hx||0,ctx.hz||0),maxD=ctx.maxD||45;
+  for(const id in m.c){const c=m.c[id],age=now-c.t;if(!(age>=0&&age<=SENSE.glance))continue;const dx=c.x-px,dz=c.z-pz,d=Math.hypot(dx,dz);if(!(d>.8&&d<maxD))continue;
+   const fresh=c.kind==='seen'&&age<=VIEW.seen;if(mv&&c.kind!=='seen'&&d>VIEW.hear)continue;
+   if(mv&&!fresh&&d>VIEW.close&&hl>1e-6&&(dx*ctx.hx+dz*ctx.hz)/(d*hl)<Math.cos(VIEW.back))continue;
+   c.id=id;if(ctx.cur!=null&&String(id)===String(ctx.cur))cur=c;const sc=age+d*.02;if(sc<bs){bs=sc;best=c;}}
+  if(cur&&best&&best!==cur&&now-(ctx.since||0)<VIEW.hold&&!(Math.hypot(best.x-px,best.z-pz)<Math.hypot(cur.x-px,cur.z-pz)*VIEW.swap))return cur;
+  return best;}
+ function urgent(c,now,d){return !!c&&((c.kind==='seen'&&now-c.t<=VIEW.seen)||d<=VIEW.near);}
+ // ---- Who to go after ----
+ // The freshest contact (memBest), but a player committed to one keeps going for it while it is fresh (SENSE.hunt) and only
+ // drops it for another HUNT.swap x as far - not for every gunshot across the map (the route flipped with each new sound) -
+ // and a spot it reached (HUNT.reach m) with nobody there is checked: passed over until news of that enemy comes in.
+ // cur: the id it hunts now; ok(c) (optional): a contact it can go to at all (a TDM spawn room it cannot enter: no). -> contact | null.
+ const HUNT={swap:.6,reach:3};
+ function hunt(m,now,px,pz,cur,ok){if(!m)return null;let best=null,bs=Infinity,keep=null;
+  for(const id in m.c){const c=m.c[id],age=now-c.t;if(!(age>=0&&age<=SENSE.hunt))continue;const d=Math.hypot(c.x-px,c.z-pz);if(d<HUNT.reach)c.chk=c.t;if(c.chk===c.t||(ok&&!ok(c)))continue;
+   c.id=id;const sc=age+d*.02;if(sc<bs){bs=sc;best=c;}if(cur!=null&&String(id)===String(cur))keep=c;}
+  if(keep&&best&&best!==keep&&!(Math.hypot(best.x-px,best.z-pz)<Math.hypot(keep.x-px,keep.z-pz)*HUNT.swap))return keep;
+  return best;}
+ // ---- Reloading out of a fight (= the page's offline bots, work/bot_ammo_runtime.js xbAmTick) ----
+ // Never while it sees an enemy (an empty magazine excepted: the callers reload that at once, mid-duel too); after a kill once
+ // out of sight RELOAD_AT.kill[0] s with RELOAD_AT.kill[1] of the magazine gone; low (<= RELOAD_AT.low left) after
+ // RELOAD_AT.cover s out of sight; anything missing in a lull of RELOAD_AT.lull s. Each at the bot's own pace j (0.8-1.2), so
+ // a team does not reload in lockstep. Before, the server's bots reloaded only an empty magazine: they walked into the next
+ // fight with what the last spray left and reloaded in it.
+ // st {mag, full, quiet: s since it last saw an enemy, killed: it got a kill since its last reload, j} -> reason | null
+ const RELOAD_AT={kill:[.25,.2],low:.35,cover:.6,lull:3};
+ function reloadPace(P){if(P&&P._rp!=null)return P._rp;const r=seeded(P,0x2e10ad55),k=.8+r()*.4;if(P)P._rp=k;return k;}
+ function reloadCall(st){if(!st||!(st.full>0)||!(st.mag<st.full))return null;if(st.mag<=0)return 'empty';const q=st.quiet||0,j=st.j||1;if(!(q>0))return null;
+  if(st.killed&&q>=RELOAD_AT.kill[0]*j&&(st.full-st.mag)/st.full>=RELOAD_AT.kill[1])return 'kill';
+  if(q>=RELOAD_AT.cover*j&&st.mag/st.full<=RELOAD_AT.low)return 'low';
+  if(q>=RELOAD_AT.lull*j)return 'lull';return null;}
+ // ---- Not backing out of a fight it has not fought ----
+ // A bot that likes a longer range (an anchor 16-32 m, a support 11-20 m) stepped back from any enemy closer than that the
+ // moment it saw it - before its reaction was over - out of the line it saw it on; the enemy, doing the same, lost it too, and
+ // both re-peeked: two bots 8 m apart swapping 0.3 s glimpses for 5 s without a shot. A player first shoots (or is shot), and
+ // only then gives ground. engaged: s into the fight; shot: it has fired in this fight.
+ const BACK={after:.8};
+ function backOff(engaged,shot){return !!shot&&engaged>=BACK.after;}
+ // ---- Hops ----
+ // Players jump now and then on the way - nothing to jump over, just a habit - some a lot, some never; the bots never did
+ // (0 jumps in 18 bot-minutes). HOP.none of bots never hop, the rest HOP.rate[0..1] hops a minute of free running (aggressive
+ // players more), never two within HOP.gap s; the caller allows it only on a clear straight of HOP.run m+ with no enemy
+ // known close (a hop is loud and spoils the first shot).
+ const HOP={none:.35,rate:[.6,3],gap:4,run:4};
+ function hopRate(P){if(P&&P._hop!=null)return P._hop;const r=seeded(P,0x40b2c7e9),x=r(),ag=clamp(P&&P.aggression!=null?P.aggression:.5,0,1),k=x<HOP.none?0:(HOP.rate[0]+(x-HOP.none)/(1-HOP.none)*(HOP.rate[1]-HOP.rate[0]))*(.7+.6*ag);if(P)P._hop=k;return k;}
+ function hop(P,rand,dt){const k=hopRate(P)/60;return k>0&&rand()<k*Math.max(0,dt||0);}
+ return {hash,rng,clamp,pickW,REACT,personality,reaction,crosshair,crosshairAt,firePattern,peek,attackPlan,defensePlan,roles,teamBuy,buyFor,BUYK,onMateDeath,onSound,ATTACK,DEFENSE,utility,UTIL,UTILX,teamGap,fightCast,turnStep,trackLag,wrapA,SPIKE,plantSpot,PLANT,plantDeep,postPlant,retake,postPlay,SHOOT_UTIL,shootUtility,TAILWIND,tailwindDash,tailwindKeys,LEVEL,level,aimTraits,AIM_H,aimHeight,halfWidth,aimPlan,aimAt,readyToFire,planFire,idlePitch,recoilPull,discipline,hitPart,BUY,buyArea,buyRoute,buyExit,buySpot,buyWander,buyHold,buyNew,buyTick,buyNext,buySep,SENS,cm360,sensOf,turnRate,SENSE,inView,audible,earSpot,memNew,memNote,memForget,memBest,repeek,mayFire,nextShot,areas,DFORM,GAP,midPoint,RESPOND,nearest,tradeSpot,follow,buyNear,buyCross,reactR,reacts,FIRE,sprayFade,sprayPull,turnAcc,trackTurn,cornerPick,PRE,pathCorner,preAimErr,FLASH,flashRead,blindPlay,PEEK,peekStep,RELOAD,reloadPlay,reloadBack,trailNote,reloadSpot,TRADE,WALK,quiet,ULTX,ultCall,ultReady,ADAD,adadNew,adadStep,adadSet,routeCorner,HOLD,holdCorners,holdNext,SIGHT,sightKeep,sightAt,sightSame,VIEW,calmK,calm,glance,urgent,HUNT,hunt,RELOAD_AT,reloadPace,reloadCall,BACK,backOff,HOP,hopRate,hop};
 });

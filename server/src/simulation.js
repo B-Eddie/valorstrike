@@ -2,12 +2,13 @@ import {downed18} from './agents18.js';
 import Motor from './motor.cjs';
 import {arenaWrap} from './arena.js';
 import {ropeBot} from './ropes.js';
-import {path,prepare} from './path.js';
+import {path,prepare} from './path.js';import {hyp2} from './hyp.js';
 import {rayHit} from './hitboxes.js';
 import {recordHistory,rewindHit,REWIND} from './rewind.js';
 import {recTick,recRows,recZoneRows} from './tdmorbs.js';
-import {persona,aimError,strafe,flankNode,variedPath,routeAhead,spaceLook,engage,trigger,hearTick,botView} from './bots.js';
-const XE=[0,0];
+import {persona,aimError,strafe,flankNode,variedPath,routeAhead,spaceLook,engage,trigger,hearTick,botView,botSeed,holdCorner,steerPoint} from './bots.js';
+const XE=[0,0],OCC=[0,0],STEER=[0,0],HOLD_DM=[8,26],ESC_ORDER=[0,1,7,2,6,3,5,4],ESC_DMAX=6.75*.25+1e-6;
+export const STUCK={r:.3,gap:.2},PACK=4;
 import calibration from './weapons.json' with {type:'json'};
 import BotBrain from '../../vendor/bot-brain.cjs';
 // Armor absorbs 66 %: float leftovers (54.00000000000001 hp read as 55 by Math.ceil, a 1e-14 hp survivor) are snapped to 1e-6.
@@ -27,6 +28,9 @@ export const gunOf=u=>u.srGolden&&u.weapon==='Sheriff'&&!u.headhunter?GOLDEN_GUN
 // Match clock (wiki.playvalorant.com/en-us/Deathmatch: 40 kills or 9 min = 540 s; /en-us/Team_Deathmatch: 100 kills or 9.5 min = 570 s,
 // four stages 75/75/75/345 s; valorant.gs/rules DeathmatchGameMode Round 540s). The offline page uses the same (index.html DM.len).
 export function matchSeconds(mode){return mode==='dm'?540:570;}
+// A goal node the bot's nav view leaves out (a TDM spawn room it cannot enter): the nearest node of that view, breadth-first
+// over the links (the room's exit), else the goal as it was.
+export function navSnap(V,goal){const A=V.nav.adj,ok=V.allowed;if(!ok||goal<0||ok.has(goal))return goal;const seen=new Set([goal]),q=[goal];for(let k=0;k<q.length&&k<600;k++){for(const j of A[q[k]]){if(seen.has(j))continue;if(ok.has(j))return j;seen.add(j);q.push(j);}}return goal;}
 // Team Deathmatch stages (wiki.playvalorant.com/en-us/Team_Deathmatch "Team Deathmatches are split into four stages; the first
 // three stages are 75 seconds each, and Stage 4 is 345 seconds"; valorant.gs/rules HURMGameMode Stage 1-3 75s, Stage 4 347.7s).
 // Each stage has its own guns (wiki Loadout tables): every player keeps a Stage 1 sidearm and, from Stage 2, carries a gun of the
@@ -179,8 +183,15 @@ export class Simulation{
   hearTick(this);const mem=u.mem||(u.mem=BotBrain.memNew()),eye=u.y+1.6-(u.ch||0),E=[u.x,eye,u.z],cur=u.aimTarget!=null?enemies.find(v=>v.id===u.aimTarget):null;
   const sees=v=>{const ex=v.x-u.x,ez=v.z-u.z,d=Math.hypot(ex,ez);if(!(d<55)||!BotBrain.inView((u.look||0)-Math.atan2(-ex,-ez),d))return false;const top=v.y+1.65-(v.ch||0);return this.canSee(u,v,E,[v.x,top,v.z])||this.canSee(u,v,E,[v.x,v.y+1.15-(v.ch||0)*.6,v.z]);};
   let target=cur&&sees(cur)?cur:null;if(!target){let bd=Infinity;for(const v of enemies){const d=Math.hypot(v.x-u.x,v.z-u.z);if(d<bd&&v!==cur&&sees(v)){bd=d;target=v;}}}
-  if(!target){u.sawTarget=false;return this.botUnseen(u,P,mem,enemies);}
-  const dx=target.x-u.x,dz=target.z-u.z,dist=Math.hypot(dx,dz);BotBrain.memNote(mem,target.id,target.x,target.y,target.z,this.time,'seen');
+  // Object permanence (bots-human-2, BotBrain.SIGHT): the enemy it is fighting went out of sight a moment ago (a post, a
+  // railing, a box edge) - the fight is held on where its motion carries it for this bot's SIGHT.keep window (botOccluded)
+  if(!target){const L=u.lastSight;if(cur&&u.engagedAt&&L&&L.id===cur.id&&this.time-L.t<=BotBrain.sightKeep(P.brain)+1e-9)return this.botOccluded(u,P,L,botT0);u.sawTarget=false;u.occl=false;return this.botUnseen(u,P,mem,enemies);}
+  const dx=target.x-u.x,dz=target.z-u.z,dist=Math.hypot(dx,dz);
+  // back in sight after an occlusion where its motion said: the same fight (no new reaction); anywhere else - a jiggle back to
+  // its edge, an enemy that turned round, another enemy - a new fight, with the re-peek reaction on the angle it held
+  if(u.occl){const L=u.lastSight;if(!(L&&L.id===target.id&&BotBrain.sightSame(L,this.time,target.x,target.z,dist))){const c=mem.c[target.id];if(c&&u.engagedAt)c.prevSeen=c.seenT;u.engagedAt=0;}else if(u.aimTarget===target.id){u.aimSpot=BotBrain.aimHeight(P.brain,P.r,undefined,true);u.aimHead=u.aimSpot==='head';}/* where it tracked it to: its crosshair was waiting there, as on a re-peek (aimHeight pre) */u.occl=false;}
+  {const L=u.lastSight||(u.lastSight={});L.id=target.id;L.t=this.time;L.x=target.x;L.y=target.y;L.z=target.z;L.vx=target.vx||0;L.vz=target.vz||0;L.ch=target.ch||0;}u.seenFoeAt=this.time;
+  BotBrain.memNote(mem,target.id,target.x,target.y,target.z,this.time,'seen');
   // Where the crosshair sits on the body (BotBrain.aimHeight: head / neck / chest, mostly chest-neck for a mid-ranked player; a re-peek on the angle it held stays at head height more often), re-picked per target.
   const want0=Math.atan2(-dx,-dz),rp=BotBrain.repeek(mem.c[target.id]&&mem.c[target.id].prevSeen!=null?{seenT:mem.c[target.id].prevSeen}:null,this.time,want0,u.look||0);
   if(u.aimTarget!==target.id||!u.engagedAt){if(u.aimTarget!==target.id)u.engagedAt=0;u.aimTarget=target.id;u.aimSpot=BotBrain.aimHeight(P.brain,P.r,undefined,rp);u.aimHead=u.aimSpot==='head';}
@@ -197,7 +208,7 @@ export class Simulation{
    // Engagement range preference: entries close in, anchors hold, others keep their band. Taps / bursts past 8 m are
    // shot standing still (counter-strafe), strafing between them; low-HP patient bots back out of the fight.
    /* bots-tune-2: a disciplined bot stays planted for the whole pull at range, sprays included (it used to strafe again mid-spray: 25 m shots on the move, 25 m accuracy under 40 m); ADAD: planted from the counter-strafe through the pull, strafing between pulls */const stop=disc&&dir===0&&(u.input.fire||ready||ad.q&&on);/* lane-adad: the opening stop (ad.q: the quick counter-strafe of a bot that spotted the enemy on the move, or the hold of one that saw it standing) is planted once it has reacted, while the flick lands - it used to walk on at up to 3 m/s until readyToFire, then the stop was over and a leg + a new stop came first (10 m first shot 0.9 s) */
-   u.input.forward=stop?0:dist>P.range[1]?1:dist<P.range[0]?-.6:0;u.input.side=dist<30?dir*Math.min(1,Math.max(.6,(P.strafeAmp||.5)*1.6)):0;
+   u.input.forward=stop?0:dist>P.range[1]?1:dist<P.range[0]&&BotBrain.backOff(engaged,u.shotAt>=u.engagedAt)?-.6:0;/* bots-human-2: no backing off out of its own sight line before it has shot (BotBrain.backOff) */u.input.side=dist<30?dir*Math.min(1,Math.max(.6,(P.strafeAmp||.5)*1.6)):0;
    if(u.hp<35&&P.brain.patience>.55&&!u.input.fire)u.input.forward=-1;
    if(u.crouchFight&&dist<P.crouchRange+4&&engaged>.2&&u.input.fire&&!(u.firePat&&u.firePat.kind==='tap'))u.input.duck=true;
    this.peekMove(u,P,true);/* a jiggle peek that catches sight of the enemy keeps jiggling, no shot */u.route=null;u.via=-1;if(u.ammo===0&&!u.reloadAt)this.command(u,{t:'reload'});if(BotBrain.reloadPlay({reloading:this.botReloading(u),seen:true})==='back'){/* lane-botfeel: no reload in the enemy's sight - back off to where it peeked from (its unseen trail, BotBrain.reloadSpot), else away / to a free side (BotBrain.reloadBack = offline xbReBack) */const C=BotBrain.reloadSpot(u.unseenTrail,u.x,u.z),[wx,wz]=BotBrain.reloadBack(u.x,u.z,C?C[0]:null,C?C[1]:null,target.x,target.z,W.blocked?(x,z)=>!W.blocked(x,z,.43,u.y,1.8):null),L=u.look||0,i=u.input;i.forward=-Math.sin(L)*wx-Math.cos(L)*wz;i.side=Math.cos(L)*wx-Math.sin(L)*wz;delete i.duck;delete i.walk;}this.botUtility(u,target,dist,P,engaged);return;}
@@ -214,6 +225,34 @@ export class Simulation{
  // Reloading like a player (lane-botfeel, BotBrain.reloadPlay; offline twin xbReHold): a reloading gun (a per-round reload
  // with rounds left still fires) and a remembered enemy within RELOAD.hold m -> hold the angle, no re-peek until reloaded.
  botReloading(u){return !!u.reloadAt&&!(RELOAD_ROUND[u.weapon]&&u.ammo>0);}
+ // The nav graph a bot routes on (bots-human-2): the world's; TdmSimulation leaves out the spawn rooms the bot cannot enter.
+ navView(){return this.world;}
+ // 2+ living teammates within PACK m (bots-human-2): a bot about to stop and hold an angle there would stand in a pack (a
+ // doorway, a spawn exit) - it keeps to its way instead and leaves the angle to them (spike.js sound holds, botUnseen holds)
+ packed(u){let n=0;for(const v of this.units)if(v!==u&&v.alive&&!v.loading&&v.team===u.team&&Math.abs(v.x-u.x)<PACK&&Math.abs(v.z-u.z)<PACK&&hyp2(v.x-u.x,v.z-u.z)<PACK&&++n>=2)return true;return false;}
+ // Seconds a bot's feet have gone with under STUCK.r m of progress (bots-human-2; was under 1 cm a think, which a bot wedged on a
+ // prop corner and jittering 1-2 cm a tick never met - it stood there 5 s until botProgress teleported it). Counted over
+ // consecutive checks only: a fight, a hold or a reload in between starts it over.
+ stuckFor(u,moving){const r=u.stuckRef||(u.stuckRef=[u.x,u.z,-1e9,-1e9]),now=this.time;if(!moving||now-r[3]>STUCK.gap||hyp2(u.x-r[0],u.z-r[1])>STUCK.r){r[0]=u.x;r[1]=u.z;r[2]=now;r[3]=now;return 0;}r[3]=now;return now-r[2];}
+ // Object permanence (bots-human-2, BotBrain.SIGHT): for this bot's SIGHT.keep window after the enemy it fights left its sight,
+ // the fight goes on - the crosshair on where that enemy's last seen motion carries it (the fight's own flick plan, sway and
+ // hand limits), the feet on the fight's strafe rhythm and range - and the trigger stays off (no line of sight, no shot).
+ // bot() decides on the next sighting: where the motion said -> the same fight, elsewhere -> a new one.
+ botOccluded(u,P,L,botT0){const now=this.time,G=BotBrain.sightAt(L,now,OCC),eye=u.y+1.6-(u.ch||0),dx=G[0]-u.x,dz=G[1]-u.z,dist=hyp2(dx,dz)||.01,aimH=BotBrain.AIM_H[u.aimSpot]||1.3,dy=L.y+aimH-(L.ch||0)*aimH/1.8-eye,engaged=now-u.engagedAt,[ey,ep]=aimError(P,now,engaged),xe=BotBrain.aimAt(u.aimPlan,engaged,XE),bdt=Math.min(.1,Math.max(.02,now-(botT0??(now-.05))||.05));
+  const ts=BotBrain.turnStep(P.brain,u.look||0,Math.atan2(-dx,-dz)+ey*.5+xe[0],bdt,u.turnSt||(u.turnSt={v:0}));u.look=ts.yaw;u.turnLeft=ts.left;u.pitch=Math.atan2(dy,dist)+ep*.5+xe[1];
+  const ad=u.adad,dir=ad&&ad.at===u.engagedAt?BotBrain.adadStep(ad,bdt,P.r,P.brain,false,false):0;
+  u.input.forward=dist>P.range[1]?1:dist<P.range[0]&&BotBrain.backOff(engaged,u.shotAt>=u.engagedAt)?-.6:0;u.input.side=dist<30?dir*Math.min(1,Math.max(.6,(P.strafeAmp||.5)*1.6)):0;u.input.fire=false;if(u.crouchFight&&u.ch>.05)u.input.duck=true;/* a crouch spray stays down through it (no stand-up bob) */if(u.fireUntil>now)u.fireUntil=now;/* the trigger is let go: the burst it was in ends with its target gone - the next pull is a new one (a disciplined bot counter-strafes first) */u.sawTarget=false;/* it does not see (smoke, a wall): sight-based logic (utility, ults, reactions) knows that */u.occl=true;}
+ // Reloading out of a fight like a player (bots-human-2, BotBrain.reloadCall = the page's offline bots' xbAmTick): after its
+ // kill, when low behind cover, or topping up in a lull, at its own pace - never with an enemy in sight (not called then).
+ // Was: only an empty magazine reloaded, so a bot took the rounds its last spray left into the next fight and reloaded there.
+ botTopUp(u,P){if(u.human||u.reloadAt||!u.alive||u.loading||u.utilShot||this.time-(u.shotAt??-1e9)<1.5)return false;/* not while it shoots at something (enemy utility, a moment ago) */const g=gunOf(u);if(!g||u.weapon==='Knife'||g.abilityOnly||!(g.magazineSize>0)||!(u.ammo<g.magazineSize))return false;
+  const why=BotBrain.reloadCall({mag:u.ammo,full:g.magazineSize,quiet:this.time-(u.seenFoeAt??-1e9),killed:u.killAt!=null&&u.killAt>(u.topUpAt??-1e9)&&this.time-u.killAt<8,j:BotBrain.reloadPace(P.brain)});
+  if(!why||why==='empty')return false;/* empty: the fight's own reload (bot) */u.topUpAt=this.time;return this.command(u,{t:'reload'});}
+ // Hops (bots-human-2, BotBrain.hop): now and then on a clear straight (steerPoint's u.ahead), running, on the ground, with no
+ // enemy known within 15 m - a habit some bots have (HOP.none never hop). Own stream: the persona's decisions are unchanged.
+ botHop(u,P){const i=u.input;if(!i||!i.forward||i.walk||i.duck||u.air||!(u.ahead>=BotBrain.HOP.run)||this.time-(u.hopAt??-1e9)<BotBrain.HOP.gap)return false;
+  const c=u.mem&&BotBrain.memBest(u.mem,this.time,u.x,u.z,BotBrain.SENSE.glance);if(c&&hyp2(c.x-u.x,c.z-u.z)<15)return false;
+  const R=u.hopR||(u.hopR=BotBrain.rng(BotBrain.hash('hop|'+u.name+'|'+u.id+'|'+botSeed(this))));if(!BotBrain.hop(P.brain,R,this.thinkDt??.05))return false;i.jump=true;u.hopAt=this.time;return true;}
  botReloadHold(u,mem,carrier=false){if(u.human||!this.botReloading(u))return false;const c=BotBrain.memBest(mem||u.mem||BotBrain.memNew(),this.time,u.x,u.z,BotBrain.SENSE.hunt);if(BotBrain.reloadPlay({reloading:true,seen:false,contactD:c?Math.hypot(c.x-u.x,c.z-u.z):null,carrier})!=='hold')return false;u.input={};u.inputAt=this.time;u.route=null;return true;}
  peekMove(u,P,fight){const i=u.input;if(u.human||!u.mem||!i||u.peekOff)return;let S=u.pkSt;
   if(fight){if(S&&S.style==='wide'){// Finish the swing past the held edge before counter-strafing to fire.
@@ -233,19 +272,30 @@ export class Simulation{
  botUnseen(u,P,mem,enemies){const W=this.world;
   if(u.isoDuel){const f=this.units.find(v=>v.id===u.isoDuel.foe);if(f&&f.alive){const dx=f.x-u.x,dz=f.z-u.z;u.look=Math.atan2(-dx,-dz);u.input.forward=Math.hypot(dx,dz)>2.5?1:0;/* the sealed pocket arena has no nav: straight at the foe, the walls stop the rest */}return;}
   if(u.engagedAt){const c=mem.c[u.aimTarget];if(c)c.prevSeen=c.seenT;}
-  u.engagedAt=0;u.reactionAt=0;u.xhE=null;u.pitch=BotBrain.idlePitch(P.brain);u.aimTarget=null;/* the next fight re-picks where on the body the crosshair sits */u.unseenTrail=BotBrain.trailNote(u.unseenTrail||[],u.x,u.z,this.time);/* where it stood unseen: a reload in a fight backs off toward it */if(this.objectiveRoutes)return;if(this.botReloadHold(u,mem))return;
-  const c=BotBrain.memBest(mem,this.time,u.x,u.z,BotBrain.SENSE.hunt);let target;
-  if(c)target={id:'c'+c.id,x:c.x,y:c.y,z:c.z};else{const N=W.nav.nodes,list=W.playable||[];let r=u.roam!=null?N[u.roam]:null;
+  u.engagedAt=0;u.reactionAt=0;u.xhE=null;u.pitch=BotBrain.idlePitch(P.brain);u.aimTarget=null;/* the next fight re-picks where on the body the crosshair sits */u.unseenTrail=BotBrain.trailNote(u.unseenTrail||[],u.x,u.z,this.time);/* where it stood unseen: a reload in a fight backs off toward it */this.botTopUp(u,P);/* bots-human-2: the out-of-fight reload */if(this.objectiveRoutes)return;if(this.botReloadHold(u,mem))return;
+  const V=this.navView(u),inV=V===W?null:V.allowed;/* bots-human-2: the graph this bot can walk (TDM: no spawn room it is shut out of, navView) */
+  const c=BotBrain.hunt(mem,this.time,u.x,u.z,u.huntId,inV?q=>inV.has(W.near(q.x,q.z,q.y)):null);u.huntId=c?c.id:null;let target;/* bots-human-2: committed to the enemy it goes after (BotBrain.hunt), not the latest gunshot */
+  if(c)target={id:'c'+c.id,x:c.x,y:c.y,z:c.z};else{const N=W.nav.nodes,list=V.playable||[];let r=u.roam!=null?N[u.roam]:null;
    if(!r||Math.hypot(r[0]-u.x,r[2]-u.z)<2.5||this.time>(u.roamUntil||0)){u.roam=null;for(let k=0;k<12&&list.length;k++){const i=list[Math.floor(P.r()*list.length)],n=N[i];if(Math.hypot(n[0]-u.x,n[2]-u.z)>=15){u.roam=i;break;}}u.roamUntil=this.time+15;/* nothing 15 m+ away to roam to (a tiny test world): hold */u.route=null;r=u.roam!=null?N[u.roam]:null;}
    if(!r)return;target={id:'r'+u.roam,x:r[0],y:r[1],z:r[2]};}
   const dist=Math.hypot(target.x-u.x,target.z-u.z);
-  // Holders pause in place between pushes; the pause length and spacing come from the bot's own stream.
-  if(P.hold>0&&!(this.time<u.nextHoldAt)){u.nextHoldAt=this.time+2+P.r()*3.5;if(P.r()<P.hold)u.holdUntil=this.time+1+P.r()*1.8;}if(u.holdUntil>this.time)return;
-  if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;const goal=via>=0?via:W.near(target.x,target.z,target.y);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path);u.routeAt=this.time+P.repath;}
+  // Holding like a player (bots-human-2): a holder (P.hold, by role; half that often) that hears an enemy coming - a contact it
+  // heard, not saw, HOLD_DM m off, whose way to it comes round a corner the bot can see 3 m+ away (holdCorner) - stops and holds
+  // that corner (botView keeps the crosshair on it) for 1.2-3 s, then goes after it; not again within 6 s. Own stream. Was: a 1-2.8 s
+  // stop every 2-5.5 s wherever it happened to be (server DM Ascent: 82 stand-stills of 1-4 s in 18 bot-minutes, some a metre
+  // from a wall) - a bot freezing in the open, not one holding an angle.
+  // Only footsteps (an enemy on the move nearby, maybe its way) - a gunshot is an enemy busy with someone else: that is pushed.
+  // While it holds, the stuck / progress watch starts over (it stands on purpose; that window used to end in a teleport).
+  if(u.holdUntil>this.time){u.progress=null;u.stuck=0;return;}u.holdC=null;
+  if(c&&P.hold>0&&c.kind==='heard'&&(c.how==='step'||c.how==='near')&&this.time>=(u.holdNext||0)&&dist>=HOLD_DM[0]&&dist<=HOLD_DM[1]){u.holdNext=this.time+1;const R=u.holdR||(u.holdR=BotBrain.rng(BotBrain.hash('hold|'+u.name+'|'+u.id+'|'+botSeed(this))));
+   if(R()<P.hold*.5&&!this.packed(u)){const k=holdCorner(this,u,c);if(k&&Math.hypot(k[0]-u.x,k[2]-u.z)>=3){u.holdUntil=this.time+1.2+R()*1.8;u.holdNext=u.holdUntil+6;u.holdC=c.id;u.holdK=k.slice();u.route=null;u.progress=null;u.stuck=0;return;}}}
+  if(!u.route||u.routeAt<this.time||u.route.length<2){const via=P.flank&&dist>12?(u.via>=0&&u.viaTarget===target.id?u.via:flankNode(this,u,target)):-1;u.via=via;u.viaTarget=target.id;let goal=via>=0?via:W.near(target.x,target.z,target.y);if(inV&&!inV.has(goal))goal=navSnap(V,goal);u.route=variedPath(this,u,W.near(u.x,u.z,u.y),goal,path,u.route,V);/* keep: over the re-route budget it keeps the route it has (bug 7, as goalPath) */u.routeAt=this.time+P.repath;}
   while(u.route.length>1){const n=W.nav.nodes[u.route[0]];if(Math.hypot(n[0]-u.x,n[2]-u.z)<P.accept)u.route.shift();else break;}routeAhead(W.nav.nodes,u.route,u.x,u.y,u.z);/* bug 7: no walking back to a node already passed */
   if(u.via>=0&&u.route.length<=1){const n=W.nav.nodes[u.via];if(n&&Math.hypot(n[0]-u.x,n[2]-u.z)<1.2){u.via=-1;u.route=null;}}
-  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const tx=n[0]-u.x,tz=n[2]-u.z,l=Math.hypot(tx,tz)||1,j=P.jitter*Math.min(1,l/1.5)*Math.sin((u.route[0]||0)*1.7+P.jitterPhase)/* faded near the waypoint: a jitter wider than accept orbited it */,gx=n[0]+(-tz/l)*j,gz=n[2]+(tx/l)*j;u.look=Math.atan2(u.x-gx,u.z-gz);spaceLook(this,u);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}this.peekMove(u,P);/* a remembered enemy within PEEK.range: jiggle / wide / tight / hold */
-  if(u.lastPos&&Math.hypot(u.x-u.lastPos[0],u.z-u.lastPos[1])<.01&&u.input.forward)u.stuck=(u.stuck||0)+.05;else u.stuck=0;if(u.stuck>1||u.escapeUntil>this.time){if(u.stuck>1){u.route=null;u.via=-1;}this.botEscape(u,u.stuck);}this.botProgress(u);u.lastPos=[u.x,u.z];}
+  const n=u.route&&W.nav.nodes[u.route[0]];if(n){const g=steerPoint(this,u,P,u.route,true,STEER);/* bots-human-2: straight runs to the farthest node it can walk to, its lane drifting slowly (was: the next node + a random side per node) */u.look=Math.atan2(u.x-g[0],u.z-g[1]);spaceLook(this,u);u.input.forward=1;if(P.walk&&dist<20)u.input.walk=true;}this.peekMove(u,P);/* a remembered enemy within PEEK.range: jiggle / wide / tight / hold */this.botHop(u,P);
+  // stuck = seconds of feet going with under STUCK.r m of progress (bots-human-2; was under 1 cm a think - a bot wedged on a prop
+  // corner, jittering 1-2 cm a tick, never met it and stood there 5 s until botProgress teleported it); a jiggle peek rocks on purpose
+  u.stuck=this.stuckFor(u,!!u.input.forward&&!(u.pkSt&&u.pkSt.style==='jiggle'));if(u.stuck>1||u.escapeUntil>this.time){if(u.stuck>1){u.route=null;u.via=-1;}this.botEscape(u,u.stuck);}this.botProgress(u);u.lastPos=[u.x,u.z];}
  // Stuck bot (no progress for 1 s while walking): random sidestep and hop did not get bots out of corners and ledges
  // (soak: bots frozen for the rest of the match on every map). Probe eight directions with the real motor on a copy of
  // the unit for 0.25 s and walk 0.6 s in the free one closest to where it wanted to go; after 4 s with no way out, move
@@ -254,8 +304,11 @@ export class Simulation{
   if(stuck>4){const p=this.freeNode(u,.5);if(p){[u.x,u.y,u.z]=p;u.vx=u.vz=u.vy=0;u.seq++;u.stuck=u.goalStuck=0;u.route=null;u.unstuck=(u.unstuck||0)+1;return true;}}
   if(!(this.time>=(u.escapeProbeAt||0)))return false;u.escapeProbeAt=this.time+.3;
   const want=u.look,h=1.8-(u.ch||0);let best=null;
-  for(let k=0;k<8;k++){const a=want+k*Math.PI/4,c={x:u.x,y:u.y,z:u.z,vx:0,vy:0,vz:0,ch:u.ch||0,air:u.air};for(let n=0;n<5;n++)Motor.step(c,{x:-Math.sin(a),z:-Math.cos(a),speed:6.75},.05,this.world);
-   const d=Math.hypot(c.x-u.x,c.z-u.z);if(d<.5||!(c.y>u.y-1.5))continue;const turn=Math.abs(Math.atan2(Math.sin(a-want),Math.cos(a-want)));const score=d-turn*.8;if(!best||score>best.score)best={a,score};}
+  // bots-human-2: the same eight probes, the ones nearest the way it wanted first, stopping once no direction left can beat
+  // the best (score d - 0.8 turn, d <= 6.75 x 0.25 m): each probe is 5 motor steps (0.5-2.5 ms each in a dense spot) and all
+  // eight cost 15-50 ms of one room tick; the pick is the same (an exact score tie aside).
+  for(const k of ESC_ORDER){const a=want+k*Math.PI/4,turn=Math.abs(Math.atan2(Math.sin(a-want),Math.cos(a-want)));if(best&&ESC_DMAX-turn*.8<=best.score)break;const c={x:u.x,y:u.y,z:u.z,vx:0,vy:0,vz:0,ch:u.ch||0,air:u.air};for(let n=0;n<5;n++)Motor.step(c,{x:-Math.sin(a),z:-Math.cos(a),speed:6.75},.05,this.world);
+   const d=Math.hypot(c.x-u.x,c.z-u.z);if(d<.5||!(c.y>u.y-1.5))continue;const score=d-turn*.8;if(!best||score>best.score)best={a,score};}
   if(!best){u.input.jump=true;return false;}u.escapeLook=best.a;u.escapeUntil=this.time+.6;u.look=best.a;u.input.forward=1;u.input.side=0;u.input.jump=false;u.route=null;u.escapes=(u.escapes||0)+1;return true;}
  // Escapes can oscillate in place (a step the motor will not climb, a ledge lip): under 1.5 m of progress in 5 s while
  // walking (not fighting) puts the bot on the route node it is trying to reach (else the nearest free node).
