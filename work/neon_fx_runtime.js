@@ -82,19 +82,19 @@ function neoxFastLane(o, yaw, seconds) { try { const G = neoxGeos();
   const LEN = 30, GAP = 3, H = 4.2, ttl = Math.max(0.6, seconds || 6);
   const dir = new THREE.Vector3(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0));
   const side = new THREE.Vector3(-dir.z, 0, dir.x);
-  const origin = neoxV3(o); origin.y = 0;
+  const origin = neoxV3(o); const oy = Number.isFinite(origin.y) ? origin.y : 0; /* the caster's floor (was forced to y 0: under a native map) */
   const grp = new THREE.Group();
   const geo = new THREE.PlaneGeometry(LEN, H);
   const walls = [];
   for (const s of [-1, 1]) {
     const w = new THREE.Mesh(geo, neoxMat("flame", neoxFLAME, s * 3.1 + 5));
     w.position.copy(origin).addScaledVector(dir, LEN / 2).addScaledVector(side, s * (GAP / 2 + 0.3));
-    w.position.y = H / 2; w.rotation.y = Math.atan2(-dir.z, dir.x);
+    w.position.y = oy + H / 2; w.rotation.y = Math.atan2(-dir.z, dir.x);
     grp.add(w); walls.push(w);
     const glow = new THREE.Mesh(G.plane, neoxBasic(0xffb02a, 0.5, true));
     glow.rotation.x = -Math.PI / 2; glow.rotation.z = Math.atan2(-dir.x, -dir.z);
     glow.scale.set(0.9, LEN, 1);
-    glow.position.copy(origin).addScaledVector(dir, LEN / 2).addScaledVector(side, s * (GAP / 2 + 0.3)); glow.position.y = 0.06;
+    glow.position.copy(origin).addScaledVector(dir, LEN / 2).addScaledVector(side, s * (GAP / 2 + 0.3)); glow.position.y = oy + 0.06;
     grp.add(glow); }
   return neoxFx(ttl, [grp], (dt, age) => {
     const rise = Math.min(1, age / 0.35), die = Math.max(0, (age - (ttl - 0.5)) / 0.5);
@@ -129,7 +129,7 @@ function neoxRelayBolt(o, p, opts) { try { const G = neoxGeos(); opts = opts || 
   });
   return fx; } catch (e) { try { window.neoxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }
 // ---- High Gear: persistent crackle + ground trail. getPos() -> position each tick. ----
-function neoxHighGear(getPos) { try { const G = neoxGeos();
+function neoxHighGear(getPos, opts) { try { const G = neoxGeos(); const fp = !!(opts && opts.fp); /* fp: the local player's own High Gear - ground trail only (the body arcs would orbit the camera) */
   const grp = new THREE.Group();
   const arcs = []; for (let i = 0; i < 4; i++) { const a = new THREE.Mesh(G.plane, neoxMat("arc", neoxARC, 9 + i * 2.3)); a.scale.set(0.85, 1.7, 1); grp.add(a); arcs.push(a); }
   const glow = new THREE.Mesh(G.sph, neoxBasic(0x3aa8ff, 0.10, true)); glow.scale.set(0.55, 0.9, 0.55); glow.position.y = 1.0; grp.add(glow);
@@ -137,9 +137,9 @@ function neoxHighGear(getPos) { try { const G = neoxGeos();
   let last = null;
   const fx = neoxFx(1e9, [grp], (dt, age) => {
     let p = null; try { p = typeof getPos === "function" ? getPos() : getPos; } catch (e) {}
-    if (p) grp.position.set(p.x, p.y || 0, p.z);
+    if (p) grp.position.set(p.x, p.y || 0, p.z); grp.visible = !fp;
     arcs.forEach((a, i) => { const an = neoxU.value * 2.4 + i * 2.1; a.position.set(Math.cos(an) * 0.45, 0.7 + i * 0.4 + Math.sin(neoxU.value * 5 + i) * 0.1, Math.sin(an) * 0.45); a.rotation.y = -an + Math.PI / 2; a.material.uniforms.uP.value = 0.12 + 0.3 * Math.sin(neoxU.value * 17 + i * 3.7); });
-    if (p && last && Math.hypot(p.x - last.x, p.z - last.z) > 0.35) { const t = new THREE.Mesh(G.plane, neoxBasic(0x46c8ff, 0.55, true)); t.rotation.x = -Math.PI / 2; t.rotation.z = Math.atan2(-(p.x - last.x), -(p.z - last.z)) + Math.PI / 2; t.scale.set(0.28, Math.hypot(p.x - last.x, p.z - last.z) + 0.3, 1); t.position.set((p.x + last.x) / 2, 0.05, (p.z + last.z) / 2); scene.add(t); trail.push({ m: t, a: 0 }); fx.fx.objs.push(t); }
+    if (p && last && Math.hypot(p.x - last.x, p.z - last.z) > 0.35) { const t = new THREE.Mesh(G.plane, neoxBasic(0x46c8ff, 0.55, true)); t.rotation.x = -Math.PI / 2; t.rotation.z = Math.atan2(-(p.x - last.x), -(p.z - last.z)) + Math.PI / 2; t.scale.set(0.28, Math.hypot(p.x - last.x, p.z - last.z) + 0.3, 1); t.position.set((p.x + last.x) / 2, (p.y || 0) + 0.05, (p.z + last.z) / 2); scene.add(t); trail.push({ m: t, a: 0 }); fx.fx.objs.push(t); }
     if (p) last = { x: p.x, z: p.z };
     for (let i = trail.length - 1; i >= 0; i--) { const t = trail[i]; t.a += dt; t.m.material.opacity = 0.55 * Math.max(0, 1 - t.a / 0.7); if (t.a > 0.7) { scene.remove(t.m); t.m.material.dispose(); trail.splice(i, 1); } }
   });

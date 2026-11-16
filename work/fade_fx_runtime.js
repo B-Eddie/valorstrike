@@ -158,13 +158,13 @@ function fdxHauntBurst(p) { try { const G = fdxGeos(), grp = new THREE.Group(); 
 // follow the game's wave. Self-cleans at the end. Returns handle (no move needed - it advances itself).
 function fdxNightfall(p, yaw, dist, w, seconds) { try { const G = fdxGeos(), grp = new THREE.Group();
   const W = w || 9, D = dist || 14, TTL = seconds || 2.5, dir = new THREE.Vector3(Math.sin(yaw || 0), 0, Math.cos(yaw || 0));
-  grp.position.set(p.x, 0, p.z); grp.rotation.y = yaw || 0;
+  grp.position.set(p.x, p.y || 0, p.z); grp.rotation.y = yaw || 0;
   const wall = new THREE.Mesh(G.bigplane, fdxMat("sigil", fdxSIGIL, 1.4)); wall.scale.set(W, 4.2, 1); wall.position.y = 2.1; grp.add(wall);
   const wall2 = new THREE.Mesh(G.bigplane, wall.material); wall2.scale.set(W, 4.2, 1); wall2.position.y = 2.1; wall2.rotation.y = Math.PI; grp.add(wall2);
   const base = new THREE.Mesh(G.plane, fdxBasic(0x12041f, 0.75, false)); base.rotation.x = -Math.PI / 2; base.scale.set(W, 2.2, 1); base.position.y = 0.05; grp.add(base);
   const crest = new THREE.Mesh(G.plane, fdxMat("tendrilN", fdxTENDRIL, 6.1)); crest.scale.set(W, 0.7, 1); crest.position.y = 4.1; grp.add(crest);
   const h = fdxFx(TTL, [grp], (dt, age, k) => { const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-    grp.position.set(p.x + dir.x * D * e, 0, p.z + dir.z * D * e);
+    grp.position.set(p.x + dir.x * D * e, p.y || 0, p.z + dir.z * D * e); /* rides the caster's floor (the tick put it back at y 0) */
     const fade = Math.min(1, age / 0.25) * Math.min(1, (TTL - age) / 0.4);
     wall.material.uniforms.uA.value = fade; base.material.opacity = 0.75 * fade; crest.material.uniforms.uA.value = 0.7 * fade;
     wall.material.uniforms.uSeed.value += dt * 0.35; });

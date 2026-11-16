@@ -90,7 +90,7 @@ function hushxV3(p) { return p && p.isVector3 ? p : new THREE.Vector3(p.x || 0, 
 // ---- Flow: launch pad ring + chevron + rising motes, burst on propel ----
 function hushxFlow(p, opts) { try { const G = hushxGeos(); opts = opts || {};
   const at = hushxV3(p); const delay = opts.delay == null ? 1.1 : opts.delay;
-  const grp = new THREE.Group(); grp.position.set(at.x, 0, at.z);
+  const grp = new THREE.Group(); grp.position.set(at.x, at.y || 0, at.z); /* on the caster's floor (was y 0) */
   const ring = new THREE.Mesh(G.ring, hushxBasic(0xb04ae8, 0.8, true)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.06; ring.scale.setScalar(0.01); grp.add(ring);
   const chevGeo = new THREE.PlaneGeometry(0.8, 0.8);
   const chev = new THREE.Mesh(chevGeo, hushxBasic(0xe8ff4a, 0.0, true)); chev.rotation.x = -Math.PI / 2; chev.position.y = 0.1; chev.scale.set(0.5, 0.5, 1); grp.add(chev);
@@ -124,7 +124,7 @@ function hushxFlashbulb(o, p, opts) { try { const G = hushxGeos(); opts = opts |
     r.scale.set(1.7 - (i % 4) * 0.22, 0.07 + (i % 4) * 0.015, 1); r.rotation.z = i * Math.PI / 8; star.add(r); rays.push(r); }
   const flash = new THREE.Mesh(G.sph, hushxBasic(0xff9ae0, 0.9, true)); flash.scale.setScalar(0.12); star.add(flash);
   const haze = new THREE.Mesh(G.sph, hushxBasic(0xd018b0, 0.24, true)); haze.scale.setScalar(0.4); star.add(haze);
-  const fpoolGeo = new THREE.CircleGeometry(0.5, 24); const fpool = new THREE.Mesh(fpoolGeo, hushxBasic(0x7a1ac8, 0.6, false)); fpool.rotation.x = -Math.PI / 2; fpool.position.y = 0.06 - to.y; fpool.scale.setScalar(0.01); star.add(fpool); // pin pool to ground plane below the aerial pop
+  const fpoolGeo = new THREE.CircleGeometry(0.5, 24); const fpool = new THREE.Mesh(fpoolGeo, hushxBasic(0x7a1ac8, 0.6, false)); fpool.rotation.x = -Math.PI / 2; fpool.position.y = 0.06 - (to.y - (() => { try { return typeof xFy === "function" ? xFy(to.x, to.z, to.y + 0.2) : 0; } catch (e) { return 0; } })()); /* the pool lies on the floor under the pop (was world y 0.06) */ fpool.scale.setScalar(0.01); star.add(fpool); // pin pool to ground plane below the aerial pop
   const fx = hushxFx(flyT + 1.8, [orb, star], (dt, age) => {
     if (age < flyT) { const k = age / flyT; orb.position.lerpVectors(from, to, k); orb.position.y += Math.sin(k * Math.PI) * 0.8; orb.rotation.y += dt * 9; spikes.forEach((sp, i) => sp.rotation.x += dt * (5 + i));
       if (age - (orb.userData.lt || 0) > 0.03) { orb.userData.lt = age; const p = new THREE.Mesh(G.sph, hushxBasic(0x2a1040, 0.55, false)); p.scale.setScalar(0.06); p.position.copy(orb.position); scene.add(p); fx.fx.objs.push(p); smoke.push({ m: p, a: 0 }); }
@@ -215,7 +215,7 @@ function hushxSuspension(o, d, opts) { try { const G = hushxGeos(); opts = opts 
       s.position.set(Math.cos(a) * r, 0.6 + Math.sin(hushxU.value * 1.4 + i * 2) * 0.5, Math.sin(a) * r); s.rotation.y += dt * 2;
       s.material.opacity = 0.8 * hold; });
   }, undefined, [starGeo, domeGeo, webGeo]);
-  handle.fx.endBurst = function () { if (burstAt < 0) { burstAt = handle.fx.age; landed = star.position.clone(); landed.y = 0; } };
+  handle.fx.endBurst = function () { if (burstAt < 0) { burstAt = handle.fx.age; landed = star.position.clone(); try { landed.y = typeof xFy === "function" ? xFy(landed.x, landed.z, landed.y + 0.5) : 0; } catch (e) { landed.y = 0; } } };
   /* handle end() = the projectile hit something: detonate where it is and let the burst finish. */
   return { fx: handle.fx, end: function () { handle.fx.endBurst(); } };
   } catch (e) { try { window.hushxErr = String(e && e.stack || e).slice(0, 300); xE(e); } catch (e2) {} return null; } }

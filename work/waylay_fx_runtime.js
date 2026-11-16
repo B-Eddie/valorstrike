@@ -133,9 +133,9 @@ function wayxConvergentPaths(o, yaw, opts) { try { const G = wayxGeos(); opts = 
   const LEN = opts.len || 36, W = opts.w || 13.5, WIND = opts.wind == null ? 1 : opts.wind, LIFE = Math.max(1.5, Math.min(opts.life || 2.4, 3));
   const dir = new THREE.Vector3(-Math.sin(yaw || 0), 0, -Math.cos(yaw || 0));
   const side = new THREE.Vector3(-dir.z, 0, dir.x);
-  const near = wayxV3(o); near.y = 0;
+  const near = wayxV3(o); const nearY = Number.isFinite(near.y) ? near.y : 0; near.y = 0;
   if (opts.anchor === "center") near.addScaledVector(dir, -LEN / 2);
-  const grp = new THREE.Group();
+  const grp = new THREE.Group(); grp.position.y = nearY; /* the whole effect is lifted to the caster's floor (its parts are laid out from y 0) */
   const STRIP = W / 2 - 1.2, GAP = 2.4; /* two separated strips per the showcase clip */
   const geo = new THREE.PlaneGeometry(STRIP, LEN);
   const strips = [];

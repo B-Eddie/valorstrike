@@ -139,7 +139,7 @@ function asxNebula(p, r, life, opts) { try { const R = r || 4.1, o = opts || {},
 function asxNebulaSmoke(p, dur, r, opts) { let m = null; try { m = a18Smoke(p, dur, r, 0x7a4fd0, 0xc9a8f2); m.visible = false; } catch (e) { try { xE(e); } catch (e2) {} }
   return asxNebula({ x: p.x, y: p.y || 0, z: p.z }, r, dur, opts); }
 // ---- Cosmic Divide: map-long purple starfield curtain; end pillars; rotation.y = -yaw, span local X ----
-function asxCosmicDivide(p, yaw, halfLen, life) { try { const H2 = Math.max(4, halfLen || 30), ttl = Math.max(1, life || 21), G = asxGeos(), grp = new THREE.Group(); grp.position.set(p.x, 0, p.z); grp.rotation.y = -(yaw || 0);
+function asxCosmicDivide(p, yaw, halfLen, life) { try { const H2 = Math.max(4, halfLen || 30), ttl = Math.max(1, life || 21), G = asxGeos(), grp = new THREE.Group(); grp.position.set(p.x, p.y || 0, p.z); grp.rotation.y = -(yaw || 0);
   const wall = new THREE.Mesh(G.plane, asxMat("divide", asxDIVIDE, Math.random() * 9)); wall.scale.set(H2 * 2, 6.5, 1); wall.position.y = 3.25; wall.userData.og = false; grp.add(wall);
   const wall2 = new THREE.Mesh(G.plane, wall.material); wall2.scale.copy(wall.scale); wall2.position.y = 3.25; wall2.rotation.y = Math.PI; grp.add(wall2);
   const pillars = []; for (const sx of [-1, 1]) { [[1.5, 2.6], [3.6, 1.9], [6, 1.3]].forEach(([yy, ss]) => { const pl = asxSprite(asxStarTex(), 0x9a6ff0, 0.55, ss); pl.position.set(sx * H2, yy, 0); pillars.push(pl); grp.add(pl); }); }

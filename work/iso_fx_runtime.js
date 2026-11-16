@@ -114,7 +114,7 @@ function isoxContingency(o, d, opts) { try { const G = isoxGeos(); opts = opts |
   const W = opts.width || 8, H = opts.height || 4.2, speed = opts.speed == null ? 6 : opts.speed;
   const ttl = opts.life || (speed > 0 ? 5 : 1e9);
   const dir = isoxV3(d); dir.y = 0; dir.normalize();
-  const grp = new THREE.Group(); grp.position.copy(isoxV3(o)); grp.position.y = 0;
+  const grp = new THREE.Group(); grp.position.copy(isoxV3(o)); if (!Number.isFinite(grp.position.y)) grp.position.y = 0; /* stands on the caster's floor (was y 0) */
   grp.rotation.y = Math.atan2(-dir.x, -dir.z) + Math.PI; // plane +Z faces back along the cast direction
   const geo = new THREE.PlaneGeometry(W, H);
   const wall = new THREE.Mesh(geo, isoxMat("hex", isoxHEX, Math.random() * 10)); wall.position.y = H / 2; grp.add(wall);

@@ -119,7 +119,9 @@ const fails=[];const fail=s=>{fails.push(s);if(VERBOSE)console.log('FAIL',s);};c
  await live();{const src=require('fs').readFileSync(require('path').join(__dirname,'../server/src/devices.js'),'utf8'),hh=src.match(/hotHands:\{life:([\d.]+),radius:([\d.]+),grow:([\d.]+)/);
   eq(xe('[XHOT.life,XHOT.r,XHOT.grow]'),hh?[+hh[1],+hh[2],+hh[3]]:null,'client XHOT == server DEV.hotHands');
   pick('Phoenix');xe('player.hp=100;J.q=1;J.cd.q=0;J.eq=null;true');await adv(300);const z0=xe('J.zones.length');xe('XABT.casting=true;try{xEqKey0("KeyQ")}finally{XABT.casting=false}true');
-  eq(xe('J.zones.length'),z0+1,'Hot Hands zone');eq(xe('(z=>[z.R,+z.t.toFixed(2),+z.m.scale.x.toFixed(2)])(J.zones[J.zones.length-1])'),[4.5,4,0.01],'zone starts at nothing');
+  // Hot Hands is a thrown fireball (the shared orb arc): no zone until it lands, then the zone starts at nothing on the floor it hit
+  eq(xe('[J.zones.length,(J.phq||[]).length]'),[z0,1],'Hot Hands: a fireball in flight, no zone yet');for(let i=0;i<400&&xe('J.zones.length')===z0;i++)await adv(10);
+  eq(xe('J.zones.length'),z0+1,'Hot Hands zone');{const z=xe('(z=>[z.R,z.t,z.m.scale.x,z.p.y-xFy(z.p.x,z.p.z,z.p.y+0.3)])(J.zones[J.zones.length-1])');if(!(z[0]===4.5&&z[1]>3.9&&z[1]<=4&&z[2]<0.2&&z[3]>-0.02&&z[3]<0.2))fail('zone starts at nothing, on the floor: '+JSON.stringify(z));}
   await adv(300);const r1=xe('(z=>z.m.scale.x*2.5)(J.zones[J.zones.length-1])');if(!(r1>1.2&&r1<2.6))fail('Hot Hands ~1.8 m at 0.3 s: '+r1);
   await adv(700);eq(xe('(z=>+(z.m.scale.x*2.5).toFixed(2))(J.zones[J.zones.length-1])'),4.5,'Hot Hands 4.5 m from 0.75 s');
   // relayed (online) Hot Hands spreads the same; Paint Shells stay 2.5 m
