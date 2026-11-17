@@ -199,12 +199,15 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #game #hint{bottom:112px;width:min(860px,92vw)} /* QA: sat under the HP / ability / ammo panels */
 #game:has(.x-kb.on) #hint{opacity:0} /* the ELIMINATED banner (bottom:110px) owns the bottom-center band while it shows; the hint sits at bottom:112px. No transition: a fade would freeze mid-value under starved frame clocks and leave the hint half-visible behind the banner */
 #dmg{inset:0;background:radial-gradient(ellipse at center,rgba(255,70,85,0) 52%,rgba(255,70,85,.32) 78%,rgba(255,70,85,.72) 100%);opacity:0;transition:opacity .3s;will-change:opacity;contain:strict;pointer-events:none} /* perf: a static gradient on its own layer; a full-screen blurred inset shadow repainted every frame of each hurt flash */
-#scope{inset:0;display:none;background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,radial-gradient(circle at 50% 50%,transparent 0,transparent 45.2vmin,rgba(0,0,0,.75) 45.7vmin,#000 46vmin)} /* sniper lens: 92vmin circle, centred on any aspect ratio, thin cross + thick outer posts; first in #game so the HUD paints over it */
-#xAdsT{inset:0;opacity:0;pointer-events:none}
-#xAdsT.t{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 58%,rgba(0,0,0,.28) 82%,rgba(0,0,0,.55) 100%)}
-#xAdsT:before,#xAdsT:after{content:"";position:absolute;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%)}
-#xAdsT:before{width:22px;height:22px;box-sizing:border-box;border:1.5px solid rgba(236,232,225,.9);box-shadow:0 0 0 1px rgba(0,0,0,.45),inset 0 0 0 1px rgba(0,0,0,.35)}
-#xAdsT:after{width:4px;height:4px;background:#ff4655;box-shadow:0 0 0 1px rgba(0,0,0,.6)} /* rifle/SMG ADS mini sight (replaces the crosshair while ADS) */
+#scope{inset:0;display:none;--lens:radial-gradient(circle at 50% 50%,transparent 0,transparent 38vmin,rgba(4,10,16,.22) 43.5vmin,rgba(0,0,0,.82) 45.6vmin,#000 46vmin)} /* sniper lens: 92vmin circle centred on any aspect ratio, glass falloff into the black housing; reticle per gun (o/m/l class, set in setScope); first in #game so the HUD paints over it */
+#scope,#scope.o{background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% - 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 31vmin)/3px 30vmin no-repeat,linear-gradient(#000,#000) calc(50% - 31vmin) 50%/30vmin 3px no-repeat,linear-gradient(#000,#000) calc(50% + 31vmin) 50%/30vmin 3px no-repeat,var(--lens)} /* Operator: hairline cross, heavy outer posts */
+#scope.m{background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,repeating-linear-gradient(to bottom,transparent 0 calc(6vmin - 1px),#000 calc(6vmin - 1px) 6vmin) 50% calc(50% + 12vmin)/2.4vmin 24vmin no-repeat,repeating-linear-gradient(to right,transparent 0 calc(6vmin - 1px),#000 calc(6vmin - 1px) 6vmin) calc(50% + 12vmin) 50%/24vmin 1.6vmin no-repeat,repeating-linear-gradient(to left,transparent 0 calc(6vmin - 1px),#000 calc(6vmin - 1px) 6vmin) calc(50% - 12vmin) 50%/24vmin 1.6vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 38vmin)/2px 16vmin no-repeat,linear-gradient(#000,#000) calc(50% - 38vmin) 50%/16vmin 2px no-repeat,linear-gradient(#000,#000) calc(50% + 38vmin) 50%/16vmin 2px no-repeat,var(--lens)} /* Marshal: hairline cross, range ticks below and to the sides */
+#scope.l{background:linear-gradient(#000,#000) 50% calc(50% - 24.5vmin)/1px 43vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 24.5vmin)/1px 43vmin no-repeat,linear-gradient(#000,#000) calc(50% - 24.5vmin) 50%/43vmin 1px no-repeat,linear-gradient(#000,#000) calc(50% + 24.5vmin) 50%/43vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% + 35vmin)/2px 22vmin no-repeat,linear-gradient(#000,#000) calc(50% - 35vmin) 50%/22vmin 2px no-repeat,linear-gradient(#000,#000) calc(50% + 35vmin) 50%/22vmin 2px no-repeat,radial-gradient(circle at 50% 50%,transparent calc(6vmin - 1px),rgba(0,0,0,.85) 6vmin,transparent calc(6vmin + 1px)),var(--lens)} /* Outlaw: open-centre cross, ring, side and bottom posts */
+#xAdsT{inset:0;opacity:0;display:none;pointer-events:none;contain:strict}
+#xAdsT.s{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 60%,rgba(0,0,0,.2) 84%,rgba(0,0,0,.42) 100%)} /* SMG 1.15x: faint edge falloff */
+#xAdsT.r{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 52%,rgba(0,0,0,.32) 78%,rgba(0,0,0,.62) 100%)} /* rifle / heavy 1.25x */
+#xAdsT.g{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 42%,rgba(0,0,0,.42) 66%,rgba(0,0,0,.8) 100%)} /* Guardian 1.5x / Warden 2x: scoped tunnel */
+/* rifle/SMG ADS (VALORANT): the gun's own optic is aligned to the centre ray (xvFPTick ScopeTarget) and the crosshair stays; this layer is only the zoomed edge falloff, faded with xAD.k */
 #result{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(15,25,35,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:20;text-align:center}
 body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the spectate bar (z 60) sat on top of Play again / Lobby once the match ended while dead */
 #result h2{font-size:clamp(48px,10vw,110px);font-weight:900}
@@ -11562,9 +11565,18 @@ function xSCgo(z, snap) { if (snap) { xSC.z = xSC.z0 = xSC.tz = z; xSC.t = 1; ca
 function xADu(dt) {
   if (xSC.t < 1) { xSC.t = Math.min(1, xSC.t + dt / (xSC.tz > xSC.z0 ? 0.12 : 0.09)); const e = 1 - Math.pow(1 - xSC.t, 3); xSC.z = xSC.z0 + (xSC.tz - xSC.z0) * e; }
   const f = xSCf(xSC.z); if (Math.abs(camera.fov - f) > 1e-4) { camera.fov = xAD.f = f; camera.updateProjectionMatrix(); } // also self-heals any stray FOV write
-  const t = ads === 1 && XZ[xSCw()] && xSCw() !== "Bucky" ? 1 : 0; // rifle sights align while the normal crosshair stays visible
+  const t = ads === 1 && XZ[xSCw()] && xSCw() !== "Bucky" && mode !== "duel" ? 1 : 0; // rifle sights align while the normal crosshair stays visible
   if (xAD.to !== t) { xAD.from = xAD.k; xAD.to = t; xAD.at = 0; } xAD.at = Math.min(1, (xAD.at || 0) + dt / (t > xAD.from ? 0.12 : 0.09)); const ae = 1 - Math.pow(1 - xAD.at, 3); xAD.k = xAD.p = xAD.from + (t - xAD.from) * ae;
-  const el = $("xAdsT"); if (el) hudS(el, "opacity", "0");
+  xADov();
+}
+// ADS screen layer (#xAdsT): VALORANT keeps the crosshair and shows the gun's own optic on rifle / SMG ADS; the screen adds only an edge falloff
+// that grows with the zoom (s SMG 1.15x, r rifle / heavy 1.25x, g Guardian 1.5x / Warden 2x). It follows the eased xAD.k and is display:none at
+// rest (no full-screen layer composited at hip). Sniper lens (#scope): fades in over the first ~60 % of the zoom-in from hip, reticle per gun.
+const XADC = { Spectre: "s", Stinger: "s", Vandal: "r", Phantom: "r", Bulldog: "r", Ares: "r", Odin: "r", Guardian: "g", Warden: "g" };
+function xADov() {
+  const el = $("xAdsT"); if (!el) return; const k = xAD.k > 0.004 ? xAD.k : 0;
+  hudS(el, "display", k ? "block" : "none"); hudS(el, "opacity", String(Math.round(k * 100) / 100)); // CSSOM keeps "1" / "0.5", so the diffed write stays idle at rest
+  const sc = $("scope"); if (sc && ads === 2) hudS(sc, "opacity", xSC.t < 1 && xSC.z0 <= 1.001 && xSC.tz > 1 ? String(Math.round(Math.min(1, xSC.t / 0.6) * 100) / 100) : "1");
 }
 // Classic ALT FIRE spread (wiki.playvalorant.com/en-us/Classic "Spread values", Alt Fire row): 1.9 deg first burst (1.71 crouched,
 // x0.9), max 5.78 (5.21); movement penalties crouch-walk 0 / walk 0.6 / run 1.5 / airborne 2.25 (ramped like the primary). Back-to-back
@@ -11590,7 +11602,8 @@ function xBurst() { // Classic ALT FIRE (wiki.playvalorant.com/en-us/Classic, va
   xAD.z = xSCf(z); xAD.tint = ads === 1 && (w === "Vandal" || w === "Phantom");
   xSCgo(z, !xSC.soft && !on); // right-click eases both ways; forced unscopes (reload, switch, death, round end, lobby) snap back to 75°
   if (!xSC.soft && !on) xAD.p = xAD.k = 0;
-  const el = $("xAdsT"); if (el) { el.classList.toggle("t", xAD.tint); if (!xAD.k) hudS(el, "opacity", "0"); }
+  const el = $("xAdsT"), c = ads === 1 && w !== "Bucky" ? XADC[w] || "" : ""; if (el) { if (c) { if (el.className !== "hud " + c) el.className = "hud " + c; } xADov(); } // class kept through the ease-out so the falloff fades, not pops
+  const sc = $("scope"), sw = mode === "duel" || w === "Operator" ? "o" : w === "Marshal" ? "m" : w === "Outlaw" ? "l" : "o"; if (sc && ads === 2 && !sc.classList.contains(sw)) sc.className = "hud " + sw;
   hudS($("scope"), "display", ads === 2 ? "block" : "none"); hudS($("cross"), "display", ads === 2 ? "none" : ""); // only the sniper lens replaces the crosshair; rifles keep it on ADS, as in Valorant
   const dead = mode !== "duel" && player && player.hp <= 0;
   if (ads === 2) gun.visible = false; else if (mode !== "duel" && mode !== "aim") gun.visible = rw !== "knife" && !dead;

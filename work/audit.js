@@ -1355,7 +1355,8 @@ if (!NO3) {
     // rifle ADS: light zoom, mini sight, no black lens; a rifle shot keeps ADS
     xe("xScopeT(); true"); settle(); a = st();
     if (a.ads !== 1 || Math.abs(a.fov - fz(1.25)) > 0.05 || a.sc !== "none" || !a.gun) err.push("vandal ads: " + JSON.stringify(a));
-    if (xe('document.getElementById("xAdsT").style.opacity') !== "1.00") err.push("mini sight not shown");
+    { const ov = JSON.parse(xe('JSON.stringify({ o: document.getElementById("xAdsT").style.opacity, d: document.getElementById("xAdsT").style.display, c: document.getElementById("xAdsT").className })'));
+      if (ov.o !== "1" || ov.d !== "block" || !/\br\b/.test(ov.c)) err.push("rifle ADS edge falloff not shown: " + JSON.stringify(ov)); }
     xe("ammo = 20; fcd = 0; shoot(); true"); if (st().ads !== 1) err.push("rifle shot dropped ADS");
     xe("xScopeT(); true"); settle(); a = st(); if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05) err.push("vandal off: " + JSON.stringify(a));
     // Marshal 3.5x lens; death snaps out; lobby leaves no scope
@@ -1365,7 +1366,7 @@ if (!NO3) {
     if (a.ads !== 0 || Math.abs(a.fov - 75) > 0.05 || a.sc !== "none") err.push("lobby: " + JSON.stringify(a));
     ok = !err.length;
   } catch (e) { err.push(String(e.stack || e).slice(0, 300)); }
-  report.push({ label: "Scope pass: Operator 2.5x then 5x, eased FOV, unscope on sniper shot / reload / switch / death / lobby, lens only for snipers (rifles get a mini sight), FOV restored to 75", el: true, handler: true, cond: ok, pass: ok, errs: err });
+  report.push({ label: "Scope pass: Operator 2.5x then 5x, eased FOV, unscope on sniper shot / reload / switch / death / lobby, lens only for snipers (rifles get the ADS edge falloff, crosshair kept), FOV restored to 75", el: true, handler: true, cond: ok, pass: ok, errs: err });
   try { toLobby(); } catch (e) {}
 }
 
