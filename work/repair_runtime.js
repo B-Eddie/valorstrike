@@ -108,29 +108,46 @@ const XR_GC=(at,i,k)=>k===0?at.getX(i):k===1?at.getY(i):k===2?at.getZ(i):at.getW
 // (every corpse of an agent shares it).
 const XR_SL=new WeakMap();
 function xrSampleList(g,stride){let c=XR_SL.get(g);if(c&&c.stride===stride)return c;const ps=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight,n=Math.ceil(ps.count/stride);
- c={stride,n,vi:new Int32Array(n),dom:new Int32Array(n),si:new Int32Array(n*4),sw:new Float32Array(n*4)};
- for(let i=0,s=0;i<ps.count;i+=stride,s++){let best=-1,bi=0;c.vi[s]=i;for(let k=0;k<4;k++){const w=XR_GC(sw,i,k),j=XR_GC(si,i,k);c.si[s*4+k]=j;c.sw[s*4+k]=w;if(w>best){best=w;bi=j;}}c.dom[s]=bi;}
+ c={stride,n,vi:new Int32Array(n),dom:new Int32Array(n),si:new Int32Array(n*4),sw:new Float32Array(n*4),p:new Float64Array(n*3)};/* botlag: the sampled bind-pose positions (getX / getY / getZ, exact in a Float64Array) so xrSupports reads one array kind on every agent */
+ for(let i=0,s=0;i<ps.count;i+=stride,s++){let best=-1,bi=0;c.vi[s]=i;c.p[s*3]=ps.getX(i);c.p[s*3+1]=ps.getY(i);c.p[s*3+2]=ps.getZ(i);for(let k=0;k<4;k++){const w=XR_GC(sw,i,k),j=XR_GC(si,i,k);c.si[s*4+k]=j;c.sw[s*4+k]=w;if(w>best){best=w;bi=j;}}c.dom[s]=bi;}
  XR_SL.set(g,c);return c;}
 // combat lane: per-bone skinning matrices come from a pool reused mesh after mesh (each mesh's matrices are only read while that mesh is
 // sampled; was a new Matrix4 per bone per mesh, ~700 per kill); same products in the same order.
 const XR_SM={tmp:new THREE.Matrix4(),pre:new THREE.Matrix4(),m:[]};
+const XR_DXYZ=Float64Array.from(XR_DIRS.flat());
 function xrSupports(R,sc,sim){
- const byBone=new Map(),J=new Map();for(const a of R.list)if(a.b)J.set(a.b,a);const owner=b=>{if(byBone.has(b))return byBone.get(b);let x=b;while(x&&!J.has(x))x=x.parent;const j=x?J.get(x):null;byBone.set(b,j);return j;};
- const inv=new Map();for(const a of R.list)if(a.b){a.b.updateWorldMatrix(true,false);inv.set(a,new THREE.Matrix4().copy(a.b.matrixWorld).invert());a.sup=XR_DIRS.map(()=>null);a.supD=XR_DIRS.map(()=>-Infinity);}
+ // botlag (2026-11-16, user: "fix all the lag ... Only work on bots rn"): a bot's death built its contact volume in 3.7 ms warm and
+ // 10-20 ms most of an agent's first ~20 corpses (work/qa/botlag sup_bench: the loop deoptimised again and again on the mixed
+ // array kinds - Matrix4 elements that are Smi or double arrays, interleaved / quantized position arrays, a new owner / bone
+ // closure per call), the 15-37 ms kill frames of an offline round (work/bench_bots.cjs). Same samples, same products in the
+ // same order, same contact points: the per-sample lookups read flat Float64Arrays (owner joint per bone, the per-bone skin
+ // matrices, joint positions and inverses: exact copies of the doubles), Vector3.distanceTo / applyMatrix4 written out as three
+ // does them, the sampled positions kept in the cached sample list. test_ragdoll_perf / test_ragdoll_warm.
+ const J=new Map(),L=R.list,nj=L.length,ND=XR_DIRS.length,DXYZ=XR_DXYZ,sqrt=Math.sqrt,isFin=Number.isFinite,REACH=XR_REACH,V3=THREE.Vector3;/* globals read once (a vm-context page harness looks each one up per use) */for(let j=0;j<nj;j++){const a=L[j];if(a.b)J.set(a.b,j);}
+ const byBone=new Map(),INV=new Float64Array(nj*16),JP=new Float64Array(nj*3),HAS=new Uint8Array(nj),SD=new Float64Array(nj*ND).fill(-Infinity),SP=new Array(nj*ND).fill(null);
+ for(let j=0;j<nj;j++){const a=L[j];if(!a.b)continue;HAS[j]=1;a.b.updateWorldMatrix(true,false);const e=new THREE.Matrix4().copy(a.b.matrixWorld).invert().elements;for(let q=0;q<16;q++)INV[j*16+q]=e[q];}
  const meshes=[];let total=0;sc.traverse(o=>{if(o.isSkinnedMesh&&o.visible!==false&&o.geometry&&o.geometry.attributes.skinIndex){meshes.push(o);total+=o.geometry.attributes.position.count;}});
- const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3(),l=new THREE.Vector3(),JP=new Map();for(const a of R.list)if(a.b)JP.set(a,a.b.getWorldPosition(new THREE.Vector3()));
+ const stride=Math.max(1,Math.ceil(total/XR_SAMPLES)),v=new THREE.Vector3();for(let j=0;j<nj;j++)if(HAS[j]){const p=L[j].b.getWorldPosition(v);JP[j*3]=p.x;JP[j*3+1]=p.y;JP[j*3+2]=p.z;}
  // perf (kill cost): the sample list is cached per geometry, and each vertex is skinned with the same linear blend as
  // three's boneTransform but from per-bone matrices built once per mesh (world * bindMatrixInverse * bone * boneInverse
  // * bindMatrix), so the contact points are unchanged; joint positions are read once instead of per vertex.
  for(const o of meshes){o.updateMatrixWorld(true);o.skeleton.update();const ps=o.geometry.attributes.position,bt=o.applyBoneTransform||o.boneTransform;if(!bt)continue;
-  const S=xrSampleList(o.geometry,stride),sk=o.skeleton,bm=new Map(),tmp=XR_SM.tmp,pre=XR_SM.pre.multiplyMatrices(o.matrixWorld,o.bindMatrixInverse),bnd=o.bindMatrix;let bk=0;
-  const boneM=bi=>{let m=bm.get(bi);if(m!==undefined)return m;const b=sk.bones[bi],ib=sk.boneInverses[bi];m=b&&ib?(XR_SM.m[bk]||(XR_SM.m[bk]=new THREE.Matrix4())).multiplyMatrices(pre,tmp.multiplyMatrices(b.matrixWorld,ib)).multiply(bnd).elements:null;if(m)bk++;bm.set(bi,m);return m;};
-  for(let s=0;s<S.n;s++){const bone=sk.bones[S.dom[s]];const a=bone&&owner(bone);if(!a||!a.sup)continue;
-   const i=S.vi[s],px=ps.getX(i),py=ps.getY(i),pz=ps.getZ(i);let x=0,y=0,z=0,ok=true;
-   for(let k=0;k<4;k++){const w=S.sw[s*4+k];if(!w)continue;const e=boneM(S.si[s*4+k]);if(!e){ok=false;break;}x+=w*(e[0]*px+e[4]*py+e[8]*pz+e[12]);y+=w*(e[1]*px+e[5]*py+e[9]*pz+e[13]);z+=w*(e[2]*px+e[6]*py+e[10]*pz+e[14]);}
-   if(ok)v.set(x,y,z);else{v.set(px,py,pz);bt.call(o,i,v);v.applyMatrix4(o.matrixWorld);}if(!Number.isFinite(v.y))continue;if(v.distanceTo(JP.get(a))>XR_REACH)continue;l.copy(v).applyMatrix4(inv.get(a));
-   for(let k=0;k<XR_DIRS.length;k++){const d=XR_DIRS[k],s=l.x*d[0]+l.y*d[1]+l.z*d[2];if(s>a.supD[k]){a.supD[k]=s;a.sup[k]=(a.sup[k]||new THREE.Vector3()).copy(l);}}}}
- for(const a of R.list)if(a.sup){a.sup=a.sup.filter(Boolean);delete a.supD;if(!a.sup.length)a.sup=null;}
+  const S=xrSampleList(o.geometry,stride),sk=o.skeleton,nb=sk.bones.length,tmp=XR_SM.tmp,pre=XR_SM.pre.multiplyMatrices(o.matrixWorld,o.bindMatrixInverse),bnd=o.bindMatrix,mx=XR_SM.m[0]||(XR_SM.m[0]=new THREE.Matrix4());
+  // owner joint of each bone (the nearest simulated ancestor), -1 none
+  const own=new Int32Array(nb);for(let i=0;i<nb;i++){const bone=sk.bones[i];if(!bone){own[i]=-1;continue;}let c=byBone.get(bone);if(c===undefined){let x=bone;while(x&&!J.has(x))x=x.parent;c=x?J.get(x):-1;byBone.set(bone,c);}own[i]=c;}
+  // skin matrix of each bone, built on first use (1 built, 2 none: a bone or its inverse missing)
+  const BM=new Float64Array(nb*16),BS=new Uint8Array(nb),SPo=S.p,SI=S.si,SW=S.sw,DOM=S.dom;
+  for(let s=0;s<S.n;s++){const di=DOM[s];if(!(di>=0&&di<nb))continue;const j=own[di];if(j<0||!HAS[j])continue;
+   const px=SPo[s*3],py=SPo[s*3+1],pz=SPo[s*3+2];let x=0,y=0,z=0,ok=true;
+   for(let k=0;k<4;k++){const w=SW[s*4+k];if(!w)continue;const bi=SI[s*4+k];if(!(bi>=0&&bi<nb)){ok=false;break;}let st=BS[bi];
+    if(st===0){const b=sk.bones[bi],ib=sk.boneInverses[bi];if(b&&ib){const e=mx.multiplyMatrices(pre,tmp.multiplyMatrices(b.matrixWorld,ib)).multiply(bnd).elements;for(let q=0;q<16;q++)BM[bi*16+q]=e[q];st=1;}else st=2;BS[bi]=st;}
+    if(st!==1){ok=false;break;}const m=bi*16;
+    x+=w*(BM[m]*px+BM[m+4]*py+BM[m+8]*pz+BM[m+12]);y+=w*(BM[m+1]*px+BM[m+5]*py+BM[m+9]*pz+BM[m+13]);z+=w*(BM[m+2]*px+BM[m+6]*py+BM[m+10]*pz+BM[m+14]);}
+   if(!ok){v.set(px,py,pz);bt.call(o,S.vi[s],v);v.applyMatrix4(o.matrixWorld);x=v.x;y=v.y;z=v.z;}if(!isFin(y))continue;
+   {const dx=x-JP[j*3],dy=y-JP[j*3+1],dz=z-JP[j*3+2];if(sqrt(dx*dx+dy*dy+dz*dz)>REACH)continue;}
+   const e=j*16,iw=1/(INV[e+3]*x+INV[e+7]*y+INV[e+11]*z+INV[e+15]),lx=(INV[e]*x+INV[e+4]*y+INV[e+8]*z+INV[e+12])*iw,ly=(INV[e+1]*x+INV[e+5]*y+INV[e+9]*z+INV[e+13])*iw,lz=(INV[e+2]*x+INV[e+6]*y+INV[e+10]*z+INV[e+14])*iw;
+   const o0=j*ND;for(let k=0;k<ND;k++){const d=lx*DXYZ[k*3]+ly*DXYZ[k*3+1]+lz*DXYZ[k*3+2];if(d>SD[o0+k]){SD[o0+k]=d;const q=SP[o0+k];if(q)q.set(lx,ly,lz);else SP[o0+k]=new V3(lx,ly,lz);}}}}
+ for(let j=0;j<nj;j++){const a=L[j];if(!a.b)continue;const f=[];for(let k=0;k<ND;k++){const q=SP[j*ND+k];if(q)f.push(q);}a.sup=f.length?f:null;delete a.supD;}
 }
 function xrClearance(R){const v=XR_V[6]||(XR_V[6]=new THREE.Vector3()),jp=XR_V[7]||(XR_V[7]=new THREE.Vector3());for(const a of R.list){if(!a.sup){a.rd=a.r;continue;}a.b.updateWorldMatrix(true,false);a.b.getWorldPosition(jp);let lo=jp.y;for(const s of a.sup){if(!s)continue;v.copy(s).applyMatrix4(a.b.matrixWorld);if(v.y<lo)lo=v.y;}const c=jp.y-lo;a.rd=Number.isFinite(c)?Math.min(XR_MAXCLEAR,Math.max(a.r,c)):a.r;}}
 function xrGround(R,force){const g=R.ground||(typeof groundAt==='function'?groundAt:null);for(const a of R.list){if(!force&&(R.frame+a.n.length)%4)continue;let f=R.refY-.9;if(g)try{const v=g(a.p.x,a.p.z,.08,R.refY+.15);if(Number.isFinite(v))f=v;}catch(e){}a.floor=Math.max(f,R.refY-3);}}

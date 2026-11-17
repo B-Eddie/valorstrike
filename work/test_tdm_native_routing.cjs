@@ -50,7 +50,7 @@ const me=()=>({g:{position:{x:0,y:0,z:0}}});
  const u=me();u.xb=new Map([['0>1',t.ctx._now+60000]]);t.ctx.api(u,50,50);
  assert.equal(u.xb.size,0,'bans that consume every route are dropped, never an all-paths-banned park');
  assert(calls.length===2&&calls[0]===1&&calls[1]===0,'exhaustion retries once without bans');}
-assert(src.includes("banned.has(a+'>'+b)"),'nmPath skips banned directed edges');
+assert(src.includes('banN.has(a*N.length+b)')&&src.includes('m=/^(0|[1-9][0-9]*)>(0|[1-9][0-9]*)$/.exec(q);if(m)banN.add(+m[1]*NL+ +m[2])'),'nmPath skips banned directed edges');/* botlag: the ban keys 'a>b' read once per search as numbers a*N+b (test_nav_unreach_memo checks the same edges are skipped) */
 assert(src.includes('Never place a unit on a trap node'),'nmPlace rejects zero-exit trap nodes');
 assert(src.includes('nmNear(C,p.x,p.z,p.y,.35)'),'nmNext anchors routing to the unit level (under-bridge mis-anchor parks units)');
 assert(src.includes('yBand'),'nmNear supports the level band');
