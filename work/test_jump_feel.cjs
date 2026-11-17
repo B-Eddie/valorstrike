@@ -15,9 +15,13 @@ for(const hz of [30,60,128,144,240]){
  // A committed run remains ballistic when keys are released; steer a run through 45 degrees before the apex.
  const T={...fresh(),y:1000,vx:5.4,air:true,takeoffSpeed:5.4};run(T,{...I,x:0,z:1},.25,hz);
  const angle=Math.atan2(T.vz,T.vx)*180/Math.PI;
- ok(angle>30&&angle<36,`${hz} Hz: controlled perpendicular turn responds within 250 ms (${angle} degrees)`);
- run(T,{...I,x:0,z:1},.09,hz);
- ok(T.vz>T.vx,`${hz} Hz: perpendicular steer crosses 45 degrees near the apex`);
+ ok(angle>27&&angle<34,`${hz} Hz: controlled perpendicular turn responds within 250 ms (${angle} degrees)`);
+ ok(Math.abs(Math.hypot(T.vx,T.vz)-5.4)<1e-9,`${hz} Hz: air steering keeps the speed while it turns (VALORANT / Unreal falling clamp)`);
+ run(T,{...I,x:0,z:1},.17,hz);
+ ok(T.vz>T.vx&&Math.abs(Math.hypot(T.vx,T.vz)-5.4)<1e-9,`${hz} Hz: perpendicular steer crosses 45 degrees within one jump at full speed`);
+ // Air strafe: strafe key held while the mouse turns with the velocity carves a constant-speed arc (12 / 5.4 rad/s, ~127 deg/s).
+ const U={...fresh(),y:1000,vx:5.4,air:true,takeoffSpeed:5.4};for(let n=0;n<Math.round(.5*hz);n++){const s=Math.hypot(U.vx,U.vz);M.step(U,{...I,x:-U.vz/s,z:U.vx/s},1/hz,W);U.y=1000;U.vy=0;}
+ const carve=Math.atan2(U.vz,U.vx)*180/Math.PI;ok(carve>60&&carve<67&&Math.abs(Math.hypot(U.vx,U.vz)-5.4)<1e-9,`${hz} Hz: mouse-turn air strafe carves ${carve.toFixed(1)} deg in 0.5 s at full speed, never faster`);
  const C={...fresh(),y:1000,vx:5.4,air:true,takeoffSpeed:5.4};run(C,{...I,x:0},.5,hz);
  ok(Math.abs(C.vx-5.4)<1e-12&&C.vz===0,`${hz} Hz: no drag when coasting in air`);
  // Exercise the actual shared server API with changing inputs, tags and stance during repeated jumps.

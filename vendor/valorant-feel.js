@@ -226,7 +226,17 @@ function step(P,input,dt,world){
   let v;if(grounded){const ck=(P.ch||0)/C.crouchEye,accel=max/Math.max(1e-3,C.accelTime+(C.crouchAccelTime-C.accelTime)*ck);v=groundMove(P,tx,tz,Math.max(1e-3,accel),h);}
   // Starting a jump during acceleration must not lock steering to that first substep's tiny speed.
   // Allow the current stance's speed as a target, preserve faster takeoff momentum, and retain the melee/tag ceiling.
-  else{if(!l){tx=P.vx||0;tz=P.vz||0;}const cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||0,max,.1)),s=Math.hypot(tx,tz);if(s>cap){tx*=cap/s;tz*=cap/s;}v=velocity(P.vx||0,P.vz||0,tx,tz,C.airAcceleration,h);P.vx=v.vx;P.vz=v.vz;}
+  // Air steering keeps the speed while it turns (VALORANT: "the velocity vector retains its magnitude while changing direction";
+  // Unreal's falling CalcVelocity: add the input acceleration, then clamp to the larger of the input's speed and the speed already
+  // held, never past the cap). Holding A / D while turning the mouse carries a jump around a corner at full speed; a fixed key
+  // redirects a rifle run through 45 deg in ~0.40 s. Reversing still slows at airAcceleration, no input coasts, and a unit
+  // faster than the cap (an ability's boost, a tag mid-air) eases down to the capped target as before.
+  else{const vx0=P.vx||0,vz0=P.vz||0,cap=Math.min(C.knifeSpeed*(input.tag||1),Math.max(P.takeoffSpeed||0,max,.1)),s0=Math.hypot(vx0,vz0);
+   if(!l)v={vx:vx0,vz:vz0,dx:vx0*h,dz:vz0*h};
+   else{let T=Math.hypot(tx,tz);if(T>cap){tx*=cap/T;tz*=cap/T;T=cap;}
+    if(s0>cap+1e-9)v=velocity(vx0,vz0,tx,tz,C.airAcceleration,h);
+    else{const a=C.airAcceleration*Math.min(1,l)*h/Math.max(1e-9,T),L=Math.min(cap,Math.max(T,s0));let nx=vx0+tx*a,nz=vz0+tz*a;const s1=Math.hypot(nx,nz);if(s1>L){nx*=L/s1;nz*=L/s1;}v={vx:nx,vz:nz,dx:(vx0+nx)*.5*h,dz:(vz0+nz)*.5*h};}}
+   P.vx=v.vx;P.vz=v.vz;}
   const height=1.8-(P.ch||0);
   const moveAxis=(dx,dz)=>{const x=P.x+dx,z=P.z+dz;if(world.leash&&!world.leash(x,z,P.y,P.x,P.z))return false;if(!world.blocked(x,z,.4,P.y,height)){P.x=x;P.z=z;return true;}
    // Already embedded a few mm (a capsule pressed into a wall that leans in over uneven paving): the 0.5 mm sub-steps of a

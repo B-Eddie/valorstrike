@@ -1,0 +1,640 @@
+{
+ "checks": [
+  [
+   "Vandal hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Vandal",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Vandal ADS: edge layer .r at full, crosshair + gun kept, no lens",
+   "pass",
+   {
+    "w": "Vandal",
+    "ads": 1,
+    "fov": 59,
+    "ov": {
+     "c": "hud r",
+     "o": "1",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Vandal ADS eases in (mid-transition opacity < 1)",
+   "pass",
+   {
+    "w": "Vandal",
+    "ads": 1,
+    "fov": 63.4,
+    "ov": {
+     "c": "hud r",
+     "o": "0.58",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Vandal ADS eases out (layer still fading 30 ms after release)",
+   "pass",
+   {
+    "w": "Vandal",
+    "ads": 0,
+    "fov": 66.7,
+    "ov": {
+     "c": "hud r",
+     "o": "0.3",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Vandal unscoped: layer gone, lens gone, crosshair back, gun back",
+   "pass",
+   {
+    "w": "Vandal",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud r",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Spectre hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Spectre",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud r",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Spectre ADS: edge layer .s at full, crosshair + gun kept, no lens",
+   "pass",
+   {
+    "w": "Spectre",
+    "ads": 1,
+    "fov": 63.2,
+    "ov": {
+     "c": "hud s",
+     "o": "1",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Spectre ADS eases in (mid-transition opacity < 1)",
+   "pass",
+   {
+    "w": "Spectre",
+    "ads": 1,
+    "fov": 66.1,
+    "ov": {
+     "c": "hud s",
+     "o": "0.58",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Spectre ADS eases out (layer still fading 30 ms after release)",
+   "pass",
+   {
+    "w": "Spectre",
+    "ads": 0,
+    "fov": 68.2,
+    "ov": {
+     "c": "hud s",
+     "o": "0.3",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Spectre unscoped: layer gone, lens gone, crosshair back, gun back",
+   "pass",
+   {
+    "w": "Spectre",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud s",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Guardian hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Guardian",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud s",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Guardian ADS: edge layer .g at full, crosshair + gun kept, no lens",
+   "pass",
+   {
+    "w": "Guardian",
+    "ads": 1,
+    "fov": 50.5,
+    "ov": {
+     "c": "hud g",
+     "o": "1",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Guardian ADS eases in (mid-transition opacity < 1)",
+   "pass",
+   {
+    "w": "Guardian",
+    "ads": 1,
+    "fov": 57.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0.58",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Guardian ADS eases out (layer still fading 30 ms after release)",
+   "pass",
+   {
+    "w": "Guardian",
+    "ads": 0,
+    "fov": 63.3,
+    "ov": {
+     "c": "hud g",
+     "o": "0.3",
+     "d": "block"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Guardian unscoped: layer gone, lens gone, crosshair back, gun back",
+   "pass",
+   {
+    "w": "Guardian",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Operator hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Operator",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud",
+     "d": "none",
+     "o": ""
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Operator scoped: lens .o, gun hidden, crosshair hidden, no rifle layer",
+   "pass",
+   {
+    "w": "Operator",
+    "ads": 2,
+    "fov": 31.6,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud o",
+     "d": "block",
+     "o": "1"
+    },
+    "cross": "none",
+    "gun": false
+   }
+  ],
+  [
+   "Operator 5x keeps lens .o",
+   "pass",
+   {
+    "w": "Operator",
+    "ads": 2,
+    "fov": 16.1,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud o",
+     "d": "block",
+     "o": "1"
+    },
+    "cross": "none",
+    "gun": false
+   }
+  ],
+  [
+   "Operator unscoped: layer gone, lens gone, crosshair back, gun back",
+   "pass",
+   {
+    "w": "Operator",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud o",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Marshal hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Marshal",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud o",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Marshal scoped: lens .m, gun hidden, crosshair hidden, no rifle layer",
+   "pass",
+   {
+    "w": "Marshal",
+    "ads": 2,
+    "fov": 22.8,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud m",
+     "d": "block",
+     "o": "1"
+    },
+    "cross": "none",
+    "gun": false
+   }
+  ],
+  [
+   "Marshal unscoped: layer gone, lens gone, crosshair back, gun back",
+   "pass",
+   {
+    "w": "Marshal",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud m",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Outlaw hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Outlaw",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud m",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Outlaw scoped: lens .l, gun hidden, crosshair hidden, no rifle layer",
+   "pass",
+   {
+    "w": "Outlaw",
+    "ads": 2,
+    "fov": 22.8,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "block",
+     "o": "1"
+    },
+    "cross": "none",
+    "gun": false
+   }
+  ],
+  [
+   "Outlaw unscoped: layer gone, lens gone, crosshair back, gun back",
+   "pass",
+   {
+    "w": "Outlaw",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Sheriff hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Sheriff",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Sheriff: no zoom, no layer, no lens",
+   "pass",
+   {
+    "w": "Sheriff",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Bucky hip: no ADS layer, no lens, crosshair shown",
+   "pass",
+   {
+    "w": "Bucky",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Bucky: no zoom, no layer, no lens",
+   "pass",
+   {
+    "w": "Bucky",
+    "ads": 1,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud g",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "Vandal reload: ADS dropped, layer off at once",
+   "pass",
+   {
+    "w": "Vandal",
+    "ads": 0,
+    "fov": 70.5,
+    "ov": {
+     "c": "hud r",
+     "o": "0",
+     "d": "none"
+    },
+    "sc": {
+     "c": "hud l",
+     "d": "none",
+     "o": "1"
+    },
+    "cross": "block",
+    "gun": true
+   }
+  ],
+  [
+   "no page errors",
+   "pass",
+   []
+  ]
+ ],
+ "errs": []
+}
