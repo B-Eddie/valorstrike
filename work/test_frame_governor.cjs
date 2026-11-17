@@ -78,4 +78,12 @@ G=G0();xGovClear(G,t);cur=m;t+=700;let d=false;for(let i=0;i<200&&!d;i++)d=frame
  G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,{ms:14.5,pk:14.5,bud:H},5,undefined)===undefined&&(()=>{let o;for(let i=0;i<5&&o===undefined;i++){t+=H;o=xGovTick(G,t,H,hz(72),2,m,lo,{ms:14.5,pk:14.5,bud:H});}return o;})(),undefined,'a spurious faster "fastest refresh" (13.9 ms on a 60 Hz screen) is not the GPU budget');
  G=G0();xGovClear(G,t);t+=700;assert.equal(run(G,2,null,5,H*2),1.8,'no timer query (Safari / Firefox): misses alone, as before');
  assert(/EXT_disjoint_timer_query_webgl2/.test(html)&&/xGpuBegin\(\); \} catch \(e\) \{\}\n  try \{ renderer\.render\(scene, camera\)/.test(html),'the world render is timed');}
-console.log('frame governor: OK (boot parse '+n+' scripts, cap-vs-refresh, governor steps / floor / ceiling / hysteresis / GPU headroom)');
+// F. overload memory (lag, 17 Nov 2026: each fight drew a 1.4 -> 2.0 -> 1.4 sawtooth of 25-40 ms buffer reallocations): a level the
+//    GPU reading pushed it off is not climbed back to for 60 s, the levels under it still are; after 60 s it is tried again.
+{const H=hz(60),run=(G,cur,gpu,frames)=>{let out;for(let i=0;i<frames&&out===undefined;i++){t+=H;out=xGovTick(G,t,H,H,cur,m,lo,gpu);}return out;};
+ G=G0();xGovClear(G,t);t+=700;const d=run(G,1.8,{ms:20,pk:20,bud:H},5);assert(d<1.8,'over budget at 1.8 steps down');
+ t+=700;assert.equal(run(G,d,{ms:6,pk:6,bud:H},60*20),Math.round((d+0.2)*100)/100,'climbs back under the overloaded level');
+ const below=Math.round((d+0.2)*100)/100;if(below<1.8-0.001){t+=700;assert.equal(run(G,below,{ms:6,pk:6,bud:H},60*20),Math.round((below+0.2)*100)/100,'next level still under the overloaded one');}
+ const at=Math.round((1.8-0.2)*100)/100;t+=700;assert.equal(run(G,at,{ms:6,pk:6,bud:H},60*30),undefined,'not back to 1.8 within 60 s of the overload');
+ t+=60000;assert.equal(run(G,at,{ms:6,pk:6,bud:H},60*10),1.8,'tried again after 60 s');}
+console.log('frame governor: OK (boot parse '+n+' scripts, cap-vs-refresh, governor steps / floor / ceiling / hysteresis / GPU headroom / overload memory)');

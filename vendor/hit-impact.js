@@ -19,7 +19,7 @@
       this.scene=scene;this.count=count;this.cursor=0;this.serial=0;this.emitted=[0,0,0];
       this.items=Array.from({length:count},()=>({age:1,life:.2,kind:0,anchor:null,local:new T.Vector3(),point:new T.Vector3(),head:false,predicted:false,seed:0}));
       this.obj=new T.Object3D();this.q=new T.Quaternion();this.spin=new T.Quaternion();this.axis=new T.Vector3(0,0,1);this.v=new T.Vector3();this.right=new T.Vector3();this.up=new T.Vector3();this.eye=new T.Vector3();this.col=new T.Color();this.inv=new T.Matrix4();this.zero=new T.Matrix4().makeScale(0,0,0);
-      const make=(geometry,n,name)=>{const mat=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.92,depthWrite:false,depthTest:true,blending:T.NormalBlending,toneMapped:false,side:T.DoubleSide});
+      const make=(geometry,n,name)=>{const mat=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.92,depthWrite:false,depthTest:true,blending:T.NormalBlending,toneMapped:false,side:T.DoubleSide,forceSinglePass:true});/* flat shards / core: one pass (three r149 drew transparent DoubleSide twice and re-resolved the program each pass, on every hit) */
         const m=new T.InstancedMesh(geometry,mat,n);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.frustumCulled=false;m.raycast=()=>{};m.name=name;m.visible=false;
         for(let i=0;i<n;i++){m.setMatrixAt(i,this.zero);m.setColorAt(i,this.col.setRGB(0,0,0));}scene.add(m);return m;};
       const shard=new T.BufferGeometry();shard.setAttribute('position',new T.Float32BufferAttribute([-.5,0,0,.5,-.5,0,.5,.5,0],3));
