@@ -15,6 +15,9 @@
  // banned-edge string built only when the set has entries: the old search allocated three node-sized typed arrays plus an
  // [i,s] pair per push (~2 MB per call on an 11k-node map, a GC per re-route). Same pushes, pops, comparisons and order.
  const scratch=new WeakMap();
+ // botlag: banned edges ('a>b' keys) as numbers a*n+b, built once per search (was a string per relaxed edge). A key that is not
+ // two plain integers names no edge (node ids are integers): left out, the same edges are skipped.
+ const BANRE=/^(0|[1-9][0-9]*)>(0|[1-9][0-9]*)$/;function banNum(banned,n){const s=new Set();for(const q of banned.keys()){const m=BANRE.exec(q);if(m)s.add(+m[1]*n+ +m[2]);}return s;}
  function newScratch(n){return {n,g:new Float64Array(n),prev:new Int32Array(n),closed:new Uint8Array(n),pen:new Float64Array(n),tl:new Int32Array(256),tn:0,hi:new Int32Array(1024),hs:new Float64Array(1024),busy:false};}
  // Math.hypot(x, z) computed as V8's builtin does it (max scaling + Kahan sum; with two terms the compensation is exactly 0
  // after the first, so qa*qa+qb*qb is the same op sequence): bit-identical, and inlinable without boxing (the builtin copies its
@@ -24,7 +27,7 @@
  function hyp(x,z){const a=abs(x),b=abs(z),m=a>b?a:b;if(m>0&&m<Infinity&&a===a){const qa=a/m,qb=b/m;return sqrt(qa*qa+qb*qb)*m;}return +Math.hypot(x,z);}
  function route(nav,base,seed,peers=[],allowed=null,banned=null,edgeOk=null){
   if(base.length<3)return base;
-  const N=nav.nodes,start=base[0],end=base[base.length-1],cells=grid(nav),ban=banned&&banned.size?banned:null;
+  const N=nav.nodes,start=base[0],end=base[base.length-1],cells=grid(nav),ban=banned&&banned.size?banNum(banned,N.length):null;
   let S=scratch.get(nav);if(!S||S.n!==N.length){S=newScratch(N.length);scratch.set(nav,S);}
   if(S.busy)S=newScratch(N.length);/* re-entered from an edge filter (or a filter threw mid-search): private arrays */
   S.busy=true;try{
@@ -41,7 +44,7 @@
    const a=hi[0];hn--;if(hn){const li=hi[hn],ls=hs[hn];let k=0;while(k*2+1<hn){let c=k*2+1;if(c+1<hn&&hs[c+1]<hs[c])c++;if(hs[c]>=ls)break;hi[k]=hi[c];hs[k]=hs[c];k=c;}hi[k]=li;hs[k]=ls;}
    if(closed[a])continue;if(a===end){const out=[];for(let i=end;i>=0;i=prev[i])out.push(i);out.reverse();res=length(nav,out)<=length(nav,base)*1.5+2?out:base;break;}closed[a]=1;
    const q=N[a],qx=q[0],qy=q[1],qz=q[2],ga=g[a],Aa=nav.adj[a];
-   for(let j=0;j<Aa.length;j++){const b=Aa[j];if(closed[b]||(allowed&&!allowed(b))||(ban&&ban.has(a+'>'+b))||(edgeOk&&!edgeOk(a,b)))continue;const p=N[b],px=p[0],pz=p[2],d=hyp(px-qx,pz-qz),lane=.22*(1+sin(px*.17+pz*.13+phase));
+   for(let j=0;j<Aa.length;j++){const b=Aa[j];if(closed[b]||(allowed&&!allowed(b))||(ban&&ban.has(a*N.length+b))||(edgeOk&&!edgeOk(a,b)))continue;const p=N[b],px=p[0],pz=p[2],d=hyp(px-qx,pz-qz),lane=.22*(1+sin(px*.17+pz*.13+phase));
     const hb=hyp(px-ex,pz-ez),c=ga+d*(1+lane+(hb<2.5?0:pen[b]))+abs(p[1]-qy)*.2;
     if(c<g[b]){g[b]=c;prev[b]=a;const s=c+hb;
      // push
