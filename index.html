@@ -204,9 +204,9 @@ button{font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer
 #scope.m{background:linear-gradient(#000,#000) 50% 50%/1px 92vmin no-repeat,linear-gradient(#000,#000) 50% 50%/92vmin 1px no-repeat,repeating-linear-gradient(to bottom,transparent 0 calc(6vmin - 1px),#000 calc(6vmin - 1px) 6vmin) 50% calc(50% + 12vmin)/2.4vmin 24vmin no-repeat,repeating-linear-gradient(to right,transparent 0 calc(6vmin - 1px),#000 calc(6vmin - 1px) 6vmin) calc(50% + 12vmin) 50%/24vmin 1.6vmin no-repeat,repeating-linear-gradient(to left,transparent 0 calc(6vmin - 1px),#000 calc(6vmin - 1px) 6vmin) calc(50% - 12vmin) 50%/24vmin 1.6vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 38vmin)/2px 16vmin no-repeat,linear-gradient(#000,#000) calc(50% - 38vmin) 50%/16vmin 2px no-repeat,linear-gradient(#000,#000) calc(50% + 38vmin) 50%/16vmin 2px no-repeat,var(--lens)} /* Marshal: hairline cross, range ticks below and to the sides */
 #scope.l{background:linear-gradient(#000,#000) 50% calc(50% - 24.5vmin)/1px 43vmin no-repeat,linear-gradient(#000,#000) 50% calc(50% + 24.5vmin)/1px 43vmin no-repeat,linear-gradient(#000,#000) calc(50% - 24.5vmin) 50%/43vmin 1px no-repeat,linear-gradient(#000,#000) calc(50% + 24.5vmin) 50%/43vmin 1px no-repeat,linear-gradient(#000,#000) 50% calc(50% + 35vmin)/2px 22vmin no-repeat,linear-gradient(#000,#000) calc(50% - 35vmin) 50%/22vmin 2px no-repeat,linear-gradient(#000,#000) calc(50% + 35vmin) 50%/22vmin 2px no-repeat,radial-gradient(circle at 50% 50%,transparent calc(6vmin - 1px),rgba(0,0,0,.85) 6vmin,transparent calc(6vmin + 1px)),var(--lens)} /* Outlaw: open-centre cross, ring, side and bottom posts */
 #xAdsT{inset:0;opacity:0;display:none;pointer-events:none;contain:strict}
-#xAdsT.s{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 60%,rgba(0,0,0,.2) 84%,rgba(0,0,0,.42) 100%)} /* SMG 1.15x: faint edge falloff */
-#xAdsT.r{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 52%,rgba(0,0,0,.32) 78%,rgba(0,0,0,.62) 100%)} /* rifle / heavy 1.25x */
-#xAdsT.g{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 42%,rgba(0,0,0,.42) 66%,rgba(0,0,0,.8) 100%)} /* Guardian 1.5x / Warden 2x: scoped tunnel */
+#xAdsT.s{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 50%,rgba(0,0,0,.3) 74%,rgba(0,0,0,.62) 100%)} /* SMG 1.15x: soft edge falloff (was .2 / .42 from 60 %: too faint to read as ADS over a bright map) */
+#xAdsT.r{background:radial-gradient(ellipse at 50% 50%,transparent 0,transparent 42%,rgba(0,0,0,.42) 66%,rgba(0,0,0,.82) 92%,rgba(0,0,0,.9) 100%)} /* rifle / heavy 1.25x: darker zoom tunnel */
+#xAdsT.g{background:radial-gradient(circle at 50% 50%,transparent 0,transparent 32vmin,rgba(0,0,0,.45) 46vmin,rgba(0,0,0,.8) 62vmin,rgba(0,0,0,.88) 80vmin)} /* Guardian 1.5x / Warden 2x: round tunnel around the gun's sight; stays a step under the sniper lens (#scope), which alone goes solid black */
 /* rifle/SMG ADS (VALORANT): the gun's own optic is aligned to the centre ray (xvFPTick ScopeTarget) and the crosshair stays; this layer is only the zoomed edge falloff, faded with xAD.k */
 #result{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(15,25,35,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:20;text-align:center}
 body:has(#result[style*="flex"]) .x-sp{display:none!important} /* UI lane: the spectate bar (z 60) sat on top of Play again / Lobby once the match ended while dead */
@@ -1278,6 +1278,9 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 #xdPrompt.x-int{position:fixed;left:50%;top:calc(50% + max(56px,9vh));transform:translateX(-50%);z-index:60;align-items:center;gap:9px;padding:5px 26px;background:linear-gradient(90deg,transparent,rgba(12,20,24,.5) 22%,rgba(12,20,24,.5) 78%,transparent);color:#ece8e1;font:600 13px/1 var(--hf,Arial,sans-serif);letter-spacing:.12em;text-transform:uppercase;text-shadow:0 1px 3px rgba(0,0,0,.85);pointer-events:none;white-space:nowrap}
 #xdPrompt .x-key{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;box-sizing:border-box;border-radius:2px;background:#ece8e1;color:#0f1923;font:700 12px/1 var(--hf,Arial,sans-serif);letter-spacing:0;text-shadow:none;box-shadow:0 1px 3px rgba(0,0,0,.6)}
 @media (pointer:coarse){#xdPrompt .x-key{display:none}#xdPrompt.x-int{font-size:12px}}
+/* VALORANT plates are square: the combat report buttons, post-match stat chips, spike-carrier notice and the crosshair colour
+   swatches were the last desktop surfaces with 6-8 px / circular corners (body prefix: .x-cns is defined later in the page) */
+body .x-dmg__c button,body .x-dmg__f button,body .x-cs div,body .x-cns,body .sw button{border-radius:0}
 </style>
 
 </head>
@@ -1532,6 +1535,22 @@ body:has(#result[style*="flex"]) .x-cbt{display:none!important} /* the combat re
 .srow .sw button{min-width:44px;min-height:44px}
 /* notch: the lobby content stays inside the safe area (viewport-fit=cover); its background still fills the screen */
 #lobby{padding:var(--sa-t) var(--sa-r) var(--sa-b) var(--sa-l)}
+/* ---- VALORANT client look (xValClient): the landing redesign above used web-app pills and 12-14 px radii. VALORANT's client is
+   hard-edged: square plates, one clipped corner on primary buttons, a thin offset frame around PLAY, tall condensed display titles
+   and a red square bullet before section headers. Geometry/typography only; ids, sizes and hit areas are unchanged. */
+#lobby .x-hero h1{font:400 clamp(44px,6.2vw,104px)/.88 "VS Title","Arial Narrow","Roboto Condensed",sans-serif;letter-spacing:.01em;text-transform:uppercase}
+#lobby .x-hplay,#lobby .x-lnav #playBtn.x-np{border-radius:0;box-shadow:none;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
+#lobby .x-hplay{position:relative;outline:1px solid rgba(236,232,225,.55);outline-offset:5px;clip-path:none;background:linear-gradient(135deg,var(--x-red) calc(100% - 17px),transparent calc(100% - 17px)) /* corner cut drawn in the background so the outline frame stays visible */}
+#lobby .x-hplay:hover,#lobby .x-hplay:focus-visible{transform:none;box-shadow:none;outline:1px solid var(--x-ink);outline-offset:5px;filter:brightness(1.12)}
+#lobby .x-hnew,#lobby .x-hnew b{border-radius:0}
+#lobby .x-hnew{border-left:3px solid var(--x-red);padding-left:0}
+#lobby .x-ib,#lobby .x-lvb,#lobby .x-av{border-radius:0}
+#lobby .x-lvb{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);min-width:30px;height:30px;padding:0} /* level badge: VALORANT diamond */
+#lobby .x-msc,#lobby .x-news,#lobby .x-cred p{border-radius:0}
+#lobby .x-msc{border-top:2px solid var(--x-red)}
+#lobby .x-msc li i{border-radius:0}
+#lobby .x-msc h3::before,#lobby .x-news h3::before{content:"";display:inline-block;width:7px;height:7px;margin:0 8px 1px 0;background:var(--x-red);vertical-align:middle}
+#lobby .x-logo{font:400 22px/1 "VS Title","Arial Narrow",sans-serif;letter-spacing:.08em}
 </style>
 <div id="lobby">
   <div class="x-lb">
