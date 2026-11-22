@@ -1,6 +1,8 @@
 from pathlib import Path
 import re
 root=Path(__file__).resolve().parents[1];p=root/'index.html';s=p.read_text()
+# Asset versions (work/asset_version_runtime.js): ?v=<hash> on static tags / CSS urls is added last; strip it first so every exact tag match below still holds.
+s=re.sub(r'((?:<script src="|url\()(?!https?:|data:)[^"?)]+)\?v=[0-9a-f]+', r'\1', s)
 # CDN scripts carry crossorigin="anonymous" (added last, below); strip it first so every exact tag match in this script still holds.
 CDN=['https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js','https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js']
 for u in CDN:s=s.replace('<script src="'+u+'" crossorigin="anonymous"></script>','<script src="'+u+'"></script>')
@@ -147,6 +149,27 @@ assert s.count(ga3)==1,'GLTFLoader script tag'
 s=s.replace(ga3,ga3+'<script>'+(root/'work/loader_retry_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
 # Crash report (work/crash_report_runtime.js): its own inline <script> first after the analytics stub, so it records errors,
 # WebGL context loss and the load stage from the very start (iOS user 2026-11-03: online match -> black screen / menu / "Script error").
+# Asset versions (work/asset_version_runtime.js): its own inline <script> right after the analytics stub (the crash report,
+# inserted next, goes in front of it), before any script, image or fetch asks for a file. VSV = git blob hash (10 hex) of
+# every tracked file under models/ audio/ vendor/ (+ lobby-bg.png, favicon.ico), as a path tree. From the git index, so
+# it works in CI's sparse checkout; the static tags and the CSS url() of those files get the same ?v= here.
+import subprocess
+av3='<script>// ---- ASSET VERSIONS ----'
+if av3 in s:i3=s.index(av3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
+_ls=subprocess.run(['git','-C',str(root),'ls-files','-s','-z','--','models','audio','vendor','lobby-bg.png','favicon.ico'],check=True,capture_output=True).stdout.decode('utf-8').split('\0')
+_vt={};_vf={}
+for _e in _ls:
+ if not _e:continue
+ _m,_tab=_e.split('\t',1);_h=_m.split()[1][:10];assert not _tab.endswith('/'),'sparse index entry '+_tab
+ _vf[_tab]=_h;_d=_vt
+ for _x in _tab.split('/')[:-1]:_d=_d.setdefault(_x,{})
+ _d[_tab.split('/')[-1]]=_h
+assert len(_vf)>1000,'asset version table too small'
+s=s.replace(va3,va3+'<script>'+(root/'work/asset_version_runtime.js').read_text().rstrip('\n').replace('/*ASSET_VERSIONS*/null',json.dumps(_vt,separators=(',',':'),sort_keys=True),1)+'</script>\n',1)
+def _av(m):
+ f=m.group(2);return m.group(1)+f+('?v='+_vf[f] if f in _vf else '')
+s=re.sub(r'(<script src=")((?:models|vendor|audio)/[^"?]+)(?=")',_av,s)
+s=re.sub(r'(url\()(lobby-bg\.png)(?=\))',_av,s)
 ca3='<script>// ---- CRASH REPORT ----'
 if ca3 in s:i3=s.index(ca3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
 s=s.replace(va3,va3+'<script>'+(root/'work/crash_report_runtime.js').read_text().rstrip('\n')+'</script>\n',1)

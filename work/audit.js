@@ -272,7 +272,7 @@ vm.runInContext("Date.now = () => performance.now() + 1.7e12;", context);
 // ---------- run the page's scripts in order ----------
 const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
 for (const s of scripts) {
-  const src = (s[1].match(/src="([^"]+)"/) || [])[1];
+  const src = ((s[1].match(/src="([^"]+)"/) || [])[1] || "").replace(/\?v=[0-9a-f]+$/, "") || undefined; // asset versions: ?v=<hash> (install_valorant.py) names the same file
   if (src) { if (src === "vendor/three-mesh-bvh.umd.js" || src === "/vs-m/script.js") { continue; } /* Vercel Web Analytics: served by Vercel only, nothing to run offline */ if (["vendor/barrier-mesh.cjs","models/valorant/manifest.js","models/valorant/weapon-calibration.js","vendor/valorant-feel.js","vendor/hit-impact.js"].includes(src)) { vm.runInContext(fs.readFileSync(path.join(__dirname,"..",src),"utf8"),context,{filename:src}); continue; } if (/three/.test(src)) {
       if (REAL3 && !NO3) { // REAL3=1: the real three.js r149 (+ GLTFLoader / SkeletonUtils) with only the WebGL renderers stubbed, so vector / matrix / scene-graph math is real
         const f = /three\.min/.test(src) ? "three.min.js" : /GLTFLoader/.test(src) ? "GLTFLoader.js" : "SkeletonUtils.js";
