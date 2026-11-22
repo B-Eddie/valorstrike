@@ -158,7 +158,7 @@
     if (typeof key !== 'string' || !/^[a-z0-9_-]+$/i.test(key) || typeof G.fetch !== 'function') return false;
     if (PF.key === key) return true;
     PF.stop(); PF.key = key; PF.base = 'models/valorant/maps/' + key + '/'; PF.ctl = typeof G.AbortController === 'function' ? new G.AbortController() : null; PF.started++;
-    const gen = PF.gen, root = pfAdd(PF.base + 'scene.gltf', true);
+    const gen = PF.gen, root = pfAdd(PF.base + (typeof G.nmSceneFile === 'function' ? G.nmSceneFile(PF.base) : 'scene.gltf'), true); // the packed copy when present (nmSceneFile), the file nmLoadScene asks for
     if (root) root.p.then((b) => b.text()).then((t) => { if (gen !== PF.gen) return; const j = JSON.parse(t), ok = (u) => typeof u === 'string' && u && !/^(data|blob):/i.test(u);
       for (const b of j.buffers || []) if (ok(b.uri)) pfAdd(PF.base + b.uri); // geometry first: the glTF parser waits on it before any texture is bound
       for (const im of j.images || []) if (ok(im.uri)) pfAdd(PF.base + im.uri); }).catch(() => {});

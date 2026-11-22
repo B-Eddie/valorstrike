@@ -29,6 +29,7 @@ var VSV=/*ASSET_VERSIONS*/null;
   }catch(e){return u;}
  }
  window.vsAssetUrl=vsAssetUrl;
+ window.vsAssetHas=function(p){try{return !!look(String(p).replace(/^\.?\//,''));}catch(e){return false;}};/* a file is in this build (e.g. the packed map geometry): nmSceneFile */
  try{if(typeof window.fetch==='function'){var F=window.fetch;window.fetch=function(input,init){try{if(typeof input==='string'||(typeof URL!=='undefined'&&input instanceof URL))input=vsAssetUrl(input);else if(input&&typeof Request!=='undefined'&&input instanceof Request&&input.method==='GET'){var n=vsAssetUrl(input.url);if(n!==input.url)input=new Request(n,input);}}catch(e){}return F.call(this,input,init);};}}catch(e){}
  try{var XO=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){if(typeof u==='string')arguments[1]=vsAssetUrl(u);return XO.apply(this,arguments);};}catch(e){}
  function hook(C){try{var P=C&&C.prototype,d=P&&Object.getOwnPropertyDescriptor(P,'src');if(!d||!d.set||!d.configurable)return;Object.defineProperty(P,'src',{configurable:true,enumerable:d.enumerable,get:d.get,set:function(v){d.set.call(this,typeof v==='string'?vsAssetUrl(v):v);}});}catch(e){}}
