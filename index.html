@@ -1935,7 +1935,7 @@ body .x-dmg__c button,body .x-dmg__f button,body .x-cs div,body .x-cns,body .sw 
   <div data-sp="v" id="xVid" role="tabpanel" aria-label="Video" hidden>
   <div class="srow x-sr"><span class="st-l">Graphics quality <b id="vGQ">HIGH</b></span><div class="seg" id="xGQ"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high" class="on">High</button></div></div>
   <div class="srow x-sr"><span class="st-l">Limit FPS</span><div class="seg" id="xFpsL"><button data-v="auto">Auto</button><button data-v="0" class="on">Off</button><button data-v="60">60</button><button data-v="120">120</button><button data-v="144">144</button></div></div>
-  <div class="srow x-sr"><span class="st-l">Dynamic resolution</span><div class="seg" id="xGov"><button data-v="1" class="on">On</button><button data-v="0">Off</button></div></div>
+  <div class="srow x-sr"><span class="st-l">Dynamic resolution</span><div class="seg" id="xGov"><button data-v="1">On</button><button data-v="0" class="on">Off</button></div></div>
   <div class="srow">Show FPS and ping<div class="seg" data-key="fps"><button data-v="0" class="on">Off</button><button data-v="1">On</button></div></div>
   <div class="st-sl"><div class="srow"><label for="sBri">Brightness</label><b id="vBri">1.00</b></div><input type="range" id="sBri" min="50" max="150" step="1" value="100" /></div>
   <div class="srow x-sr"><span class="st-l">Resolution</span><div class="seg" id="xRes"><button data-v="std">Standard</button><button data-v="retina" class="on">Native (sharp)</button></div></div>
@@ -5170,6 +5170,89 @@ function loop() {
   try { renderer.render(scene, camera); } catch (e) { xE(e); }
   try { xGpuEnd(); } catch (e) {}
 }
+// ---- SCENE GRAPH PERF ----
+// perf lane A (user 22 Nov 2026: "Do all fixes", no visual downgrade). three r149's render-time scene.updateMatrixWorld()
+// started from a Scene with matrixAutoUpdate on, so the root re-composed its (identity) matrix every frame and FORCED a
+// matrixWorld multiply on all ~5,200 objects: the static map, ~1,100 hidden pooled effects / first-person weapon models and
+// every bone (qa/astra REPORT: updateMatrixWorld 3.9 box ms of 10.5). XSGR.mw replaces that one call (only when the renderer
+// itself makes it, inside renderer.render) with the same update minus three kinds of dead work:
+//  - the scene root never forces (it is never moved: identity matrix, so its children's matrixWorld = their matrix chain);
+//  - a hidden (visible = false) child of the scene, of the camera's subtree or of the map group is not walked while hidden
+//    (three draws nothing under it); when it was due a forced update it is flagged matrixWorldNeedsUpdate, so it and its
+//    whole subtree are recomputed on the first frame it is visible again. Agents and corpses are walked by three as before.
+//  - the native map's own static nodes are frozen once per map (matrixAutoUpdate off after a final updateMatrix); a 1 s
+//    watchdog unfreezes anything that moves after all (none does: work/test_scene_matrix_equivalence.cjs).
+// Skinned meshes (XSGR.sk): Skeleton.update (bone matrices + bone texture upload) called by the renderer is deferred to the
+// first draw that uses that skeleton (renderBufferDirect), so agents three culls (off-screen) skip it; it runs at once when
+// the shadow map renders this frame. Every drawn mesh and every pixel is unchanged (work/test_scene_matrix_equivalence.cjs
+// compares every drawn object's matrixWorld with a full forced update; qa/cpu pixdiff A/B).
+const XSGR = { mw: true, sk: true, r: 0, defer: 0, mapG: null, fz: [], fzIv: 0, skipped: 0, deferred: 0, flushed: 0 };
+const xsgrOUMW = THREE.Object3D.prototype.updateMatrixWorld, xsgrCUMW = THREE.Camera.prototype.updateMatrixWorld, xsgrSkUp = THREE.Skeleton.prototype.update;
+const XSGR_DYN = /spike|device|EQ_|valorant-|agent|bot|view|weapon|gun|drop|smoke|turret|trap|dart|flash|orb|door|tele|portal|ability|fx/i;
+THREE.Skeleton.prototype.update = function () { if (XSGR.defer) { this.xsgrD = true; XSGR.deferred++; return; } this.xsgrD = false; return xsgrSkUp.call(this); };
+function xsgrBind(r) {
+  if (!r || r.xsgrBound) return; r.xsgrBound = true;
+  const render = r.render, rbd = r.renderBufferDirect;
+  r.render = function (s, c) {
+    const sh = this.shadowMap; XSGR.r = s === scene ? 1 : 0; XSGR.defer = XSGR.sk && !(sh.enabled && (sh.autoUpdate || sh.needsUpdate)) ? 1 : 0; // a shadow pass this frame needs every caster's bones before the draws
+    try { return render.apply(this, arguments); } finally { XSGR.r = 0; XSGR.defer = 0; }
+  };
+  r.renderBufferDirect = function (c, s, g, m, o) { if (o.isSkinnedMesh === true) { const k = o.skeleton; if (k && k.xsgrD === true) { k.xsgrD = false; XSGR.flushed++; xsgrSkUp.call(k); } } return rbd.apply(this, arguments); };
+}
+// a node the walk may descend into itself: three's own Object3D / Camera updateMatrixWorld, no override on the instance
+function xsgrPlain(o) { const f = o.updateMatrixWorld; return f === xsgrOUMW || (o.isCamera === true && f === xsgrCUMW); }
+function xsgrWalk(o, force) {
+  if (o.matrixAutoUpdate) o.updateMatrix();
+  if (o.matrixWorldNeedsUpdate || force) { if (o.parent === null) o.matrixWorld.copy(o.matrix); else o.matrixWorld.multiplyMatrices(o.parent.matrixWorld, o.matrix); o.matrixWorldNeedsUpdate = false; force = true; }
+  if (o.isCamera === true) o.matrixWorldInverse.copy(o.matrixWorld).invert();
+  const ch = o.children;
+  for (let i = 0, l = ch.length; i < l; i++) {
+    const c = ch[i];
+    if (c.visible === false) { if (force) c.matrixWorldNeedsUpdate = true; XSGR.skipped++; continue; } // hidden: nothing of it is drawn
+    if (c.matrixWorldAutoUpdate !== true && force !== true) continue;
+    if (c.children.length > 0 && xsgrPlain(c)) xsgrWalk(c, force); else c.updateMatrixWorld(force);
+  }
+}
+// the scene's direct children: the camera subtree and the map group are walked (hidden nodes skipped at any depth), other
+// visible children (agents, corpses, effects) get three's own update, hidden ones are skipped
+function xsgrSceneUpdate(sc, force) {
+  if (sc.matrixWorldNeedsUpdate || force) { sc.matrixWorld.copy(sc.matrix); sc.matrixWorldNeedsUpdate = false; force = true; }
+  const mg = XSGR.mapG, ch = sc.children;
+  for (let i = 0, l = ch.length; i < l; i++) {
+    const c = ch[i];
+    if (c.visible === false) { if (force) c.matrixWorldNeedsUpdate = true; XSGR.skipped++; continue; }
+    if (c.matrixWorldAutoUpdate !== true && force !== true) continue;
+    if ((c === camera || c === mg) && xsgrPlain(c)) xsgrWalk(c, force); else c.updateMatrixWorld(force);
+  }
+}
+// freeze the native map's own static nodes once per map (the spike, ability devices and anything else the game parents to
+// the map group keep their own updates; a node with its own onBeforeRender may move itself, e.g. the skirt that follows the camera)
+function xsgrFreezeMap(g) {
+  XSGR.mapG = g; for (const [o] of XSGR.fz) if (!o.matrixAutoUpdate && o.userData.xsgrFz) { o.matrixAutoUpdate = true; o.userData.xsgrFz = 0; } XSGR.fz = [];
+  if (!g) return; const OBR = THREE.Object3D.prototype.onBeforeRender;
+  const key = (o) => { const p = o.position, q = o.quaternion, s = o.scale; return [p.x, p.y, p.z, q.x, q.y, q.z, q.w, s.x, s.y, s.z]; };
+  const walk = (o) => {
+    if (o === spike || o === xsgrFsM() || o.userData.dynamic || o.userData.skirt || XSGR_DYN.test(o.name || "") || o.isBone || o.isSkinnedMesh || o.isLight || o.isCamera) return; // not the map's own static geometry
+    if (o.matrixAutoUpdate && o.onBeforeRender === OBR) { o.updateMatrix(); o.matrixAutoUpdate = false; o.userData.xsgrFz = 1; XSGR.fz.push([o, key(o)]); }
+    for (const c of o.children) walk(c);
+  };
+  walk(g); g.updateMatrixWorld(true);
+  if (!XSGR.fzIv) XSGR.fzIv = setInterval(() => { // watchdog: a frozen node whose transform changed after all goes back to auto updates
+    for (let i = XSGR.fz.length - 1; i >= 0; i--) { const [o, k] = XSGR.fz[i], n = key(o); let same = true; for (let j = 0; j < 10; j++) if (n[j] !== k[j]) { same = false; break; }
+      if (!same || !o.parent) { if (o.userData.xsgrFz) { o.matrixAutoUpdate = true; o.userData.xsgrFz = 0; } XSGR.fz.splice(i, 1); } }
+  }, 1000);
+}
+function xsgrFsM() { try { return fsM; } catch (e) { return null; } } // declared further down the page
+function xsgrMapG() { try { const C = typeof NM !== "undefined" ? NM.current : null; return C && C.M && C.M.g && C.key ? C.M.g : null; } catch (e) { return null; } }
+{ const prev = scene.onBeforeRender; scene.onBeforeRender = function (r) { xsgrBind(r); if (prev) return prev.apply(this, arguments); }; }
+scene.updateMatrixWorld = function (force) {
+  if (!XSGR.mw || !XSGR.r) { if (!this.matrixAutoUpdate) this.matrixAutoUpdate = true; return xsgrOUMW.call(this, force); } // off, or a call from game code: three's own full update
+  if (this.matrixAutoUpdate) { const p = this.position, q = this.quaternion, k = this.scale; if (p.x || p.y || p.z || q.x || q.y || q.z || q.w !== 1 || k.x !== 1 || k.y !== 1 || k.z !== 1) return xsgrOUMW.call(this, force); this.matrixAutoUpdate = false; this.updateMatrix(); } // the scene is never moved: an identity root that no longer forces
+  const g = xsgrMapG(); if (g !== XSGR.mapG) xsgrFreezeMap(g);
+  return xsgrSceneUpdate(this, force);
+};
+xsgrBind(renderer);
+// ---- END SCENE GRAPH PERF ----
 const XTK = { defs: [], pool: [], pt: new THREE.Vector3(), aim: new THREE.Vector3(), mv: new THREE.Vector3(), q: new THREE.Vector3() }; // perf pass 9: tick scratch
 function xDget(i, x, z, t) { const f = XTK.pool[i] || (XTK.pool[i] = { x: 0, z: 0, eye: new THREE.Vector3(), t: null }); f.x = x; f.z = z; f.t = t; XTK.defs.push(f); return f; }
 // The gun clock: knife swing, fire cooldown (fcd), spray decay, held / owed automatic fire and the reload timer. tick() runs it every
@@ -12408,14 +12491,14 @@ const xPRMax = () => { const d = devicePixelRatio || 1, p = Math.min((XS.res ===
 // after XGV.wait ms without a miss it steps back up 10%. Hysteresis: a step down within 2.5 s of a step up doubles the
 // wait before the next step up (up to 60 s), a long clean run halves it again (down to 3 s). Runs only in a live,
 // uncovered, unpaused match; off when a lower FPS limit gates rendering.
-// ON by default (user, 12 Nov 2026: "fix the lag and choppy game" - M1, 2880x1800 native: 27-50 fps with half the frames
-// dropped; ~1.2x: a steady 59): it starts at the sharp native ceiling and only steps down while vsyncs are being dropped,
-// and by default never below 1 render pixel per CSS pixel (the "1:1" floor). vs.gov = "0" (Video: Dynamic resolution Off)
-// pins the ceiling; an explicit On (vs.gov = "1") or Render scale Auto may go down to XGV.floor of the ceiling (>= 0.5).
+// OFF by default since 22 Nov 2026 (user: no visual downgrade - resolution, pixel ratio and the rest stay as chosen; it had
+// been ON by default since 12 Nov for an M1 at 2880x1800 native). Video: Dynamic resolution On (vs.gov = "1") opts in: it
+// starts at the sharp native ceiling, only steps down while vsyncs are being dropped, and may go down to XGV.floor of the
+// ceiling (>= 0.5); Render scale Auto does the same. Off (the default, or vs.gov = "0") pins the ceiling.
 // The refresh the governor judges against is the FASTEST measured one (xGovRef): the median rAF interval of a game stuck
 // at a steady 30 fps on a 60 Hz screen is 33 ms, which read as "a 30 Hz screen, nothing missed" and never stepped down.
 let xAdPR = Infinity, xAdT = performance.now(), xAdN = 0; // xAdPR: the governor's pixel ratio (Infinity = the ceiling)
-const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") !== "0"; } catch (e) { return true; } })(), /* ON by default; vs.gov = "0" (Video: Dynamic resolution Off) pins the native ceiling */ opt: (() => { try { return localStorage.getItem("vs.gov") === "1"; } catch (e) { return false; } })(), /* explicit On: may go under 1:1 CSS px */ ref: 0, refT: 0, floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0, cap: 0, capT: 0 };
+const XGV = { on: (() => { try { return localStorage.getItem("vs.gov") === "1"; } catch (e) { return false; } })(), /* OFF by default (user, 22 Nov 2026: no visual downgrade, so never a lower resolution unless the player turns it On); vs.gov = "1" (Video: Dynamic resolution On) opts in */ opt: (() => { try { return localStorage.getItem("vs.gov") === "1"; } catch (e) { return false; } })(), /* explicit On: may go under 1:1 CSS px */ ref: 0, refT: 0, floor: 0.6, win: 40, missN: 4, f: new Uint8Array(40), fi: 0, misses: 0, last: 0, up: 0, down: 0, wait: 3000, clean: 0, steps: 0, hold: 0, cap: 0, capT: 0 };
 const xPRFloor = (m) => Math.min(m, Math.max(XGV.opt || XS.scale === "auto" ? 0.5 : 1, m * XGV.floor)); // default: never under 1 render px per CSS px
 // The display refresh the governor judges against (pure): the fastest median rAF interval seen. A slower one replaces it
 // only after 5 s at the floor pixel ratio without reaching it (the window moved to a slower screen; at the floor there is
