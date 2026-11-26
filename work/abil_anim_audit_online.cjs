@@ -6,7 +6,7 @@
 const fs=require('fs'),path=require('path'),vm=require('vm');
 async function online(REC,summarise,ONLY){
  const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8'),boot=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
- const log=console.log;console.log=()=>{};const proc=Object.create(process,{env:{value:{...process.env,REAL3:'1',REAL3_DIR:process.env.REAL3_DIR||'/workspace/work/qa'}}});const H=new Function('require','__dirname','process','module',boot+'\nreturn {win,context,errors,xErrCalls,advance,mkEvent,dispatch,setPhase:p=>{phase=p;}};')(require,__dirname,proc,module);console.log=log;
+ const log=console.log;console.log=()=>{};const proc=Object.create(process,{env:{value:{...process.env,REAL3:'1',REAL3_DIR:process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three')}}});const H=new Function('require','__dirname','process','module',boot+'\nreturn {win,context,errors,xErrCalls,advance,mkEvent,dispatch,setPhase:p=>{phase=p;}};')(require,__dirname,proc,module);console.log=log;
  const xe=code=>vm.runInContext('__xe',H.context)(code),e0=H.errors.length;/* boot-time harness notes (external scripts) are not page errors */
  const {localCluster}=await import('../server/tools/local-cluster.mjs');const {ScriptedHuman}=await import('../server/tools/scripted-human.mjs');const {loadWorld}=await import('../server/src/world.js');
  const cluster=await localCluster({env:{ALLOW_LOCAL_ORIGIN:'true',ENABLE_SPIKE:'true'}});const world=await loadWorld(cluster.env.ASSETS,'ascent');

@@ -34,7 +34,7 @@ for(const key of fs.readdirSync(path.join(root,'models/valorant/maps'))){const d
 assert.ok(maps>=1,'at least one map ships packed geometry');
 // 5. through the real loader (three r149 + GLTFLoader r147, as the page): scene-packed.gltf with nmBufRelease gives the same
 // meshes as scene.gltf (positions / uvs / indices identical, normals = the Int8x4 nmPackGeometry makes of the float normals).
-(async()=>{const D=process.env.REAL3_DIR||'/workspace/work/qa',key=process.env.PACKED_MAP||'lotus',dir='models/valorant/maps/'+key+'/';
+(async()=>{const D=process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three'),key=process.env.PACKED_MAP||'lotus',dir='models/valorant/maps/'+key+'/';
  if(!fs.existsSync(path.join(D,'GLTFLoader.js'))||!fs.existsSync(path.join(root,dir,'scene-packed.gltf'))){console.log('  (loader check skipped: no '+D+'/GLTFLoader.js or no packed '+key+')');return;}
  const c={console:{log(){},warn(){},error(){}},setTimeout,clearTimeout,queueMicrotask,TextDecoder,TextEncoder,Blob,URL,Headers,Response,navigator:{userAgent:'node'},NM:{}};vm.createContext(c);
  c.Request=class extends Request{constructor(u,o){super(typeof u==='string'?new URL(u,'http://localhost/').href:u,o);}};

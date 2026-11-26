@@ -14,7 +14,7 @@
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert/strict'),v8=require('v8');
 v8.setFlagsFromString('--expose-gc');const gc=vm.runInNewContext('gc');
 const root=path.join(__dirname,'..'),src=fs.readFileSync(path.join(__dirname,'native_maps_runtime.js'),'utf8');
-const D=process.env.REAL3_DIR||'/workspace/work/qa';
+const D=process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three');
 const pick=n=>{const i=src.indexOf('function '+n+'(');assert(i>=0,n+' missing from native_maps_runtime.js');let j=src.indexOf('\nfunction ',i+1);return src.slice(i,j);};
 const tick=ms=>new Promise(r=>setTimeout(r,ms));
 function ctx(){

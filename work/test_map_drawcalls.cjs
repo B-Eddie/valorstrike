@@ -129,7 +129,7 @@ if(!ONLY||ONLY.includes('A')){const r=fakeRenderer(true),A=api(r,0),S=scene();co
   console.log('A ok: lifted overlay keeps its lift on the texture array (nmLift',lit.userData.nmLift+', colour',lit.color.r.toFixed(3)+')');}
  console.log('A ok: arrays',opt.arrays,'chunks',opt.chunks,'materials',arrMats.size);}
 // ---- B. shader + page
-if(!ONLY||ONLY.includes('B')){const d=process.env.REAL3_DIR||'/workspace/work/qa',f=path.join(d,'three.min.js');let T=null;if(!process.env.QA_THREE160&&fs.existsSync(f)){const ctx={self:{},window:{},console};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(f,'utf8'),ctx);T=ctx.THREE||ctx.self.THREE||ctx.window.THREE;}
+if(!ONLY||ONLY.includes('B')){const d=process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three'),f=path.join(d,'three.min.js');let T=null;if(!process.env.QA_THREE160&&fs.existsSync(f)){const ctx={self:{},window:{},console};ctx.globalThis=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync(f,'utf8'),ctx);T=ctx.THREE||ctx.self.THREE||ctx.window.THREE;}
  if(T&&T.REVISION==='149'){const L=T.ShaderLib.lambert,sh={vertexShader:L.vertexShader,fragmentShader:L.fragmentShader,uniforms:{}},m={nmArrTex:{a:1},nmPalTex:{p:1}};
   const A=new Function('THREE','NM_ARR',fn('nmArrShader')+';return nmArrShader;')(T,NM_ARR);A.call(m,sh);
   assert(sh.uniforms.nmArr.value===m.nmArrTex&&sh.uniforms.nmPal.value===m.nmPalTex,'uniforms');

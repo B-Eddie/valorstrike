@@ -1,11 +1,11 @@
 // Boots the real page (index.html) in audit.js's fake DOM + fake timers, as test_client_online.cjs does, for offline
 // soaks. real3: the real three.js scene graph (only the WebGL renderer stubbed) so object positions, scene children and
-// geometries / materials / textures are real. Uses work/qa's three r149 (REAL3_DIR) when present, else the repo's own
+// geometries / materials / textures are real. Uses the page's vendored three (vendor/three, or REAL3_DIR) when present, else the repo's own
 // three (server/node_modules/three, r160) behind a tiny GLTFLoader / SkeletonUtils shim (no asset downloads offline).
 const fs=require('fs'),path=require('path'),os=require('os'),vm=require('vm');
 function mulberry(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
 function threeDir(){
- const own=process.env.REAL3_DIR||'/workspace/work/qa';if(!process.env.QA_THREE160&&['three.min.js','GLTFLoader.js','SkeletonUtils.js'].every(f=>fs.existsSync(path.join(own,f))))return {dir:own,rev:'149'};
+ const own=process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three');if(!process.env.QA_THREE160&&['three.min.js','GLTFLoader.js','SkeletonUtils.js'].every(f=>fs.existsSync(path.join(own,f))))return {dir:own,rev:(/REVISION="(\d+)"|="(\d+)"/.exec(fs.readFileSync(path.join(own,'three.min.js'),'utf8'))||[]).slice(1).find(Boolean)||'?'};
  const dir=path.join(os.tmpdir(),'vs-three160');fs.mkdirSync(dir,{recursive:true});
  const cjs=fs.readFileSync(path.join(__dirname,'..','server','node_modules','three','build','three.cjs'),'utf8');
  fs.writeFileSync(path.join(dir,'three.min.js'),'(function(){var exports={};'+cjs+'\n;globalThis.THREE=exports;})();');

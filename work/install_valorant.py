@@ -6,6 +6,10 @@ s=re.sub(r'((?:<script src="|url\()(?!https?:|data:)[^"?)]+)\?v=[0-9a-f]+', r'\1
 # CDN scripts carry crossorigin="anonymous" (added last, below); strip it first so every exact tag match in this script still holds.
 CDN=['https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js','https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js']
 for u in CDN:s=s.replace('<script src="'+u+'" crossorigin="anonymous"></script>','<script src="'+u+'"></script>')
+# three.js is vendored (three r170 + its GLTFLoader / SkeletonUtils, built by work/three/build.cjs into vendor/three/ with the
+# r149-compat patches in work/three/patches.cjs): an index.html that still names the r149 / r147 CDN copies gets the local files.
+THREE_JS={CDN[0]:'vendor/three/three.min.js',CDN[1]:'vendor/three/GLTFLoader.js',CDN[2]:'vendor/three/SkeletonUtils.js'}
+for u,v in THREE_JS.items():s=s.replace('<script src="'+u+'"></script>','<script src="'+v+'"></script>')
 a='// ---- VALORANT ASSET INTEGRATION ----';b='// ---- END VALORANT ASSET INTEGRATION ----'
 if a in s:s=s[:s.index(a)]+s[s.index(b)+len(b):]
 block=(root/'work/valorant_runtime.js').read_text();
@@ -151,7 +155,7 @@ s=s.replace(va3,va3+'<script>'+(root/'work/hypot_runtime.js').read_text().rstrip
 # three's ImageBitmapLoader / ImageLoader / FileLoader .load before any glTF load starts). Re-inserted on every run.
 la3='<script>// ---- LOADER RETRY ----'
 if la3 in s:i3=s.index(la3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
-ga3='<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>\n'
+ga3='<script src="vendor/three/GLTFLoader.js"></script>\n'
 assert s.count(ga3)==1,'GLTFLoader script tag'
 s=s.replace(ga3,ga3+'<script>'+(root/'work/loader_retry_runtime.js').read_text().rstrip('\n')+'</script>\n',1)
 # Crash report (work/crash_report_runtime.js): its own inline <script> first after the analytics stub, so it records errors,

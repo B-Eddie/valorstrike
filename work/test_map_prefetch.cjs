@@ -16,7 +16,7 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('ass
 const root=path.join(__dirname,'..');
 const RT=fs.readFileSync(path.join(__dirname,'loader_retry_runtime.js'),'utf8');
 const unhandled=[];process.on('unhandledRejection',e=>unhandled.push(String((e&&e.message)||e)));
-function threeFiles(){const d=process.env.REAL3_DIR||'/workspace/work/qa';if(!process.env.QA_THREE160&&['three.min.js','GLTFLoader.js'].every(f=>fs.existsSync(path.join(d,f))))return {three:fs.readFileSync(path.join(d,'three.min.js'),'utf8'),gltf:fs.readFileSync(path.join(d,'GLTFLoader.js'),'utf8'),rev:'149'};return null;}
+function threeFiles(){const d=process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three');if(!process.env.QA_THREE160&&['three.min.js','GLTFLoader.js'].every(f=>fs.existsSync(path.join(d,f))))return {three:fs.readFileSync(path.join(d,'three.min.js'),'utf8'),gltf:fs.readFileSync(path.join(d,'GLTFLoader.js'),'utf8'),rev:'149'};return null;}
 const REAL=threeFiles();
 // three r149's FileLoader builds a Request first: resolve relative URLs against a page base, as a browser does (page_harness)
 const BASE='http://localhost/';class PageRequest extends Request{constructor(u,o){super(typeof u==='string'?new URL(u,BASE).href:u,o);}}

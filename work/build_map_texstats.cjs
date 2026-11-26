@@ -13,7 +13,7 @@
 const PW=process.env.PW_DIR||'/workspace/work/pw/node_modules/playwright';process.env.PLAYWRIGHT_BROWSERS_PATH=process.env.PLAYWRIGHT_BROWSERS_PATH||'/workspace/work/pw/browsers';
 process.env.LD_LIBRARY_PATH=(process.env.LD_LIBRARY_PATH||'')+':/workspace/work/pw/libs';
 const {chromium}=require(PW),fs=require('fs'),path=require('path'),http=require('http'),crypto=require('crypto');
-const ROOT=process.env.VS_ROOT||path.resolve(__dirname,'..'),QA=process.env.REAL3_DIR||'/workspace/work/qa',OUT=process.argv[2]||'',PORT=+(process.env.PORT||8899);
+const ROOT=process.env.VS_ROOT||path.resolve(__dirname,'..'),QA=process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three'),OUT=process.argv[2]||'',PORT=+(process.env.PORT||8899);
 const MAPS=(process.env.MAPS||'ascent,bind,breeze,haven,lotus,split').split(','),VERIFY=!!process.env.VERIFY;
 const LOCAL={'three.min.js':path.join(QA,'three.min.js'),'GLTFLoader.js':path.join(QA,'GLTFLoader.js'),'SkeletonUtils.js':path.join(QA,'SkeletonUtils.js')};
 const MIME={'.html':'text/html','.js':'application/javascript','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.png':'image/png','.jpg':'image/jpeg','.json':'application/json','.bin':'application/octet-stream','.webp':'image/webp','.ogg':'audio/ogg','.mp3':'audio/mpeg'};

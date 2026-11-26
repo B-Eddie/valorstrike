@@ -3,7 +3,7 @@
 "use strict";
 const fs = require("fs"), vm = require("vm"), path = require("path");
 // nothree: the THREE script failed to load. midthrow: THREE loads but the 3D init throws part way (CanvasTexture).
-const REAL3 = !!process.env.REAL3, REAL3_DIR = process.env.REAL3_DIR || "/workspace/work/qa";
+const REAL3 = !!process.env.REAL3, REAL3_DIR = process.env.REAL3_DIR || path.join(__dirname, "..", "vendor", "three");
 const MID = process.argv.includes("midthrow"), NO3 = process.argv.includes("nothree") || MID;
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 // ---------- knife back-stab check: bot yaw set exactly as the bot AI does (atan2(dx, dz) toward its aim) ----------
