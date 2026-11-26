@@ -51,7 +51,9 @@ async function bundle(PKG, entry, file, patches, plugins, banner) {
     bundle: true, format: 'iife', target: 'es2018', minify: true, legalComments: 'none', charset: 'utf8', write: false,
     plugins: [P.plugin, ...plugins], logLevel: 'error' });
   P.check();
-  const code = banner + r.outputFiles[0].text;
+  // the only newlines esbuild leaves in minified output are inside template literals (GLSL chunks): trailing blanks there
+  // are not significant and are dropped so `git diff --check` stays clean
+  const code = banner + r.outputFiles[0].text.replace(/[ \t]+$/gm, '');
   fs.writeFileSync(path.join(OUT, file), code);
   return code.length;
 }
