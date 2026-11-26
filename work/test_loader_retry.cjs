@@ -83,7 +83,7 @@ function textured(gl){const out=[];gl.scene.traverse(o=>{if(o.isMesh)out[+o.mate
  { const html=fs.readFileSync(path.join(root,'index.html'),'utf8');const a=html.indexOf('// ---- LOADER RETRY ----'),b=html.indexOf('// ---- END LOADER RETRY ----');
    assert(a>0&&b>a,'index.html carries the LOADER RETRY block (run python3 work/install_valorant.py)');
    assert.equal(html.slice(a,b+'// ---- END LOADER RETRY ----'.length),RT.trimEnd(),'installed block == work/loader_retry_runtime.js');
-   const g=html.indexOf('examples/js/loaders/GLTFLoader.js" crossorigin="anonymous"></script>'),m=html.indexOf('const $ = (id) => document.getElementById(id);');
+   const g=html.search(/<script src="vendor\/three\/GLTFLoader\.js(\?v=[0-9a-f]+)?"><\/script>/),m=html.indexOf('const $ = (id) => document.getElementById(id);');
    assert(g>0&&g<a,'runs after GLTFLoader.js');assert(m>b,'runs before the game script');
    assert.equal(html.split('// ---- LOADER RETRY ----').length,2,'installed once'); }
  const base='models/valorant/maps/test/';
@@ -95,11 +95,14 @@ function textured(gl){const out=[];gl.scene.traverse(o=>{if(o.isMesh)out[+o.mate
     assert(miss>=10,'baseline: textures whose body broke off are missing ('+miss+')');
     assert(errs.filter(e=>/Couldn't load texture/.test(e)).length>=10,'baseline logs Couldn\'t load texture');
     assert(N.peak>20,'baseline: every texture fetched at once (peak '+N.peak+')');
-    const N2=net();gltfMap(N2,base,4);N2.plan.set(base+'scene.bin',1);const B=ctx(N2,{ua:FF,patched:false});const r2=await loadMap(B.c,base,1500);await tick(50);
-    assert(r2.hang,'baseline: an interrupted .bin body never settles (FileLoader progress stream)');
-    assert(unhandled.slice(u0).some(m=>/input stream/.test(m)),'baseline: unhandled "Error in input stream"');
+    const N2=net();gltfMap(N2,base,4);N2.plan.set(base+'scene.bin',1);const B=ctx(N2,{ua:FF,patched:false});const r2=await loadMap(B.c,base,1500).catch(e=>({err:e}));await tick(50);
+    // three r149: the FileLoader progress stream never settles (hang + unhandled "Error in input stream"); three r170's
+    // FileLoader rejects the load instead (the map would still lose that buffer: no retry without the patch)
+    if(B.c.THREE.REVISION==='149'){assert(r2.hang,'baseline: an interrupted .bin body never settles (FileLoader progress stream)');
+     assert(unhandled.slice(u0).some(m=>/input stream/.test(m)),'baseline: unhandled "Error in input stream"');}
+    else assert(r2.hang||(r2.err&&/Failed to load buffer/.test(String(r2.err.message||r2.err))),'baseline: an interrupted .bin body fails the load');
     unhandled.length=u0;
-    console.log(`  baseline (unpatched): ${miss}/40 textures missing, fetch peak ${N.peak}, interrupted .bin -> load hangs + unhandled rejection`); }
+    console.log(`  baseline (unpatched three r${B.c.THREE.REVISION}): ${miss}/40 textures missing, fetch peak ${N.peak}, interrupted .bin -> ${r2.hang?'load hangs + unhandled rejection':'load fails'}`); }
   // 3. patched, Firefox: every asset fails 1-3 times, all load, cap held
   { const N=net();gltfMap(N,base,120);for(let i=0;i<120;i++)N.plan.set(base+'textures/t'+i+'.png',i%4);N.plan.set(base+'scene.gltf',2);N.plan.set(base+'scene.bin',3);
     const {c,errs}=ctx(N,{ua:FF,patched:true});const LR=c.xLoaderRetry;assert.equal(LR.installed,true);

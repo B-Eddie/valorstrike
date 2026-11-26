@@ -55,8 +55,8 @@ const rec=s=>JSON.parse(s.get('vs.crash'));
    assert(a>0&&b>a,'index.html carries the CRASH REPORT script (python3 work/install_valorant.py)');
    assert.equal(html.slice(a+'<script>'.length,b+'// ---- END CRASH REPORT ----'.length),RT.trimEnd(),'installed == work/crash_report_runtime.js');
    assert(a<html.indexOf('<script>/* perf2: allocation-free Math.hypot')&&a>html.indexOf('window.va = window.va ||'),'first script after the analytics stub');
-   for(const u of ['https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js']){
-    assert(html.includes('<script src="'+u+'" crossorigin="anonymous"></script>'),u+' loads with CORS (crossorigin="anonymous"), not muted to "Script error."');}
+   for(const f of ['three.min.js','GLTFLoader.js','SkeletonUtils.js']){ // three.js is vendored (same origin): its errors are never muted to "Script error."
+    assert(new RegExp('<script src="vendor/three/'+f.replace('.','\\.')+'(\\?v=[0-9a-f]+)?"></script>').test(html),'vendor/three/'+f+' loads from the page origin');}
    assert(!/<script src="https:\/\/[^"]+"><\/script>/.test(html),'no cross-origin script without crossorigin');
    assert(/xCrash\.begin\(/.test(html)&&/xCrash\.stage\("playable"\)/.test(html)&&/xCrash\.stage\("weapons"\)/.test(html)&&/xCrash\.stage\("rigs"\)/.test(html)&&/xCrash\.stage\("warm"\)/.test(html)&&/xCrash\.stage\('map-download'\)/.test(html)&&/xCrash\.stage\('map-upload'\)/.test(html),'match / map load stages reported');
    assert(/ws\.addEventListener\('close',e=>\{try\{if\(window\.xCrash\)xCrash\.ws\(e\.code,e\.reason\)/.test(html),'online socket closes reported');

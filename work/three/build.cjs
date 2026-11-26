@@ -42,7 +42,7 @@ function patcher(PKG, list) {
 // 'three' imported by the addons resolves to the page's global THREE (the core bundle), as the old examples/js files did
 const globalThree = { name: 'global-three', setup(b) {
   b.onResolve({ filter: /^three$/ }, () => ({ path: 'three', namespace: 'global-three' }));
-  b.onLoad({ filter: /.*/, namespace: 'global-three' }, () => ({ contents: 'module.exports = window.THREE;', loader: 'js' }));
+  b.onLoad({ filter: /.*/, namespace: 'global-three' }, () => ({ contents: 'module.exports = globalThis.THREE;', loader: 'js' }));
 } };
 
 async function bundle(PKG, entry, file, patches, plugins, banner) {
@@ -66,9 +66,9 @@ async function bundle(PKG, entry, file, patches, plugins, banner) {
   const lic = '/**\n * three.js r' + ver.split('.')[1] + ' (npm three@' + ver + '), MIT License, Copyright 2010-2024 Three.js Authors.\n * Built by work/three/build.cjs with the patches in work/three/patches.cjs (r149 behaviour kept where the page\n * depends on it) and work/three/compat.js. Do not edit: rebuild.\n */\n';
   const compat = fs.readFileSync(path.join(__dirname, 'compat.js'), 'utf8');
   const sizes = {};
-  sizes['three.min.js'] = await bundle(PKG, "import * as T from './src/Three.js';\nconst THREE = Object.assign({}, T);\n" + compat + "\nwindow.THREE = THREE;\n", 'three.min.js', CORE, [], lic);
-  sizes['GLTFLoader.js'] = await bundle(PKG, "import { GLTFLoader } from './examples/jsm/loaders/GLTFLoader.js';\nwindow.THREE.GLTFLoader = GLTFLoader;\n", 'GLTFLoader.js', GLTF, [globalThree], lic);
-  sizes['SkeletonUtils.js'] = await bundle(PKG, "import * as S from './examples/jsm/utils/SkeletonUtils.js';\nwindow.THREE.SkeletonUtils = Object.assign({}, S);\n", 'SkeletonUtils.js', SKEL, [globalThree], lic);
+  sizes['three.min.js'] = await bundle(PKG, "import * as T from './src/Three.js';\nconst THREE = Object.assign({}, T);\n" + compat + "\nglobalThis.THREE = THREE;\n", 'three.min.js', CORE, [], lic);
+  sizes['GLTFLoader.js'] = await bundle(PKG, "import { GLTFLoader } from './examples/jsm/loaders/GLTFLoader.js';\nglobalThis.THREE.GLTFLoader = GLTFLoader;\n", 'GLTFLoader.js', GLTF, [globalThree], lic);
+  sizes['SkeletonUtils.js'] = await bundle(PKG, "import * as S from './examples/jsm/utils/SkeletonUtils.js';\nglobalThis.THREE.SkeletonUtils = Object.assign({}, S);\n", 'SkeletonUtils.js', SKEL, [globalThree], lic);
   fs.copyFileSync(path.join(PKG, 'LICENSE'), path.join(OUT, 'LICENSE'));
   console.log('three', ver, JSON.stringify(sizes));
 })().catch((e) => { console.error(e); process.exit(1); });
