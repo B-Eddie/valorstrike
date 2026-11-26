@@ -13,7 +13,10 @@ na='// ---- ORIGINAL VALORANT MAPS ----';nb='// ---- END ORIGINAL VALORANT MAPS 
 if na in s:s=s[:s.index(na)]+s[s.index(nb)+len(nb):]
 fa='// ---- VALORANT FEEL ----';fb='// ---- END VALORANT FEEL ----'
 if fa in s:s=s[:s.index(fa)]+s[s.index(fb)+len(fb):]
-block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/feel_runtime.js').read_text();ra='// Repair pass: bone-following damage volumes and joint-constrained corpse physics.';rb='// ---- END REPAIR PASS ----'
+# Path worker (work/path_worker_runtime.js) right after the native maps: its nmPath wrapper must be the innermost one (BOT VARIETY / ropes wrap it later); the worker blob carries vendor/bot-routes.cjs as a JSON string.
+pwa='// ---- PATH WORKER ----';pwb='// ---- END PATH WORKER ----'
+while pwa in s:s=s[:s.index(pwa)]+s[s.index(pwb)+len(pwb):]
+block+='\n'+(root/'work/native_maps_runtime.js').read_text()+'\n'+(root/'work/path_worker_runtime.js').read_text().rstrip('\n').replace('/*XPW_ROUTES_SRC*/null',__import__('json').dumps((root/'vendor/bot-routes.cjs').read_text()),1)+'\n'+(root/'work/feel_runtime.js').read_text();ra='// Repair pass: bone-following damage volumes and joint-constrained corpse physics.';rb='// ---- END REPAIR PASS ----'
 if ra in s:s=s[:s.index(ra)]+s[s.index(rb)+len(rb):]
 block+='\n'+(root/'work/repair_runtime.js').read_text();sa='// ---- TRUSTED ONLINE SERVER ----';sb='// ---- END TRUSTED ONLINE SERVER ----'
 if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
@@ -42,6 +45,10 @@ block+='\n'+(root/'work/omen_fx_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/sova_fx_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/fx_warm_runtime.js').read_text().rstrip('\n')
 block+='\n'+(root/'work/bot_variety_runtime.js').read_text().rstrip('\n').replace(va,va+'\n'+(root/'vendor/bot-routes.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/bot-brain.cjs').read_text().rstrip('\n')+'\n'+(root/'vendor/spawn-barriers.cjs').read_text().rstrip('\n'),1);ma='// ---- BOT AMMO ----';mb='// ---- END BOT AMMO ----'
+# Path worker for BOT VARIETY's own route callers (work/path_worker_late_runtime.js): right after the bot variety block (it wraps xpaCorner / xhpRoute / xhpAngles / xhpWarm).
+pla='// ---- PATH WORKER (BOT VARIETY CALLERS) ----';plb='// ---- END PATH WORKER (BOT VARIETY CALLERS) ----'
+while pla in s:s=s[:s.index(pla)]+s[s.index(plb)+len(plb):]
+block+='\n'+(root/'work/path_worker_late_runtime.js').read_text().rstrip('\n')
 while ma in s:s=s[:s.index(ma)]+s[s.index(mb)+len(mb):]
 block+='\n'+(root/'work/bot_ammo_runtime.js').read_text().rstrip('\n');da='// ---- DEBUG HOOKS ----';db='// ---- END DEBUG HOOKS ----'
 if da in s:s=s[:s.index(da)]+s[s.index(db)+len(db):]
