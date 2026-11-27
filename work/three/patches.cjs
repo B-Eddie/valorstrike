@@ -57,6 +57,29 @@ const CORE = [
   { id: 'lights-hemi', file: 'src/renderers/webgl/WebGLLights.js',
     find: "\t\t\t\tuniforms.skyColor.copy( light.color ).multiplyScalar( intensity );\n\t\t\t\tuniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity );",
     replace: "\t\t\t\tuniforms.skyColor.copy( light.color ).multiplyScalar( intensity * scaleFactor );\n\t\t\t\tuniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity * scaleFactor );" },
+  // 5. Box3.expandByObject / setFromObject (r149): the geometry's bounding box for every mesh (r151+ uses a SkinnedMesh's
+  //    own box, its vertices skinned on the CPU from the pose of the moment, and an InstancedMesh's box of all
+  //    instances), and precise = true reads the raw vertex positions (r170 skins / morphs them). The page sizes and
+  //    grounds each agent model from its box at load (Gekko came out 0.930 instead of 0.909 tall-scale, feet offsets of
+  //    other agents moved by 0.1 mm). BatchedMesh (new) keeps its own box.
+  { id: 'box3-precise', file: 'src/math/Box3.js',
+    find: "\t\t\tif ( precise === true && positionAttribute !== undefined && object.isInstancedMesh !== true ) {\n\n\t\t\t\tfor ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {\n\n\t\t\t\t\tif ( object.isMesh === true ) {\n\n\t\t\t\t\t\tobject.getVertexPosition( i, _vector );\n\n\t\t\t\t\t} else {\n\n\t\t\t\t\t\t_vector.fromBufferAttribute( positionAttribute, i );\n\n\t\t\t\t\t}\n",
+    replace: "\t\t\tif ( precise === true && positionAttribute !== undefined && object.isBatchedMesh !== true ) {\n\n\t\t\t\tfor ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {\n\n\t\t\t\t\t_vector.fromBufferAttribute( positionAttribute, i );\n" },
+  { id: 'box3-object', file: 'src/math/Box3.js',
+    find: "\t\t\t\tif ( object.boundingBox !== undefined ) {\n\n\t\t\t\t\t// object-level bounding box\n",
+    replace: "\t\t\t\tif ( object.isBatchedMesh === true && object.boundingBox !== undefined ) {\n\n\t\t\t\t\t// object-level bounding box\n" },
+  // 6. Raycasts (r149): a SkinnedMesh is pre-tested against its geometry's sphere / box, not a sphere / box skinned once
+  //    from the pose at its first raycast and never refreshed; an InstancedMesh is not pre-tested against a sphere of all
+  //    instances computed once (stale after setMatrixAt). Triangle tests are unchanged (skinned, per instance).
+  { id: 'raycast-skinned', file: 'src/objects/SkinnedMesh.js',
+    find: "\t\tif ( this.boundingSphere === null ) this.computeBoundingSphere();\n\n\t\t_sphere.copy( this.boundingSphere );\n\t\t_sphere.applyMatrix4( matrixWorld );\n\n\t\tif ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;",
+    replace: "\t\tif ( this.geometry.boundingSphere === null ) this.geometry.computeBoundingSphere();\n\n\t\t_sphere.copy( this.geometry.boundingSphere );\n\t\t_sphere.applyMatrix4( matrixWorld );\n\n\t\tif ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;" },
+  { id: 'raycast-skinned-box', file: 'src/objects/SkinnedMesh.js',
+    find: "\t\tif ( this.boundingBox !== null ) {\n\n\t\t\tif ( _ray.intersectsBox( this.boundingBox ) === false ) return;",
+    replace: "\t\tif ( this.geometry.boundingBox !== null ) {\n\n\t\t\tif ( _ray.intersectsBox( this.geometry.boundingBox ) === false ) return;" },
+  { id: 'raycast-instanced', file: 'src/objects/InstancedMesh.js',
+    find: "\t\t// test with bounding sphere first\n\n\t\tif ( this.boundingSphere === null ) this.computeBoundingSphere();\n\n\t\t_sphere.copy( this.boundingSphere );\n\t\t_sphere.applyMatrix4( matrixWorld );\n\n\t\tif ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;\n\n",
+    replace: "" },
 ];
 const GLTF = [
   // 4. Safari decodes glTF textures with TextureLoader (<img>) as GLTFLoader r147 did, not ImageBitmapLoader (r170 on
