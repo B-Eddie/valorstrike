@@ -1,26 +1,64 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/vs-m/:path*", "destination": "https://valorstrike.vercel.app/_vercel/insights/:path*" }
+    {
+      "source": "/vs-m/:path*",
+      "destination": "https://valorstrike.vercel.app/_vercel/insights/:path*"
+    }
   ],
   "headers": [
     {
       "source": "/(models|audio|vendor)/(.*)",
-      "has": [{ "type": "query", "key": "v" }],
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "has": [
+        {
+          "type": "query",
+          "key": "v"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     },
     {
       "source": "/(lobby-bg\\.png|favicon\\.ico)",
-      "has": [{ "type": "query", "key": "v" }],
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "has": [
+        {
+          "type": "query",
+          "key": "v"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     },
     {
       "source": "/",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/index.html",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "handoff-*": false
+    }
+  }
 }

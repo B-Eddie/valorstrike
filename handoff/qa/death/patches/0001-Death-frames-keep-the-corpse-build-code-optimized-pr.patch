@@ -1,0 +1,85 @@
+From b2d8083d31b6939cffaab264e44bc800d2fd66b2 Mon Sep 17 00:00:00 2001
+From: Eddie <121364681+B-Eddie@users.noreply.github.com>
+Date: Wed, 25 Nov 2026 06:30:17 +0000
+Subject: [PATCH] Death frames: keep the corpse-build code optimized (private
+ keep-warm rig)
+
+V8 discards the optimized code of xrSupports / xrSolve ~10-15 s after their last call, so a death
+more than ~10 s after the previous one built its 6000-sample contact volume in baseline code
+(xrRagdoll 10-41 ms on the kill frame instead of ~2 ms). xrKeep runs the same corpse build + one
+solve/pose step every 3 s on a private 23-bone rig that is never in the scene (~0.5 ms).
+WIP: numbers pending.
+---
+ index.html             | 22 ++++++++++++++++++++++
+ work/repair_runtime.js | 22 ++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+
+diff --git a/index.html b/index.html
+index 6dedfa73..544a7125 100644
+--- a/index.html
++++ b/index.html
+@@ -21322,6 +21322,28 @@ function xrWarm(){const t0=performance.now();let calls=0;try{const L=(typeof XSO
+   for(const [b,p,q,s]of bones){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.m.updateMatrixWorld(true);}
+  }catch(e){}XR_WARM.runs++;XR_WARM.calls+=calls;XR_WARM.last=performance.now()-t0;return calls;}
+ if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrWarm);else xrWarm();}return r;};}
++// death lane (2026-11-25, death-frame spikes): xrWarm's optimized code does not last. V8 throws away the optimized code of a function
++// that has not run for ~10-15 s (Chromium, %GetOptimizationStatus: xrSupports / xrSolve TurboFan -> discarded 10-15 s after the last
++// call, no deopt; a full build every 4 s kept it), so a death more than ~10 s after the last one built its 6000-sample contact volume
++// in baseline / interpreted code: xrRagdoll 10-41 ms on the kill frame instead of ~2 ms. xrKeep runs the whole corpse build
++// (xrRagdoll -> xrSupports -> xrSampleList -> xrGround) and one solve / pose step every XR_KEEP.ms on a private 23-bone, 23-vertex
++// rig that is never in the scene: same functions, same argument types, ~0.1 ms. It touches no game object (its own bones, mesh,
++// geometry - a sample list cached under that geometry - and ground function; the scratch vectors it shares are written before every
++// read), draws nothing from the game's generator (xNoRng) and is skipped while a body died within XR_KEEP.ms (that build ran it).
++const XR_KEEP={ms:3000,last:0,runs:0,ms1:0,M:null};
++function xrKeepRig(){const sc=new THREE.Group(),B={},mk=(n,p,x,y,z)=>{const b=new THREE.Bone();b.name=n;b.position.set(x,y,z);(p?B[p]:sc).add(b);B[n]=b;};
++ mk('Splitter',null,0,1,0);mk('Pelvis','Splitter',0,0,0);mk('Spine1','Pelvis',0,.1,0);mk('Spine2','Spine1',0,.12,0);mk('Spine4','Spine2',0,.15,0);mk('Neck','Spine4',0,.15,0);mk('Head','Neck',0,.1,0);
++ for(const [s,k]of [['L',1],['R',-1]]){mk(s+'_Clavicle','Spine4',.05*k,.1,0);mk(s+'_Shoulder',s+'_Clavicle',.12*k,0,0);mk(s+'_Elbow',s+'_Shoulder',.28*k,0,0);mk(s+'_Hand',s+'_Elbow',.25*k,0,0);mk(s+'_Hip','Pelvis',.1*k,-.05,0);mk(s+'_Knee',s+'_Hip',0,-.42,0);mk(s+'_Foot',s+'_Knee',0,-.42,0);mk(s+'_Toe',s+'_Foot',0,-.05,.12);}
++ const bones=Object.values(B),n=bones.length,pos=new Float32Array(n*3),si=new Uint16Array(n*4),sw=new Float32Array(n*4),v=new THREE.Vector3();sc.updateMatrixWorld(true);
++ bones.forEach((b,i)=>{b.getWorldPosition(v);pos[i*3]=v.x+.02;pos[i*3+1]=v.y;pos[i*3+2]=v.z+.02;si[i*4]=i;sw[i*4]=1;});
++ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
++ const mesh=new THREE.SkinnedMesh(g,new THREE.MeshBasicMaterial());mesh.frustumCulled=false;sc.add(mesh);mesh.bind(new THREE.Skeleton(bones));const m=new THREE.Group();m.add(sc);m.updateMatrixWorld(true);
++ return {m,sx:{sc},valorant:true,rest:bones.map(b=>[b,b.position.clone(),b.quaternion.clone()]),ground:()=>0};}
++function xrKeep(){if(!running||paused||document.hidden)return;const now=performance.now();if(now-XR_KEEP.last<XR_KEEP.ms)return;
++ if(typeof XDEAD!=='undefined')for(const e of XDEAD)if(e.c&&e.c.diedAt>XR_KEEP.last)XR_KEEP.last=e.c.diedAt;if(now-XR_KEEP.last<XR_KEEP.ms)return;XR_KEEP.last=now;
++ const go=()=>{try{const K=XR_KEEP.M||(XR_KEEP.M=xrKeepRig());for(const [b,p,q]of K.rest){b.position.copy(p);b.quaternion.copy(q);}K.m.updateMatrixWorld(true);const R=xrRagdoll(K,K.ground);if(R&&xrSolve(R,1/60))xrPose(R);}catch(e){}};
++ if(typeof xNoRng==='function')xNoRng(go);else go();XR_KEEP.runs++;XR_KEEP.ms1=performance.now()-now;}
++if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(xrKeep);
+ {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
+ {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
+  if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
+diff --git a/work/repair_runtime.js b/work/repair_runtime.js
+index 435bff5a..84857aab 100644
+--- a/work/repair_runtime.js
++++ b/work/repair_runtime.js
+@@ -219,6 +219,28 @@ function xrWarm(){const t0=performance.now();let calls=0;try{const L=(typeof XSO
+   for(const [b,p,q,s]of bones){b.position.copy(p);b.quaternion.copy(q);b.scale.copy(s);}M.m.updateMatrixWorld(true);}
+  }catch(e){}XR_WARM.runs++;XR_WARM.calls+=calls;XR_WARM.last=performance.now()-t0;return calls;}
+ if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrWarm);else xrWarm();}return r;};}
++// death lane (2026-11-25, death-frame spikes): xrWarm's optimized code does not last. V8 throws away the optimized code of a function
++// that has not run for ~10-15 s (Chromium, %GetOptimizationStatus: xrSupports / xrSolve TurboFan -> discarded 10-15 s after the last
++// call, no deopt; a full build every 4 s kept it), so a death more than ~10 s after the last one built its 6000-sample contact volume
++// in baseline / interpreted code: xrRagdoll 10-41 ms on the kill frame instead of ~2 ms. xrKeep runs the whole corpse build
++// (xrRagdoll -> xrSupports -> xrSampleList -> xrGround) and one solve / pose step every XR_KEEP.ms on a private 23-bone, 23-vertex
++// rig that is never in the scene: same functions, same argument types, ~0.1 ms. It touches no game object (its own bones, mesh,
++// geometry - a sample list cached under that geometry - and ground function; the scratch vectors it shares are written before every
++// read), draws nothing from the game's generator (xNoRng) and is skipped while a body died within XR_KEEP.ms (that build ran it).
++const XR_KEEP={ms:3000,last:0,runs:0,ms1:0,M:null};
++function xrKeepRig(){const sc=new THREE.Group(),B={},mk=(n,p,x,y,z)=>{const b=new THREE.Bone();b.name=n;b.position.set(x,y,z);(p?B[p]:sc).add(b);B[n]=b;};
++ mk('Splitter',null,0,1,0);mk('Pelvis','Splitter',0,0,0);mk('Spine1','Pelvis',0,.1,0);mk('Spine2','Spine1',0,.12,0);mk('Spine4','Spine2',0,.15,0);mk('Neck','Spine4',0,.15,0);mk('Head','Neck',0,.1,0);
++ for(const [s,k]of [['L',1],['R',-1]]){mk(s+'_Clavicle','Spine4',.05*k,.1,0);mk(s+'_Shoulder',s+'_Clavicle',.12*k,0,0);mk(s+'_Elbow',s+'_Shoulder',.28*k,0,0);mk(s+'_Hand',s+'_Elbow',.25*k,0,0);mk(s+'_Hip','Pelvis',.1*k,-.05,0);mk(s+'_Knee',s+'_Hip',0,-.42,0);mk(s+'_Foot',s+'_Knee',0,-.42,0);mk(s+'_Toe',s+'_Foot',0,-.05,.12);}
++ const bones=Object.values(B),n=bones.length,pos=new Float32Array(n*3),si=new Uint16Array(n*4),sw=new Float32Array(n*4),v=new THREE.Vector3();sc.updateMatrixWorld(true);
++ bones.forEach((b,i)=>{b.getWorldPosition(v);pos[i*3]=v.x+.02;pos[i*3+1]=v.y;pos[i*3+2]=v.z+.02;si[i*4]=i;sw[i*4]=1;});
++ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
++ const mesh=new THREE.SkinnedMesh(g,new THREE.MeshBasicMaterial());mesh.frustumCulled=false;sc.add(mesh);mesh.bind(new THREE.Skeleton(bones));const m=new THREE.Group();m.add(sc);m.updateMatrixWorld(true);
++ return {m,sx:{sc},valorant:true,rest:bones.map(b=>[b,b.position.clone(),b.quaternion.clone()]),ground:()=>0};}
++function xrKeep(){if(!running||paused||document.hidden)return;const now=performance.now();if(now-XR_KEEP.last<XR_KEEP.ms)return;
++ if(typeof XDEAD!=='undefined')for(const e of XDEAD)if(e.c&&e.c.diedAt>XR_KEEP.last)XR_KEEP.last=e.c.diedAt;if(now-XR_KEEP.last<XR_KEEP.ms)return;XR_KEEP.last=now;
++ const go=()=>{try{const K=XR_KEEP.M||(XR_KEEP.M=xrKeepRig());for(const [b,p,q]of K.rest){b.position.copy(p);b.quaternion.copy(q);}K.m.updateMatrixWorld(true);const R=xrRagdoll(K,K.ground);if(R&&xrSolve(R,1/60))xrPose(R);}catch(e){}};
++ if(typeof xNoRng==='function')xNoRng(go);else go();XR_KEEP.runs++;XR_KEEP.ms1=performance.now()-now;}
++if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(xrKeep);
+ {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
+ {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
+  if(typeof xdpGone==='function'?xdpGone(e,age):age>4){scene.remove(e.c.m);scene.remove(e.gn);xDisp(e.gn);const j=XSOL.mx.indexOf(e.c);if(j>=0)XSOL.mx.splice(j,1);XDEAD.splice(i,1);}else e.t=typeof xdpGone==='function'?Math.min(2.5,age):Math.max(e.t,age);}return visual(dt);};}
+-- 
+2.47.3
+

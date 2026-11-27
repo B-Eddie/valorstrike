@@ -1,0 +1,84 @@
+diff --git a/index.html b/index.html
+index 544a7125..a6e827c7 100644
+--- a/index.html
++++ b/index.html
+@@ -21327,22 +21327,31 @@ if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm===
+ // call, no deopt; a full build every 4 s kept it), so a death more than ~10 s after the last one built its 6000-sample contact volume
+ // in baseline / interpreted code: xrRagdoll 10-41 ms on the kill frame instead of ~2 ms. xrKeep runs the whole corpse build
+ // (xrRagdoll -> xrSupports -> xrSampleList -> xrGround) and one solve / pose step every XR_KEEP.ms on a private 23-bone, 23-vertex
+-// rig that is never in the scene: same functions, same argument types, ~0.1 ms. It touches no game object (its own bones, mesh,
++// rig that is never in the scene: same functions, same argument types. It touches no game object (its own bones, mesh,
+ // geometry - a sample list cached under that geometry - and ground function; the scratch vectors it shares are written before every
+ // read), draws nothing from the game's generator (xNoRng) and is skipped while a body died within XR_KEEP.ms (that build ran it).
+-const XR_KEEP={ms:3000,last:0,runs:0,ms1:0,M:null};
++const XR_KEEP={ms:3000,vpb:16,warm:60,warmMs:300,wn:0,wms:0,last:0,runs:0,ms1:0,M:null};
+ function xrKeepRig(){const sc=new THREE.Group(),B={},mk=(n,p,x,y,z)=>{const b=new THREE.Bone();b.name=n;b.position.set(x,y,z);(p?B[p]:sc).add(b);B[n]=b;};
+  mk('Splitter',null,0,1,0);mk('Pelvis','Splitter',0,0,0);mk('Spine1','Pelvis',0,.1,0);mk('Spine2','Spine1',0,.12,0);mk('Spine4','Spine2',0,.15,0);mk('Neck','Spine4',0,.15,0);mk('Head','Neck',0,.1,0);
+  for(const [s,k]of [['L',1],['R',-1]]){mk(s+'_Clavicle','Spine4',.05*k,.1,0);mk(s+'_Shoulder',s+'_Clavicle',.12*k,0,0);mk(s+'_Elbow',s+'_Shoulder',.28*k,0,0);mk(s+'_Hand',s+'_Elbow',.25*k,0,0);mk(s+'_Hip','Pelvis',.1*k,-.05,0);mk(s+'_Knee',s+'_Hip',0,-.42,0);mk(s+'_Foot',s+'_Knee',0,-.42,0);mk(s+'_Toe',s+'_Foot',0,-.05,.12);}
+- const bones=Object.values(B),n=bones.length,pos=new Float32Array(n*3),si=new Uint16Array(n*4),sw=new Float32Array(n*4),v=new THREE.Vector3();sc.updateMatrixWorld(true);
+- bones.forEach((b,i)=>{b.getWorldPosition(v);pos[i*3]=v.x+.02;pos[i*3+1]=v.y;pos[i*3+2]=v.z+.02;si[i*4]=i;sw[i*4]=1;});
++ // XR_KEEP.vpb skin vertices per bone (a ring around the bone, blended with its parent bone): with one vertex per bone a tick ran the
++ // sample loop 23 times and xrSupports never tiered up from cold (stayed baseline until the first real corpse); a few hundred
++ // samples per tick bring it to optimized code before the first death while staying far below a real body's 6000.
++ const bones=Object.values(B),n=bones.length,K=XR_KEEP.vpb,pos=new Float32Array(n*K*3),si=new Uint16Array(n*K*4),sw=new Float32Array(n*K*4),v=new THREE.Vector3();sc.updateMatrixWorld(true);
++ bones.forEach((b,i)=>{b.getWorldPosition(v);const pi=Math.max(0,bones.indexOf(b.parent));for(let k=0;k<K;k++){const o=(i*K+k),a=k*2.399963,r=.02+.04*(k%4)/3,w=.55+.4*((k*7)%K)/K;
++  pos[o*3]=v.x+r*Math.cos(a);pos[o*3+1]=v.y+.03*((k%3)-1);pos[o*3+2]=v.z+r*Math.sin(a);si[o*4]=i;sw[o*4]=w;si[o*4+1]=pi;sw[o*4+1]=1-w;}});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
+  const mesh=new THREE.SkinnedMesh(g,new THREE.MeshBasicMaterial());mesh.frustumCulled=false;sc.add(mesh);mesh.bind(new THREE.Skeleton(bones));const m=new THREE.Group();m.add(sc);m.updateMatrixWorld(true);
+  return {m,sx:{sc},valorant:true,rest:bones.map(b=>[b,b.position.clone(),b.quaternion.clone()]),ground:()=>0};}
++function xrKeepGo(){try{const K=XR_KEEP.M||(XR_KEEP.M=xrKeepRig());for(const [b,p,q]of K.rest){b.position.copy(p);b.quaternion.copy(q);}K.m.updateMatrixWorld(true);const R=xrRagdoll(K,K.ground);if(R&&xrSolve(R,1/60))xrPose(R);}catch(e){}}
+ function xrKeep(){if(!running||paused||document.hidden)return;const now=performance.now();if(now-XR_KEEP.last<XR_KEEP.ms)return;
+  if(typeof XDEAD!=='undefined')for(const e of XDEAD)if(e.c&&e.c.diedAt>XR_KEEP.last)XR_KEEP.last=e.c.diedAt;if(now-XR_KEEP.last<XR_KEEP.ms)return;XR_KEEP.last=now;
+- const go=()=>{try{const K=XR_KEEP.M||(XR_KEEP.M=xrKeepRig());for(const [b,p,q]of K.rest){b.position.copy(p);b.quaternion.copy(q);}K.m.updateMatrixWorld(true);const R=xrRagdoll(K,K.ground);if(R&&xrSolve(R,1/60))xrPose(R);}catch(e){}};
+- if(typeof xNoRng==='function')xNoRng(go);else go();XR_KEEP.runs++;XR_KEEP.ms1=performance.now()-now;}
++ if(typeof xNoRng==='function')xNoRng(xrKeepGo);else xrKeepGo();XR_KEEP.runs++;XR_KEEP.ms1=performance.now()-now;}
++// The 3 s ticks keep optimized code alive but are too sparse to produce it: from cold, xrSupports was still baseline at the first
++// death (Chromium, %GetOptimizationStatus). So behind the loading screen (after xrWarm, same gate) the private rig is built
++// XR_KEEP.warm times back to back (capped at XR_KEEP.warmMs) to tier the corpse-build code up before the match; the ticks keep it.
++function xrKeepWarm(){const t0=performance.now();let n=0;for(;n<XR_KEEP.warm&&performance.now()-t0<XR_KEEP.warmMs;n++)xrKeepGo();XR_KEEP.wn=n;XR_KEEP.wms=performance.now()-t0;XR_KEEP.last=performance.now();return n;}
++if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrKeepWarm);else xrKeepWarm();}return r;};}
+ if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(xrKeep);
+ {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
+ {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade
+diff --git a/work/repair_runtime.js b/work/repair_runtime.js
+index 84857aab..a46e7062 100644
+--- a/work/repair_runtime.js
++++ b/work/repair_runtime.js
+@@ -224,22 +224,31 @@ if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm===
+ // call, no deopt; a full build every 4 s kept it), so a death more than ~10 s after the last one built its 6000-sample contact volume
+ // in baseline / interpreted code: xrRagdoll 10-41 ms on the kill frame instead of ~2 ms. xrKeep runs the whole corpse build
+ // (xrRagdoll -> xrSupports -> xrSampleList -> xrGround) and one solve / pose step every XR_KEEP.ms on a private 23-bone, 23-vertex
+-// rig that is never in the scene: same functions, same argument types, ~0.1 ms. It touches no game object (its own bones, mesh,
++// rig that is never in the scene: same functions, same argument types. It touches no game object (its own bones, mesh,
+ // geometry - a sample list cached under that geometry - and ground function; the scratch vectors it shares are written before every
+ // read), draws nothing from the game's generator (xNoRng) and is skipped while a body died within XR_KEEP.ms (that build ran it).
+-const XR_KEEP={ms:3000,last:0,runs:0,ms1:0,M:null};
++const XR_KEEP={ms:3000,vpb:16,warm:60,warmMs:300,wn:0,wms:0,last:0,runs:0,ms1:0,M:null};
+ function xrKeepRig(){const sc=new THREE.Group(),B={},mk=(n,p,x,y,z)=>{const b=new THREE.Bone();b.name=n;b.position.set(x,y,z);(p?B[p]:sc).add(b);B[n]=b;};
+  mk('Splitter',null,0,1,0);mk('Pelvis','Splitter',0,0,0);mk('Spine1','Pelvis',0,.1,0);mk('Spine2','Spine1',0,.12,0);mk('Spine4','Spine2',0,.15,0);mk('Neck','Spine4',0,.15,0);mk('Head','Neck',0,.1,0);
+  for(const [s,k]of [['L',1],['R',-1]]){mk(s+'_Clavicle','Spine4',.05*k,.1,0);mk(s+'_Shoulder',s+'_Clavicle',.12*k,0,0);mk(s+'_Elbow',s+'_Shoulder',.28*k,0,0);mk(s+'_Hand',s+'_Elbow',.25*k,0,0);mk(s+'_Hip','Pelvis',.1*k,-.05,0);mk(s+'_Knee',s+'_Hip',0,-.42,0);mk(s+'_Foot',s+'_Knee',0,-.42,0);mk(s+'_Toe',s+'_Foot',0,-.05,.12);}
+- const bones=Object.values(B),n=bones.length,pos=new Float32Array(n*3),si=new Uint16Array(n*4),sw=new Float32Array(n*4),v=new THREE.Vector3();sc.updateMatrixWorld(true);
+- bones.forEach((b,i)=>{b.getWorldPosition(v);pos[i*3]=v.x+.02;pos[i*3+1]=v.y;pos[i*3+2]=v.z+.02;si[i*4]=i;sw[i*4]=1;});
++ // XR_KEEP.vpb skin vertices per bone (a ring around the bone, blended with its parent bone): with one vertex per bone a tick ran the
++ // sample loop 23 times and xrSupports never tiered up from cold (stayed baseline until the first real corpse); a few hundred
++ // samples per tick bring it to optimized code before the first death while staying far below a real body's 6000.
++ const bones=Object.values(B),n=bones.length,K=XR_KEEP.vpb,pos=new Float32Array(n*K*3),si=new Uint16Array(n*K*4),sw=new Float32Array(n*K*4),v=new THREE.Vector3();sc.updateMatrixWorld(true);
++ bones.forEach((b,i)=>{b.getWorldPosition(v);const pi=Math.max(0,bones.indexOf(b.parent));for(let k=0;k<K;k++){const o=(i*K+k),a=k*2.399963,r=.02+.04*(k%4)/3,w=.55+.4*((k*7)%K)/K;
++  pos[o*3]=v.x+r*Math.cos(a);pos[o*3+1]=v.y+.03*((k%3)-1);pos[o*3+2]=v.z+r*Math.sin(a);si[o*4]=i;sw[o*4]=w;si[o*4+1]=pi;sw[o*4+1]=1-w;}});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
+  const mesh=new THREE.SkinnedMesh(g,new THREE.MeshBasicMaterial());mesh.frustumCulled=false;sc.add(mesh);mesh.bind(new THREE.Skeleton(bones));const m=new THREE.Group();m.add(sc);m.updateMatrixWorld(true);
+  return {m,sx:{sc},valorant:true,rest:bones.map(b=>[b,b.position.clone(),b.quaternion.clone()]),ground:()=>0};}
++function xrKeepGo(){try{const K=XR_KEEP.M||(XR_KEEP.M=xrKeepRig());for(const [b,p,q]of K.rest){b.position.copy(p);b.quaternion.copy(q);}K.m.updateMatrixWorld(true);const R=xrRagdoll(K,K.ground);if(R&&xrSolve(R,1/60))xrPose(R);}catch(e){}}
+ function xrKeep(){if(!running||paused||document.hidden)return;const now=performance.now();if(now-XR_KEEP.last<XR_KEEP.ms)return;
+  if(typeof XDEAD!=='undefined')for(const e of XDEAD)if(e.c&&e.c.diedAt>XR_KEEP.last)XR_KEEP.last=e.c.diedAt;if(now-XR_KEEP.last<XR_KEEP.ms)return;XR_KEEP.last=now;
+- const go=()=>{try{const K=XR_KEEP.M||(XR_KEEP.M=xrKeepRig());for(const [b,p,q]of K.rest){b.position.copy(p);b.quaternion.copy(q);}K.m.updateMatrixWorld(true);const R=xrRagdoll(K,K.ground);if(R&&xrSolve(R,1/60))xrPose(R);}catch(e){}};
+- if(typeof xNoRng==='function')xNoRng(go);else go();XR_KEEP.runs++;XR_KEEP.ms1=performance.now()-now;}
++ if(typeof xNoRng==='function')xNoRng(xrKeepGo);else xrKeepGo();XR_KEEP.runs++;XR_KEEP.ms1=performance.now()-now;}
++// The 3 s ticks keep optimized code alive but are too sparse to produce it: from cold, xrSupports was still baseline at the first
++// death (Chromium, %GetOptimizationStatus). So behind the loading screen (after xrWarm, same gate) the private rig is built
++// XR_KEEP.warm times back to back (capped at XR_KEEP.warmMs) to tier the corpse-build code up before the match; the ticks keep it.
++function xrKeepWarm(){const t0=performance.now();let n=0;for(;n<XR_KEEP.warm&&performance.now()-t0<XR_KEEP.warmMs;n++)xrKeepGo();XR_KEEP.wn=n;XR_KEEP.wms=performance.now()-t0;XR_KEEP.last=performance.now();return n;}
++if(typeof window!=='undefined'){const warm=window.xWarmShaders;if(typeof warm==='function')window.xWarmShaders=function(){const go=running&&!xPC;const r=warm.apply(this,arguments);if(go){if(typeof xNoRng==='function')xNoRng(xrKeepWarm);else xrKeepWarm();}return r;};}
+ if(typeof window!=='undefined')(window.XHK||(window.XHK=[])).push(xrKeep);
+ {const die=xDie;xDie=function(b){const r=die.apply(this,arguments);if(b&&b.xm&&b.xm.dead){b.xm.diedAt=b.xm.diedAt||performance.now();}return r;};}
+ {const visual=xVis;xVis=function(dt){const now=performance.now();for(let i=XDEAD.length-1;i>=0;i--){const e=XDEAD[i],age=(now-(e.c.diedAt||now))/1000;// corpse lifetime: work/death_runtime.js decides (xdpGone: round modes keep bodies until the round resets); kept bodies hold e.t under the base loop's 3 s ring fade

@@ -1,0 +1,3 @@
+BONES=only VW=1 ./runmatch.sh bind low 960 540 bnB2 /workspace/work/qa/three/base_wt
+BONES=only VW=1 ./runmatch.sh bind low 960 540 bnL2 /workspace/work/vs-lane-three
+BONES=only VW=1 ./runmatch.sh bind low 960 540 bnB3 /workspace/work/qa/three/base_wt

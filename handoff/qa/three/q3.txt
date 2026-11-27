@@ -1,0 +1,2 @@
+DRAWLIST=only ./runmatch.sh bind low 960 540 dlbase /workspace/work/qa/three/base_wt
+DRAWLIST=only ./runmatch.sh bind low 960 540 dllane /workspace/work/vs-lane-three

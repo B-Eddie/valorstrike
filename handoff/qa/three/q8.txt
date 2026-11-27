@@ -1,0 +1,2 @@
+VFMAT=1 BONES=only VW=1 ./runmatch.sh bind low 960 540 vmB /workspace/work/qa/three/base_wt
+VFMAT=1 BONES=only VW=1 ./runmatch.sh bind low 960 540 vmL /workspace/work/vs-lane-three

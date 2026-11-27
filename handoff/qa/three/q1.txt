@@ -1,0 +1,4 @@
+./runmatch.sh bind low 960 540 mbaseA /workspace/work/qa/three/base_wt
+./runmatch.sh bind low 960 540 mlane /workspace/work/vs-lane-three
+./runmatch.sh bind low 960 540 mbaseB /workspace/work/qa/three/base_wt
+./runmatch.sh bind low 960 540 mbaseA2 /workspace/work/qa/three/base_wt

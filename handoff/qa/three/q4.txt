@@ -1,0 +1,3 @@
+DRAWLIST=1 ./runmatch.sh bind low 960 540 dA /workspace/work/qa/three/base_wt
+DRAWLIST=1 ./runmatch.sh bind low 960 540 dL /workspace/work/vs-lane-three
+DRAWLIST=1 ./runmatch.sh bind low 960 540 dB /workspace/work/qa/three/base_wt
