@@ -1,0 +1,16 @@
+11s boot
+62s match loaded 50s
+70s cfg {"pr":1,"buf":[1280,720],"gov":false,"xs":{"res":"retina","shd":"map","aa":true,"lod":40}}
+70s noop 44
+84s js /workspace/work/qa/gates6/perf/md_check_pre.js {"wrapInstalled":true,"cachedExt":true,"err":null,"cachedOwnProps":[],"cached_mDE":"function(){}","cached_mDA":"function(){}","proto_mDE":"noWebGLMultiDraw","proto_mDA":null,"attached":true,"drawElemNoop":true,"calls":262}
+93s js /workspace/work/qa/gates6/perf/md_attach.js {"got":true,"sameAsThreeCache":true,"mDE":"function(){}"}
+93s js /workspace/work/qa/gates6/perf/md_check_post.js {"wrapInstalled":true,"cachedExt":true,"err":null,"cachedOwnProps":[],"cached_mDE":"function(){}","cached_mDA":"function(){}","proto_mDE":"noWebGLMultiDraw","proto_mDA":null,"attached":true,"drawElemNoop":true,"calls":258}
+96s warm frames/3s 0
+100s warm frames/3s 0
+105s warm frames/3s 1
+109s warm frames/3s 124
+119s meas {"frames":381,"ftMean":27.43,"calls":140,"tris":764926,"xSimRun":1.074,"vmTick":0.327,"xVis":1.117,"xSolTick":0.652,"umw":1.363,"render:main":7.911,"loop":12.608}
+129s meas {"frames":498,"ftMean":20.15,"calls":134,"tris":693976,"xSimRun":0.863,"vmTick":0.359,"xVis":1.181,"xSolTick":0.979,"umw":1.429,"render:main":7.119,"loop":12.021}
+139s meas {"frames":357,"ftMean":28.06,"calls":259,"tris":2446092,"xSimRun":4.796,"vmTick":0.398,"xVis":1.789,"xSolTick":0.323,"umw":1.594,"render:main":9.613,"loop":18.777}
+139s js /workspace/work/qa/gates6/perf/md_check_end.js {"wrapInstalled":true,"cachedExt":true,"err":null,"cachedOwnProps":[],"cached_mDE":"function(){}","cached_mDA":"function(){}","proto_mDE":"noWebGLMultiDraw","proto_mDA":null,"attached":true,"drawElemNoop":true,"calls":259}
+139s done

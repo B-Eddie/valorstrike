@@ -1,0 +1,69 @@
+{
+ "map": "ascent",
+ "gq": "medium",
+ "root": "/workspace/work/qa/three/base_wt",
+ "errors": [],
+ "loadS": 50,
+ "cfg": {
+  "pr": 1,
+  "buf": [
+   1280,
+   720
+  ],
+  "gov": false,
+  "xs": {
+   "res": "retina",
+   "shd": "map",
+   "aa": true,
+   "lod": 40
+  }
+ },
+ "noop": 44,
+ "js": {
+  "/workspace/work/qa/gates6/perf/md_check_pre.js": "{\"wrapInstalled\":true,\"cachedExt\":true,\"err\":null,\"cachedOwnProps\":[],\"cached_mDE\":\"function(){}\",\"cached_mDA\":\"function(){}\",\"proto_mDE\":\"noWebGLMultiDraw\",\"proto_mDA\":null,\"attached\":true,\"drawElemNoop\":true,\"calls\":262}",
+  "/workspace/work/qa/gates6/perf/md_attach.js": "{\"got\":true,\"sameAsThreeCache\":true,\"mDE\":\"function(){}\"}",
+  "/workspace/work/qa/gates6/perf/md_check_post.js": "{\"wrapInstalled\":true,\"cachedExt\":true,\"err\":null,\"cachedOwnProps\":[],\"cached_mDE\":\"function(){}\",\"cached_mDA\":\"function(){}\",\"proto_mDE\":\"noWebGLMultiDraw\",\"proto_mDA\":null,\"attached\":true,\"drawElemNoop\":true,\"calls\":258}",
+  "/workspace/work/qa/gates6/perf/md_check_end.js": "{\"wrapInstalled\":true,\"cachedExt\":true,\"err\":null,\"cachedOwnProps\":[],\"cached_mDE\":\"function(){}\",\"cached_mDA\":\"function(){}\",\"proto_mDE\":\"noWebGLMultiDraw\",\"proto_mDA\":null,\"attached\":true,\"drawElemNoop\":true,\"calls\":259}"
+ },
+ "meas": [
+  {
+   "frames": 381,
+   "ftMean": 27.43,
+   "calls": 140,
+   "tris": 764926,
+   "xSimRun": 1.074,
+   "vmTick": 0.327,
+   "xVis": 1.117,
+   "xSolTick": 0.652,
+   "umw": 1.363,
+   "render:main": 7.911,
+   "loop": 12.608
+  },
+  {
+   "frames": 498,
+   "ftMean": 20.15,
+   "calls": 134,
+   "tris": 693976,
+   "xSimRun": 0.863,
+   "vmTick": 0.359,
+   "xVis": 1.181,
+   "xSolTick": 0.979,
+   "umw": 1.429,
+   "render:main": 7.119,
+   "loop": 12.021
+  },
+  {
+   "frames": 357,
+   "ftMean": 28.06,
+   "calls": 259,
+   "tris": 2446092,
+   "xSimRun": 4.796,
+   "vmTick": 0.398,
+   "xVis": 1.789,
+   "xSolTick": 0.323,
+   "umw": 1.594,
+   "render:main": 9.613,
+   "loop": 18.777
+  }
+ ]
+}

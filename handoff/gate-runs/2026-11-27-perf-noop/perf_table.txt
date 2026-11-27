@@ -1,0 +1,24 @@
+base1 root /workspace/work/qa/three/base_wt noop 44 fail None errors 0 RC 0 | multi_draw attached: pre(before diag)=True post(after diag)=True end(after meas)=True cached_mDE_end='function(){}'
+  meas0: frames 441 ftMean 22.71 loop 12.545 render:main 8.395 umw 1.641 xSimRun 0.781 calls 127 tris 677425
+  meas1: frames 538 ftMean 18.59 loop 11.407 render:main 7.661 umw 1.718 xSimRun 0.701 calls 146 tris 779489
+  meas2: frames 393 ftMean 25.57 loop 14.412 render:main 9.017 umw 1.691 xSimRun 1.675 calls 252 tris 2805633
+  mean of 3: ftMean 22.290 loop 12.788 render:main 8.358 umw 1.683 xSimRun 1.052 | ftMean min 18.59 max 25.57 sd 3.509
+lane1 root /workspace/work/vs-lane-three noop 44 fail None errors 0 RC 0 | multi_draw attached: pre(before diag)=False post(after diag)=True end(after meas)=True cached_mDE_end='function(){}'
+  meas0: frames 459 ftMean 21.79 loop 12.007 render:main 7.947 umw 1.526 xSimRun 0.807 calls 89 tris 660502
+  meas1: frames 440 ftMean 22.69 loop 10.577 render:main 6.533 umw 1.682 xSimRun 0.821 calls 98 tris 634493
+  meas2: frames 410 ftMean 24.43 loop 14.172 render:main 8.137 umw 1.567 xSimRun 2.615 calls 176 tris 2543961
+  mean of 3: ftMean 22.970 loop 12.252 render:main 7.539 umw 1.592 xSimRun 1.414 | ftMean min 21.79 max 24.43 sd 1.342
+base2 root /workspace/work/qa/three/base_wt noop 44 fail None errors 0 RC 0 | multi_draw attached: pre(before diag)=True post(after diag)=True end(after meas)=True cached_mDE_end='function(){}'
+  meas0: frames 381 ftMean 27.43 loop 12.608 render:main 7.911 umw 1.363 xSimRun 1.074 calls 140 tris 764926
+  meas1: frames 498 ftMean 20.15 loop 12.021 render:main 7.119 umw 1.429 xSimRun 0.863 calls 134 tris 693976
+  meas2: frames 357 ftMean 28.06 loop 18.777 render:main 9.613 umw 1.594 xSimRun 4.796 calls 259 tris 2446092
+  mean of 3: ftMean 25.213 loop 14.469 render:main 8.214 umw 1.462 xSimRun 2.244 | ftMean min 20.15 max 28.06 sd 4.396
+lane2 root /workspace/work/vs-lane-three noop 44 fail None errors 0 RC 0 | multi_draw attached: pre(before diag)=False post(after diag)=True end(after meas)=True cached_mDE_end='function(){}'
+  meas0: frames 518 ftMean 19.37 loop 11.276 render:main 6.831 umw 1.425 xSimRun 0.87 calls 89 tris 582041
+  meas1: frames 529 ftMean 18.97 loop 10.859 render:main 6.638 umw 1.485 xSimRun 0.848 calls 127 tris 1318539
+  meas2: frames 477 ftMean 21.03 loop 15.308 render:main 8.921 umw 1.38 xSimRun 2.447 calls 203 tris 2602359
+  mean of 3: ftMean 19.790 loop 12.481 render:main 7.463 umw 1.430 xSimRun 1.388 | ftMean min 18.97 max 21.03 sd 1.092
+
+base (2 runs): ftMean 23.752 [22.290..25.213] loop 13.628 [12.788..14.469] render:main 8.286 [8.214..8.358] umw 1.573 [1.462..1.683] xSimRun 1.648 [1.052..2.244]
+lane (2 runs): ftMean 21.380 [19.790..22.970] loop 12.367 [12.252..12.481] render:main 7.501 [7.463..7.539] umw 1.511 [1.430..1.592] xSimRun 1.401 [1.388..1.414]
+lane - base: ftMean -2.372 (-10.0%) loop -1.262 (-9.3%) render:main -0.785 (-9.5%) umw -0.062 (-3.9%) xSimRun -0.247 (-15.0%)

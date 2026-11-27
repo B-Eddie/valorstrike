@@ -1,0 +1,24 @@
+TAKEN
+11s boot
+61s match loaded 51s
+71s cfg {"pr":1,"buf":[1280,720],"gov":false,"xs":{"res":"retina","shd":"map","aa":true,"lod":40}}
+71s noop 44
+71s js /workspace/work/qa/gates6/perf/md_check_pre.js {"wrapInstalled":true,"cachedExt":true,"err":null,"cachedOwnProps":[],"cached_mDE":"function multiDrawElementsWEBGL() { [native code] }","cached_mDA":"function multiDrawArraysWEBGL() { [native code] }","proto_mDE":"noWebGLMultiDraw","proto_mDA":null,"attached":false,"drawElemNoop":true,"calls":221}
+71s js /workspace/work/qa/gates6/perf/md_attach.js {"got":true,"sameAsThreeCache":true,"mDE":"function(){}"}
+71s js /workspace/work/qa/gates6/perf/md_check_post.js {"wrapInstalled":true,"cachedExt":true,"err":null,"cachedOwnProps":[],"cached_mDE":"function(){}","cached_mDA":"function(){}","proto_mDE":"noWebGLMultiDraw","proto_mDA":null,"attached":true,"drawElemNoop":true,"calls":221}
+74s warm frames/3s 0
+79s warm frames/3s 1
+82s warm frames/3s 3
+86s warm frames/3s 0
+89s warm frames/3s 0
+93s warm frames/3s 0
+96s warm frames/3s 0
+99s warm frames/3s 32
+102s warm frames/3s 146
+112s meas {"frames":518,"ftMean":19.37,"calls":89,"tris":582041,"xSimRun":0.87,"vmTick":0.336,"xVis":1.352,"xSolTick":0.406,"umw":1.425,"render:main":6.831,"loop":11.276}
+122s meas {"frames":529,"ftMean":18.97,"calls":127,"tris":1318539,"xSimRun":0.848,"vmTick":0.421,"xVis":1.239,"xSolTick":0.279,"umw":1.485,"render:main":6.638,"loop":10.859}
+132s meas {"frames":477,"ftMean":21.03,"calls":203,"tris":2602359,"xSimRun":2.447,"vmTick":0.429,"xVis":1.409,"xSolTick":0.298,"umw":1.38,"render:main":8.921,"loop":15.308}
+132s js /workspace/work/qa/gates6/perf/md_check_end.js {"wrapInstalled":true,"cachedExt":true,"err":null,"cachedOwnProps":[],"cached_mDE":"function(){}","cached_mDA":"function(){}","proto_mDE":"noWebGLMultiDraw","proto_mDA":null,"attached":true,"drawElemNoop":true,"calls":203}
+133s done
+DROPPED
+RC 0

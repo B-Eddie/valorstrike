@@ -1,0 +1,69 @@
+{
+ "map": "ascent",
+ "gq": "medium",
+ "root": "/workspace/work/vs-lane-three",
+ "errors": [],
+ "loadS": 45,
+ "cfg": {
+  "pr": 1,
+  "buf": [
+   1280,
+   720
+  ],
+  "gov": false,
+  "xs": {
+   "res": "retina",
+   "shd": "map",
+   "aa": true,
+   "lod": 40
+  }
+ },
+ "noop": 44,
+ "js": {
+  "/workspace/work/qa/gates6/perf/md_check_pre.js": "{\"wrapInstalled\":true,\"cachedExt\":true,\"err\":null,\"cachedOwnProps\":[],\"cached_mDE\":\"function multiDrawElementsWEBGL() { [native code] }\",\"cached_mDA\":\"function multiDrawArraysWEBGL() { [native code] }\",\"proto_mDE\":\"noWebGLMultiDraw\",\"proto_mDA\":null,\"attached\":false,\"drawElemNoop\":true,\"calls\":221}",
+  "/workspace/work/qa/gates6/perf/md_attach.js": "{\"got\":true,\"sameAsThreeCache\":true,\"mDE\":\"function(){}\"}",
+  "/workspace/work/qa/gates6/perf/md_check_post.js": "{\"wrapInstalled\":true,\"cachedExt\":true,\"err\":null,\"cachedOwnProps\":[],\"cached_mDE\":\"function(){}\",\"cached_mDA\":\"function(){}\",\"proto_mDE\":\"noWebGLMultiDraw\",\"proto_mDA\":null,\"attached\":true,\"drawElemNoop\":true,\"calls\":221}",
+  "/workspace/work/qa/gates6/perf/md_check_end.js": "{\"wrapInstalled\":true,\"cachedExt\":true,\"err\":null,\"cachedOwnProps\":[],\"cached_mDE\":\"function(){}\",\"cached_mDA\":\"function(){}\",\"proto_mDE\":\"noWebGLMultiDraw\",\"proto_mDA\":null,\"attached\":true,\"drawElemNoop\":true,\"calls\":176}"
+ },
+ "meas": [
+  {
+   "frames": 459,
+   "ftMean": 21.79,
+   "calls": 89,
+   "tris": 660502,
+   "xSimRun": 0.807,
+   "vmTick": 0.418,
+   "xVis": 1.229,
+   "xSolTick": 0.174,
+   "umw": 1.526,
+   "render:main": 7.947,
+   "loop": 12.007
+  },
+  {
+   "frames": 440,
+   "ftMean": 22.69,
+   "calls": 98,
+   "tris": 634493,
+   "xSimRun": 0.821,
+   "vmTick": 0.314,
+   "xVis": 1.241,
+   "xSolTick": 0.258,
+   "umw": 1.682,
+   "render:main": 6.533,
+   "loop": 10.577
+  },
+  {
+   "frames": 410,
+   "ftMean": 24.43,
+   "calls": 176,
+   "tris": 2543961,
+   "xSimRun": 2.615,
+   "vmTick": 0.32,
+   "xVis": 1.313,
+   "xSolTick": 0.24,
+   "umw": 1.567,
+   "render:main": 8.137,
+   "loop": 14.172
+  }
+ ]
+}
