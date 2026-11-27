@@ -87,6 +87,20 @@ const GLTF = [
   //    measured on that path.
   { id: 'gltf-safari-images', file: 'examples/jsm/loaders/GLTFLoader.js',
     find: "( isSafari && safariVersion < 17 )", replace: "isSafari" },
+  // 7. aoMap / lightMap sample UV set 1, as GLTFLoader r147 + three r149 did unconditionally ('Materials sample aoMap
+  //    from UV set 1 and other maps from UV set 0'). r151+ samples the texture's channel, which defaults to 0 when the
+  //    glTF material gives no texCoord, so on models whose TEXCOORD_1 differs from TEXCOORD_0 (e.g. the FP viewmodel
+  //    weapons) the AO came from the wrong UVs (grip/magazine stripes off by up to 74/255 on the lane). Force channel 1
+  //    whenever the glTF did not already pick a set > 0.
+  { id: 'gltf-ao-channel', file: 'examples/jsm/loaders/GLTFLoader.js',
+    find: "\t\t\tif ( mapDef.texCoord !== undefined && mapDef.texCoord > 0 ) {\n\n\t\t\t\ttexture = texture.clone();\n\t\t\t\ttexture.channel = mapDef.texCoord;\n\n\t\t\t}\n",
+    replace: "\t\t\tif ( mapDef.texCoord !== undefined && mapDef.texCoord > 0 ) {\n\n\t\t\t\ttexture = texture.clone();\n\t\t\t\ttexture.channel = mapDef.texCoord;\n\n\t\t\t}\n\n\t\t\tif ( ( mapName === 'aoMap' || mapName === 'lightMap' ) && texture.channel === 0 ) {\n\n\t\t\t\ttexture = texture.clone();\n\t\t\t\ttexture.channel = 1;\n\n\t\t\t}\n" },
+  // 8. ...and the r147 fallback for meshes whose geometry has no second UV set: copy set 0 to set 1 on demand, so an
+  //    aoMap/lightMap at channel 1 always has data (r147 did exactly this with the old uv2 attribute; in r151+ naming
+  //    UV set 1 is the 'uv1' attribute). Net effect for single-UV models is identical to sampling set 0.
+  { id: 'gltf-ao-uvcopy', file: 'examples/jsm/loaders/GLTFLoader.js',
+    find: "\tassignFinalMaterial( mesh ) {\n\n\t\tconst geometry = mesh.geometry;\n\t\tlet material = mesh.material;\n",
+    replace: "\tassignFinalMaterial( mesh ) {\n\n\t\tconst geometry = mesh.geometry;\n\t\tlet material = mesh.material;\n\n\t\tif ( ( material.aoMap || material.lightMap ) && geometry.attributes.uv1 === undefined && geometry.attributes.uv !== undefined ) {\n\n\t\t\tgeometry.setAttribute( 'uv1', geometry.attributes.uv );\n\n\t\t}\n" },
 ];
 const SKEL = [];
 module.exports = { CORE, GLTF, SKEL };
