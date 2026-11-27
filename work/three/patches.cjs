@@ -57,6 +57,13 @@ const CORE = [
   { id: 'lights-hemi', file: 'src/renderers/webgl/WebGLLights.js',
     find: "\t\t\t\tuniforms.skyColor.copy( light.color ).multiplyScalar( intensity );\n\t\t\t\tuniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity );",
     replace: "\t\t\t\tuniforms.skyColor.copy( light.color ).multiplyScalar( intensity * scaleFactor );\n\t\t\t\tuniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity * scaleFactor );" },
+  // 9. Color.getHex truncates like r149 (clamp + bit-shift truncation), not Math.round (r152+): 8-bit hexes that
+  //    transit JS land +1 higher on 124/256 values in r170. The game's damage-flash emissive capture/restore
+  //    (m.userData.e0 = m.emissive.getHex(); ... setHex(e0)) round-trips through this, so after any damage flash the
+  //    lane left the viewmodel gun's emissive 1/255 brighter (24750 px at maxdiff exactly 1 on every vandal shot).
+  { id: 'color-gethex-trunc', file: 'src/math/Color.js',
+    find: "\t\treturn Math.round( clamp( _color.r * 255, 0, 255 ) ) * 65536 + Math.round( clamp( _color.g * 255, 0, 255 ) ) * 256 + Math.round( clamp( _color.b * 255, 0, 255 ) );",
+    replace: "\t\treturn clamp( _color.r * 255, 0, 255 ) << 16 ^ clamp( _color.g * 255, 0, 255 ) << 8 ^ clamp( _color.b * 255, 0, 255 ) << 0;" },
   // 5. Box3.expandByObject / setFromObject (r149): the geometry's bounding box for every mesh (r151+ uses a SkinnedMesh's
   //    own box, its vertices skinned on the CPU from the pose of the moment, and an InstancedMesh's box of all
   //    instances), and precise = true reads the raw vertex positions (r170 skins / morphs them). The page sizes and
