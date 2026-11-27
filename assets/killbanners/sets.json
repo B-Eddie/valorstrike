@@ -1,0 +1,1423 @@
+{
+ "aemondir": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "154",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "aeris": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "araxys": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-12",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "araxysep9": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-12",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "arcanecollectorsset": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-1.5",
+   "radius": "159",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "ayakashi": {
+  "meta": {
+   "headshotX": "-0.3",
+   "headshotY": "-18.5",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5",
+   "audio-6"
+  ]
+ },
+ "blackspyre": {
+  "meta": {
+   "headshotX": "1",
+   "headshotY": "-20",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "blackthorn": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "blastx": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "bolt": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "bubblegumdeathwish": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "3.25",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "bubblegumdeathwish2": {
+  "meta": {
+   "headshotX": "-1",
+   "headshotY": "-16.5",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "bubblegumdeathwish3": {
+  "meta": {
+   "headshotX": "0.6",
+   "headshotY": "-4",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "bubblegumdeathwish4": {
+  "meta": {
+   "headshotX": "8",
+   "headshotY": "4",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "champions2021": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "134",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "champions2022": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "134",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "champions2023": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "134",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "champions2024": {
+  "meta": {
+   "additionalData": "{\"1\":\"uploads\\/killbanners\\/champions2024\\/Champs24_1.png\",\"2\":\"uploads\\/killbanners\\/champions2024\\/Champs24_2.png\",\"3\":\"uploads\\/killbanners\\/champions2024\\/Champs24_3.png\",\"4\":\"uploads\\/killbanners\\/champions2024\\/Champs24_4.png\",\"5\":\"uploads\\/killbanners\\/champions2024\\/Champs24_5.png\",\"6\":\"uploads\\/killbanners\\/champions2024\\/Champs24_6.png\"}",
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "120",
+   "type": "BannerSwap"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "champions2025": {
+  "meta": {
+   "additionalData": "{\"1\":\"uploads\\/killbanners\\/champions2025\\/Champs-25-1.png\",\"2\":\"uploads\\/killbanners\\/champions2025\\/Champs-25-2.png\",\"3\":\"uploads\\/killbanners\\/champions2025\\/Champs-25-3.png\",\"4\":\"uploads\\/killbanners\\/champions2025\\/Champs-25-4.png\",\"5\":\"uploads\\/killbanners\\/champions2025\\/champs-25-5.png\",\"6\":\"uploads\\/killbanners\\/champions2025\\/champs-25-6.png\"}",
+   "headshotX": "2",
+   "headshotY": "2",
+   "radius": "120",
+   "type": "BannerSwap"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "chronovoid": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-2",
+   "radius": "150",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "cryostasis": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "cyrax": {
+  "meta": {
+   "headshotX": "1",
+   "headshotY": "-14",
+   "radius": "215",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "default": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "138",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "divergence": {
+  "meta": {
+   "headshotX": "-4.74726",
+   "headshotY": "-3",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "dolmirsrevenge": {
+  "meta": {
+   "headshotX": "2",
+   "headshotY": "-5",
+   "radius": "153",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "doombringer": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "138",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "elderflame": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-17",
+   "radius": "144",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "evoridreamwings": {
+  "meta": {
+   "headshotX": "1",
+   "headshotY": "4.7",
+   "radius": "163",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "exo": {
+  "meta": {
+   "headshotX": "1",
+   "headshotY": "-6",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "forsaken": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-15",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "gaiasvengeance": {
+  "meta": {
+   "headshotX": "-2",
+   "headshotY": "-20",
+   "radius": "138",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "gaiasvengeanceep7": {
+  "meta": {
+   "headshotX": "-2",
+   "headshotY": "-20",
+   "radius": "138",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "glitchpop": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "172",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "glitchpop20": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "172",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "helix": {
+  "meta": {
+   "headshotX": "1",
+   "headshotY": "-21.5",
+   "radius": "157",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "holomeridian": {
+  "meta": {
+   "additionalData": "{\"hasHeadshot\":true,\"emblem-0\":\"uploads\\/killbanners\\/holomeridian\\/holomeridian_emblem_b.png\",\"emblem-1\":\"uploads\\/killbanners\\/holomeridian\\/holomeridian_emblem_bv1.png\",\"emblem-2\":\"uploads\\/killbanners\\/holomeridian\\/holomeridian_emblem_bv2.png\",\"emblem-3\":\"uploads\\/killbanners\\/holomeridian\\/holomeridian_emblem_bv3.png\",\"hs-audio-1\":\"holomeridian\\/audios\\/holomeridian_1_hs.mp3\",\"hs-audio-2\":\"holomeridian\\/audios\\/holomeridian_2_hs.mp3\",\"hs-audio-3\":\"holomeridian\\/audios\\/holomeridian_3_hs.mp3\",\"hs-audio-4\":\"holomeridian\\/audios\\/holomeridian_4_hs.mp3\",\"hs-audio-5\":\"holomeridian\\/audios\\/holomeridian_5_hs.mp3\"}",
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "142",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5",
+   "audio-1-hs",
+   "audio-2-hs",
+   "audio-3-hs",
+   "audio-4-hs",
+   "audio-5-hs"
+  ]
+ },
+ "imperium": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-22",
+   "radius": "176",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "ion": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-30",
+   "radius": "135",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "ionep5": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-30",
+   "radius": "135",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "kuronami": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "180",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "magepunk": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "magepunkep3": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "magepunkep6": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "mystbloom": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-29",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "mystbloom-v25": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-29",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "neofrontier": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-29",
+   "radius": "152",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "neptune": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "18",
+   "radius": "155",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "neptunev25": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "18",
+   "radius": "155",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "nocturnum": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "156",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "oni": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "172",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "oniep6": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "172",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "orabyonetap-ignition": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "orabyonetap-lawyer": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "orabyonetap-raja": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "orabyonetap-renegade": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "orabyonetap-watch": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "origin": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "155",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "overdrive": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "134",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "phaseguard": {
+  "meta": {
+   "additionalData": "{\"Variant-0\":{\"Color\":\"#ED6D3B\"},\"Variant-1\":{\"Color\":\"#008BBD\"},\"Variant-2\":{\"Color\":\"#68BD42\"},\"Variant-3\":{\"Color\":\"#D6D642\"}}",
+   "headshotX": "0.5",
+   "headshotY": "-2.5",
+   "radius": "163",
+   "type": "Phaseguard"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "popmonz-capybara": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-35",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "popmonz-cat": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "popmonz-squid": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "preludetochaos": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-18",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "preludetochaosv25": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-18",
+   "radius": "170",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "prime": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-17",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "prime20": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-17",
+   "radius": "145",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "primordium": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "152",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "protocol781-a": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "143",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "radiantcrisis001": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "134",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "reaver": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "reaverep5": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "reaverv26": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "recon": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-22",
+   "radius": "136",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "res-bazookabadger": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "res-dancefever": {
+  "meta": {
+   "headshotX": "2",
+   "headshotY": "16",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "res-knockout": {
+  "meta": {
+   "headshotX": "2",
+   "headshotY": "16",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "rgx11zpro": {
+  "meta": {
+   "headshotX": "0.85",
+   "headshotY": "-21",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "rgx11zproep4": {
+  "meta": {
+   "headshotX": "0.85",
+   "headshotY": "-21",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "rgx11zproep9": {
+  "meta": {
+   "headshotX": "0.85",
+   "headshotY": "-21",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "rogue": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-17",
+   "radius": "167",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "ruination": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-23",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "sentinelsoflight": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-15",
+   "radius": "128",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "sentinelsoflightep7": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-15",
+   "radius": "128",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "singularity": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "singularityep9": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-10",
+   "radius": "140",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "solarstride": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-20",
+   "radius": "147",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "sovereign": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-26",
+   "radius": "155",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "sovereignep8": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-26",
+   "radius": "155",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "spectrum": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "135",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5",
+   "audio-6"
+  ]
+ },
+ "splashx": {
+  "meta": {
+   "headshotX": "2",
+   "headshotY": "-15",
+   "radius": "163",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "valianthero": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-22",
+   "radius": "156",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "vct": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "166",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "vct2025": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "0",
+   "radius": "166",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ },
+ "xerofang": {
+  "meta": {
+   "headshotX": "0",
+   "headshotY": "-25",
+   "radius": "165",
+   "type": "Default"
+  },
+  "audios": [
+   "audio-1",
+   "audio-2",
+   "audio-3",
+   "audio-4",
+   "audio-5"
+  ]
+ }
+}
