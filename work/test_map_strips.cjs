@@ -61,7 +61,8 @@ const v=new THREE.Vector3();for(const st of strips){let at=0;for(const c of st.c
 const drawn=cam=>{scene.updateMatrixWorld(true);const C={scene,cullAt:null};api.nmCull(C,cam);api.nmRuns(C,cam);const out=[];const fr=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse)),sp=new THREE.Sphere();
  scene.traverse(o=>{if(!o.isMesh||!o.visible)return;const g=o.geometry;if(o.frustumCulled!==false){if(!g.boundingSphere)g.computeBoundingSphere();sp.copy(g.boundingSphere).applyMatrix4(o.matrixWorld);if(!fr.intersectsSphere(sp))return;}
   if(o.userData.nmMulti){const M=o.userData.nmMulti;assert(M.count>0,'multi proxy visible with no runs');assert(M.starts.length>=o.userData.nmMultiCountMax||M.starts.length>=M.count,'range arrays undersized');
-   for(let i=0;i<M.count;i++){const s=M.starts[i]/4,c=M.counts[i];assert(Number.isInteger(s),'range start not on an element boundary');assert(s>=0&&s+c<=g.index.count,'range out of bounds');if(i)assert(s>=out[out.length-1].e,'ranges not ascending');assert(!(i&&out[out.length-1].e===s),'two consecutive ranges are mergeable: a missed merge costs a draw');out.push({o,s,e:s+c});}
+   const bpe=(strips.find(x=>x.geometry===g)||{}).idxB||(g.index.array&&g.index.array.BYTES_PER_ELEMENT);assert(bpe===2||bpe===4,'strip index element size unknown: ranges are byte offsets and cannot be read');
+   for(let i=0;i<M.count;i++){const s=M.starts[i]/bpe,c=M.counts[i];assert(Number.isInteger(s),'range start not on an element boundary');assert(s>=0&&s+c<=g.index.count,'range out of bounds');if(i)assert(s>=out[out.length-1].e,'ranges not ascending');assert(!(i&&out[out.length-1].e===s),'two consecutive ranges are mergeable: a missed merge costs a draw');out.push({o,s,e:s+c});}
    return;}
   out.push({o,s:0,e:g.index.count});});return out;};
 const tris=list=>{const m=new Map();for(const {o,s,e} of list){const g=o.geometry,P=g.attributes.position.array,U=g.attributes.uv.array,I=g.index.array;for(let t=s;t<e;t+=3){const k=o.material.name+'|'+[0,1,2].map(j=>key(P,U,I[t+j])).join('|');m.set(k,(m.get(k)||0)+1);}}return m;};
@@ -76,6 +77,18 @@ const tris=list=>{const m=new Map();for(const {o,s,e} of list){const g=o.geometr
    assert.equal(mine.length,rr,'one range per run of consecutive visible chunks');assert.equal(got.size,exp.size,'drawn triangles != visible chunks');for(const t of exp)assert(got.has(t),'a visible chunk was not drawn');runs+=rr;}}
  assert(culled>0,'no chunk ever culled: the test scene does not exercise culling');
  console.log('nmRuns:',views,'views, avg',(runs/views).toFixed(1),'draws for',(chunkN/views).toFixed(1),'visible strip chunks,',(culled/views).toFixed(1),'culled');}
+// Uint16 strips (nmPackGeometry converts any strip with <= 65535 verts on the page): ranges must track the
+// real element size. Convert the largest small strip, drop the cached size, and the same coverage must hold.
+{const small=strips.filter(st=>st.geometry.attributes.position.count<=65535);assert(small.length,'no small strip in the scene: the Uint16 path is untested');
+ const st=small[0],g=st.geometry,u16=new Uint16Array(g.index.array);g.setIndex(new THREE.BufferAttribute(u16,1));delete st.idxB;
+ const cam=new THREE.OrthographicCamera(-500,500,500,-500,-1000,1000);cam.position.set(0,50,0);cam.lookAt(0,0,0);cam.updateMatrixWorld(true);
+ const got=tris(drawn(cam));assert.equal(got.size,want.size,'Uint16 strip: distinct triangles changed');for(const [k,n] of want)assert.equal(got.get(k),n,'Uint16 strip: triangle count changed');
+ assert.equal(st.idxB,2,'nmRuns did not cache the Uint16 element size');
+ for(const st2 of strips)if(st2!==st)assert.equal(st2.idxB,4,'a Uint32 strip was misread');
+ // and back again: a stale cache must never survive a type change (the page drops arrays after upload)
+ g.setIndex(new THREE.BufferAttribute(new Uint32Array(u16),1));delete st.idxB;const got2=tris(drawn(cam));assert.equal(got2.size,want.size,'re-widened strip: coverage changed');assert.equal(st.idxB,4);}
 // no index copy kept: after the upload drops the strip's index array, its chunks hold nothing
 {const st=strips[0],c=st.chunks[0];assert(c.geometry.index.array&&c.geometry.index.array.length===c.n);st.geometry.index.array=null;assert.equal(c.geometry.index.array,null,'strip chunk keeps its own copy of the index');}
-console.log('test_map_strips OK: strips',strips.length,'chunks',chunks.length,'span',NM_STRIP.span,'m');
+// source guard: the byte-offset unit assumption must never come back
+assert(!/\*4/.test(fn('nmRuns')),'nmRuns hardcodes a x4 byte offset (Uint32 assumption) again');
+console.log('test_map_strips OK: strips',strips.length,'chunks',chunks.length,'span',NM_STRIP.span,'m (Uint16+Uint32 strip offsets covered)');
