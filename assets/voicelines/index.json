@@ -1,0 +1,2444 @@
+{
+ "Astra": {
+  "agent": "astra",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"I am on a higher plane, Chale. Literally.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/594322343.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Chaleeee! You are ready for this situation, right my friends?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/175858568.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"That moment is gone, better be cool-oh. Now we are here, here.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/1029173550.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"We must be better now.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/130726935.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Akoa wei paa ara\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/1063880202.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Soul shots.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/121879310.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Trinity, you're welcome!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/619741613.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"This thing, kw\u03b5, settled.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/110036988.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"The barrel of the gun is always dark.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/685546798.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Hey, people, come on now. I'm anticipating my congratulations.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/391285698.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/584336914.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"MVP me-oh, was this a dream-oh, chale give me pinch-oh.\" <em>Laughs</em>",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/836135652.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/1073705091.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"It was never in doubt. Yeah my people-oh, yeah.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Astra/en/1003173747.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Breach": {
+  "agent": "breach",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Stand in my way, I dare you.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/802792402.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"These cowards aren't ready for me. No one ever is.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1063220625.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Time to take these arms for a spin.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1042440072.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Mow 'em down!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1043423377.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Too late.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/254572390.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"No match.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1021816430.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three out!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/317058296.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Not one left.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/563205729.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"What the hell were the rest of you doing?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1048566646.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Taunt me again.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1046117070.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Jobs' done. Pay up.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/1034644841.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"I always do the heavy lifting!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/191803177.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/168921286.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"We ran right over them.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Breach/en/341502175.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Brimstone": {
+  "agent": "brimstone",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"They think I'm an old dog? Heh. I'll show 'em just how many tricks I know.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/421554800.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Failure is the great teacher. So let's teach 'em something.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/1027736054.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Stay in range of my stim beacon, we'll mow them down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/1050979529.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"They've got nerve!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/202406402.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Down and out.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/1041849654.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Headshot.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/183441567.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/107141677.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"We got five, that's bingo.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/236315019.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Get off my lawn!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/50940315.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"That's why they put me in charge.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/477470271.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"I'll never retire.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/186841932.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"Who's the old dog now?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/936998022.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/311025029.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Fish in a barrel.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Brimstone/en/465405362.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Chamber": {
+  "agent": "chamber",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"You have good taste my friend.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/765052468.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"This killing is terrible business, but I always say: if I must do something, be the best.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/1009439464.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"It seems these strangers want me dead. Et bien, they are not the first.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/103105893.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Kick them out.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/135001540.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Not your best.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/145365151.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"So long!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/1065278594.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/13278699.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"I am sorry, we couldn't work out our differences.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/1026036903.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Did you enjoy the show? <em>Laughs</em> Of course you did.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/1025632817.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"You were in my way, so this, was inevitable.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/448420535.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/666652677.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Bravo, you all did beautifully!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Chamber/en/605161239.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Clove": {
+  "agent": "clove",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"I've got all the time in the world.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/864444586.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"You know what? If one of those lookalikes came over here and pretended to be one of ya. I'm not sure I'd be able to tell the difference.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/132099877.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"I reckon I'll take a kip after this. I've earned it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/164939215.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Ah shite, I lost my pet rock!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/1003111923.mp3",
+    "label": "Barrier going down"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"That's you, pal.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/153238872.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/482987345.mp3",
+    "label": "Triple kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"And I did that with a sore tummy!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/1025117785.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Do I get a prize for that, or what?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/213892083.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"We need to celebrate! Party in the danger room.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/387478222.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/470296582.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Were they born yesterday or something?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Clove/en/721783986.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Cypher": {
+  "agent": "cypher",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Nothing stays hidden from me, nothing.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/246514732.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"They're scared. I don't need cameras to see that.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/156208267.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"One of my cameras is broken! Oh wait. Okay, it's fine.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/156075165.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"We must shore up our defenses!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/1035161085.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Goodbye.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/1032881090.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Headshot.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/225775203.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three out of five.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/113243163.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Wiped clean.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/1050918970.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"You're dead and I didn't feel anything, not even a thrill.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/524154687.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"You copies are nothing.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/138862816.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Back to my workshop. Still much to be done.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/1045156722.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"I knew your every move, it was sad watching you scamper.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/67677848.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/4138087.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"You guys are so much better than my last team.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Cypher/en/358341049.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Deadlock": {
+  "agent": "deadlock",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Death is not an option.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/727149664.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Trust me, we can get this job done.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/102755977.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Make them regret their choice of profession.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/16743688.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Stay strong.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/1014017122.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"One less.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/18690702.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Headshot.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/1031637441.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/93929402.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"They're done.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/649362442.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Is there no one else?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/1004571610.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"This is our victory.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/394180376.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/269925357.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Perfectly done.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Deadlock/en/582382701.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Fade": {
+  "agent": "fade",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Everyone is afraid of something.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/963067082.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Don't worry everyone, I won't tell them what scares you. Promise.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/1000945065.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Pry open their mind. Find the weakness.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/164881262.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Make them fight for it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/1013485289.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Sleep.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/202736236.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Yat a\u015f\u015fa\u011f\u0131.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/252677127.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That makes three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/1014573293.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"You should have run.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/134438271.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Don't worry, I did all the work.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/764767501.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Did they really think they could scare me?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/198236453.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"The nightmare is over. For them at least.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/280577346.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/782350326.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Now this pleases me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Fade/en/30890552.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Gekko": {
+  "agent": "gekko",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Wachale g\u00fcey, my crew is coming through.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/464327068.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"We got my four friends, then five of us, that's nine! Man, we're stacked!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/142278062.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Hey, little man, pump us up. Let's hear it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/1055837379.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Dream big, make it happen.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/1041916288.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"I'll take it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/438596804.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Niice!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/256599475.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"I'm good for three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/716755233.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"You want more? Sorry buddy, it's over.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/1007683894.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Had to do it to 'em.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/1007007722.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Hey, GG y'all!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/217189444.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/449393558.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"This is what we dooooo!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Gekko/en/294741178.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Harbor": {
+  "agent": "harbor",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Together, we'll crush them.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/409447225.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Well. This looks dangerous, good thing we brought guns.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/1046280652.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"How's everyone feeling? Good? Because you look great.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/197986478.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"They're pretty air tight, huh?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/1031869351.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Stay down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/1028511476.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Oof.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/155041245.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Got three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/147613956.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Your journey ends here.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/1008917486.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"What did they expect?!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/455315178.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/256751941.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/420218840.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"After this, the first round of chai is on me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Harbor/en/1042849347.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Hush": {
+  "agent": "hush",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"All it takes is a little nudge.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/22223756.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"<em>Shudders.</em> The hair on the back of my neck is standing up. That's never a good sign. Safeties off, please!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/213034835.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"My old field partner used to say: <em>War is one in the mind.</em> He's dead now.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/103180783.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Perceive everything.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/341764194.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Piss off.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/179170685.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Oh no! Your brain!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/31880054.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/540839823.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Their brain will fully cease function in just a few minutes.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/909352544.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"<em>Sigh.</em> My back is sweating.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/256833237.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Oh, yeah! I have to call my mom!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/1008713619.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/670598786.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Yes! I hate losing field partners.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Hush/en/1005122054.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Iso": {
+  "agent": "iso",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Enough training, it's time.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/1043906359.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"One minute. Finding a playlist. <em>Humming</em> Ah! Perfect.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/343123643.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"I didn't bring a snack. Did anyone bring a snack?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/231148480.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"This is business.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/126614325.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Target down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/133971606.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"\u8d70\u597d\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/124840252.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Got three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/424205535.mp3",
+    "label": "Triple kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Five chances and they missed them all.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/828513117.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"That was satisfying.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/351759833.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/146086984.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/831490406.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"This is a very impressive group.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Iso/en/1021766878.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Jett": {
+  "agent": "jett",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Cool. Let's go.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/878055936.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Think you can keep up? Who am I kidding? You know you can't keep up.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/105069490.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Snacktime! <em>Snacking</em> Hm. Sorry. Only brought enough for me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/588153386.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Let's take at least one down with us.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/205568264.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Stay down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/174420904.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Uh. Gottem.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/1033789044.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/1016873275.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Yikes. That sucks.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/1061067730.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Ha! You should have seen your faces!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/983331696.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Oh my back hurts, everyone is so heavy.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/152356682.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Was that supposed to be a fight?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/1042603403.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"Oh, my back hurts! Everyone is so heavy!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/881769107.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/823859341.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Wow, so embarassing.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Jett/en/264871748.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "KayO": {
+  "agent": "kayo",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Let's do this.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/170847866.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"What's the plan? Send the robot in first? Smart choice.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/36120699.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Attack when they're suppressed. I cut their options, they make mistakes.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/250198553.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Whatever it takes.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/1019555060.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Canceled.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/102556129.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Catch this.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/27823311.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three kills.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/301111377.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Survivors rest, I'll clean up.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/1004639734.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"I was built for this!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/1021408329.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Go back to fighting bots.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/146982433.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"No rest required. Ready for deployment.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/168334943.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/663443395.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"That lot was trash.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/KayO/en/413364917.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Killjoy": {
+  "agent": "killjoy",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Relax, I've already thought of everything.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/1062625853.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"I built literally everything on this battlefield. Ja! Even the things that might kill us. What?! You want me to say sorry?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/128676700.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"I can hold an area pretty well myself. Make sure to cover the angles I can't.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/1062772814.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"We can keep them out.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/1010877796.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Terminated.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/1037456583.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Perfect accuracy.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/1027122973.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Got three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/636428298.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"You tried.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/199673064.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Go ahead, call me tech support again!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/191610684.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"I had to focus for a second.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/277749964.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"I knew it would all work out, it always does.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/1041778850.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/914854217.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/476920907.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Flawless, what did they expect?\" <em>Laughs</em>",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Killjoy/en/653455669.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Miks": {
+  "agent": "miks",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Let's make some noise!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/412410164.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"I'm telling you, we need a battle soundtrack! Imagine it: we drop in, guns up, all cinematic, and then <em>starts beatboxing</em>. Ugh, epic!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/187810022.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Trust each other. That's all.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/998131543.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Turn it up!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/135865759.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"That's it!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/774208266.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Nice one!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/419305978.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three is good!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/785347147.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Just... no.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/1002307194.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Do not disrespect my team!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/315713930.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Hell yeah! That's my team!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/647396422.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/405220719.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Ee, to je to. Now they know who we are.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Miks/en/81877825.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Neon": {
+  "agent": "neon",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Move or get zapped.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/5690468.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Radiant powers, deadly tech. I'm sure we won't break anything.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/287630246.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"My advice? Don't get shot.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/1033884847.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Let's go.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/28667464.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Back off.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/250819470.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Get lost!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/1051855601.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/822435095.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Not a chance!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/163524309.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"And don't come back!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/1010426750.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"I faced worse.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/325599561.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"What did I say? Don't mess with me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/351253333.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/339916695.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"We crushed it! Should we... Celebrate or something?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Neon/en/1058882220.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Omen": {
+  "agent": "omen",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"I am the beginning, I am the end.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/717842149.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Do they know what it means to be truly afraid? I'll show them.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/1035409505.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"I'll make them remember they're only human.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/168272580.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"I am not just a shadow.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/1042269954.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Give in.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/137643938.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"To dust.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/167374169.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three killed.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/735485044.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Petty things.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/33262483.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Worthless dead fools.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/671396028.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"You thought you could escape my nightmare?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/810867982.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Rest now. I will keep watch.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/711195570.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"You thought you could escape my nightmare?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/819777577.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/236308981.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"They died underneath our boots.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Omen/en/483310533.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Phoenix": {
+  "agent": "phoenix",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Just take a seat. I got this.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/384959611.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Keep a healthy distance, I burn hot.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/1053968159.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"This is crazy, it's feel like we've been doing this forever. Anyone else feel like that? Just me? Okay.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/1053565389.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"This one is for the fam back home.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/840056859.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"No you don't.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/338213642.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"They're super dead.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/1035280349.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Triple baby.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/688194919.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"You tried! <em>Laughs</em> I stopped that.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/180753689.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Mess with me again? Oh wait. You caaaan't.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/189196393.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Ooouh! That's going in an highlight reel for sure!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/564509456.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Aw man, I was just getting warmed up.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/1003733843.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/24209094.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"You get that on camera?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Phoenix/en/406341261.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Raze": {
+  "agent": "raze",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Yes! I'm pumped!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/632864455.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"You can take the girl out of Salvador but you'll never take the girl out of Salvador. Wait...\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/190614808.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"We're here because we're the best. Don't any of you forget that.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/213723043.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Ah! They don't have a chance.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/1017110721.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Snuffed out.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/1016469053.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Loosen up.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/1052553480.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three for me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/236774374.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Woo! Okay, take a break, guys.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/160092368.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Talk about collateral damage! Ah!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/202814779.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Don't mess with this baiana.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/150940272.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Gente! As colorful as carnaval.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/1025178861.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/428894859.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Ah... Now that was a work of art.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Raze/en/261930098.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Reyna": {
+  "agent": "reyna",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"They have no idea how heartless I am.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/847719523.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"These enemies have nothing special. Still human. Still mortal.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/1032179566.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"As much as this world hurt me, it's mine. And I will kill to defend it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/117253823.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"At least, they kept it interesting.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/220670489.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Hush.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/10119983.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Don't resist.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/196999645.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three souls.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/141606901.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"You were pitiful.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/136861729.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Bow before me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/325268218.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"My heart's racing.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/173096033.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"They stopped breathing? Excellent. Then we're done.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/190255022.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"If I act superior, it's because I am.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/48946453.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/209251814.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Such trash.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Reyna/en/421266354.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Sage": {
+  "agent": "sage",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"I am both shield and sword.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/119342169.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"I will defend you all with my power and with my life.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/124771404.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"I know what must be done.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/366646073.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Tip the balance in our favor.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/180147718.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Good attempt.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/1055136260.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Message sent.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/1042785968.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/898202186.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Your tactics failed.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/277531176.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Today, I was the sword.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/1029456913.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"I am not just your healer.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/137212572.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Now to mend what we have broken.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/209092805.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"Even death cannot stop me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/12566979.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/354478770.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"They have seen our power.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sage/en/668568959.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Skye": {
+  "agent": "skye",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Alright, where's the fight?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/452875258.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Remember everyone, if we survive, woodworking class tonight in the mess hall. Nimble hands, nimble minds.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/161340342.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"If you see one of my creatures, it's a good thing, alright? You'll figure out what they do eventually.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/344215715.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"We're not equals. Let's go.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/105058647.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Out.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/1010458013.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Done with.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/1034470979.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/343651250.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"I think that's it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/219093647.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"I can feel it. I can be so much more.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/40281328.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Ah. Now there's some serenity.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/1007066325.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"And that's full time! Good stuff.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/365313088.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"How did I get this powerful?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/715080201.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/271454960.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"In the words of our Sova, the pack, survives.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Skye/en/249307517.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Sova": {
+  "agent": "sova",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Wherever they run, I will find them.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/130865070.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"There is no retreat, not when annihilation is at stake. This is our day.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/107556654.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"A bow and arrow is old fashionned. But sometimes old ways are best.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/1028925292.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Keep them cornered.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/1013989996.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Enemy down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/200438871.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Bullseye.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/129947322.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three gone.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/248180811.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Be at rest.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/1015962828.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Is there no one left?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/128344029.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Do not hunt the hunter.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/190209623.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"I am not tired, are you?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/223040931.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"A little recognition is nice now and then, thank you.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/560709173.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/301121789.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"You all are wonderful.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Sova/en/150348561.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Tejo": {
+  "agent": "tejo",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"New weapons, same war.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/742419327.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"You know? I had a dream last night. We killed all of them and none of us died, I take it as a sign.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/1016835147.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Do what you're here to do and we won't have a problem.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/1072228503.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"By any means necessary.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/303017292.mp3",
+    "label": "Barrier going down"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Headshot.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/116140466.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/882079122.mp3",
+    "label": "Triple kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Now that brings back memories.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/1045630431.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Are we done? Good.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/457411494.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/241420772.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Is this a joke to them?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Tejo/en/576286433.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Veto": {
+  "agent": "veto",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"Give them nothing.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/280461185.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"They don't want this fight, they just don't know it yet.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/1073357102.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Watch them, sooner or later they will make a mistake. Capitalize on it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/1315511.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"No ego, no pride.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/229236566.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Gone cold.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/136543516.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"%Unsure%.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/1004770119.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three out.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/592406506.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Perimeter secured.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/196793025.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Do your Earth a favor, hit the range.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/716564857.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"%Unsure%! That is what we are meant for! C'est bien, l'\u00e9quipe !\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/145523032.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/1036466404.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"C'est bien ! Bruises and scrapes we can deal with.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Veto/en/1035653162.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Viper": {
+  "agent": "viper",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"No one can hold their breath forever.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/204662687.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"They are not important. Let's move through them. Like smoke through lungs.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/1070121253.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Remember, nobody's a hero when they're crying for air.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/1029491272.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"I will not lose my home again!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/1037738991.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"One down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/1023037130.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Dead fool.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/1023020569.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three down.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/666037777.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Well, you tried.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/296310090.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"You wanted a villain? I gave you a villain!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/707671649.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"If you want something done right, do it yourself.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/140313164.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"Hide the bodies, we weren't here.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/263561576.mp3",
+    "label": "Match win"
+   },
+   "match_win_mvp": {
+    "file": "match_win_mvp.mp3",
+    "quote": "\"I am your monster, you made me this way. Never forget that.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/748339415.mp3",
+    "label": "Match win, as MVP"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/1071586208.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"It's sad, really.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Viper/en/33831133.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Vyse": {
+  "agent": "vyse",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"All paths end with me.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/270637703.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"It's time. Remember your role. Keep your nerve. And if all else fails, send them my way.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/1067055838.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"They brought weapons made of metal? To kill me? Huh. Ironic.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/1034774448.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Move.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/108706731.mp3",
+    "label": "Barrier going down"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"Hush up.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/1030511179.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"That's three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/252817166.mp3",
+    "label": "Triple kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"If any of you mattered, you'd be alive.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/177090545.mp3",
+    "label": "Ace"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"That's one way of getting what you want, I suppose? I'll take it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/40084612.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/124573620.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"A team like this can do anything.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Vyse/en/201799821.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Waylay": {
+  "agent": "waylay",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"I don't try, I do.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/552605401.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"Remember if I spot any of you being stupid out there, I will kick your ass when we get back. And I kick hard.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/1022474013.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"\u0e17\u0e38\u0e01\u0e04\u0e19\u0e42\u0e2d\u0e40\u0e04\u0e19\u0e30? You all feeling good? We got this!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/509767121.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"Back at it.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/127363166.mp3",
+    "label": "Barrier going down"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"\u0e2d\u0e38\u0e4a\u0e22!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/477013670.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Got three!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/1022919799.mp3",
+    "label": "Triple kill"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"This team is shaping up into something special. Do you know that?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/150710501.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/1023304101.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Absolutely demolished.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Waylay/en/253530027.mp3",
+    "label": "Flawless round"
+   }
+  }
+ },
+ "Yoru": {
+  "agent": "yoru",
+  "events": {
+   "select": {
+    "file": "select.mp3",
+    "quote": "\"I'll fight anybody, I'll fight everybody.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/107320642.mp3",
+    "label": "Character select"
+   },
+   "match_start": {
+    "file": "match_start.mp3",
+    "quote": "\"These guys caught me in a mood. Bad luck for them.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/1034433401.mp3",
+    "label": "Match start"
+   },
+   "round_start": {
+    "file": "round_start.mp3",
+    "quote": "\"Move in after I strike. That's when they're weak.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/1046034143.mp3",
+    "label": "Round start"
+   },
+   "barrier_down": {
+    "file": "barrier_down.mp3",
+    "quote": "\"They want more of me? Fine.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/145082068.mp3",
+    "label": "Barrier going down"
+   },
+   "kill": {
+    "file": "kill.mp3",
+    "quote": "\"Die.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/161766801.mp3",
+    "label": "Kill"
+   },
+   "headshot": {
+    "file": "headshot.mp3",
+    "quote": "\"\u304f\u305f\u3070\u3063\u3066\u308d.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/213492167.mp3",
+    "label": "Headshot kill"
+   },
+   "triple": {
+    "file": "triple.mp3",
+    "quote": "\"Three.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/274554758.mp3",
+    "label": "Triple kill"
+   },
+   "last_kill": {
+    "file": "last_kill.mp3",
+    "quote": "\"Your biggest mistake was that you pissed me off.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/234664520.mp3",
+    "label": "Last kill"
+   },
+   "ace": {
+    "file": "ace.mp3",
+    "quote": "\"Send five more! We can do this again!\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/411898278.mp3",
+    "label": "Ace"
+   },
+   "clutch": {
+    "file": "clutch.mp3",
+    "quote": "\"Anyone else thinks they can kill a god?\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/705259392.mp3",
+    "label": "Clutch"
+   },
+   "match_win": {
+    "file": "match_win.mp3",
+    "quote": "\"I'm done here.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/1065332799.mp3",
+    "label": "Match win"
+   },
+   "death": {
+    "file": "death.mp3",
+    "quote": "",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/290770484.mp3",
+    "label": "Death"
+   },
+   "flawless": {
+    "file": "flawless.mp3",
+    "quote": "\"Well they sucked.\"",
+    "source": "https://kingdomarchives.com/uploads/voicelines/Yoru/en/342801819.mp3",
+    "label": "Flawless round"
+   }
+  }
+ }
+}
