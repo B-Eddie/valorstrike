@@ -1,0 +1,63 @@
+{
+ "map": "ascent",
+ "gq": "medium",
+ "root": "/workspace/work/qa/three/base_wt",
+ "errors": [],
+ "loadS": 48,
+ "cfg": {
+  "pr": 1,
+  "buf": [
+   1280,
+   720
+  ],
+  "gov": false,
+  "xs": {
+   "res": "retina",
+   "shd": "map",
+   "aa": true,
+   "lod": 40
+  }
+ },
+ "noop": 43,
+ "meas": [
+  {
+   "frames": 556,
+   "ftMean": 18.04,
+   "calls": 117,
+   "tris": 614020,
+   "xSimRun": 0.655,
+   "vmTick": 0.383,
+   "xVis": 1.144,
+   "xSolTick": 0.269,
+   "umw": 1.692,
+   "render:main": 8.359,
+   "loop": 11.996
+  },
+  {
+   "frames": 518,
+   "ftMean": 19.3,
+   "calls": 169,
+   "tris": 1083479,
+   "xSimRun": 0.747,
+   "vmTick": 0.305,
+   "xVis": 1.054,
+   "xSolTick": 0.249,
+   "umw": 1.582,
+   "render:main": 6.731,
+   "loop": 10.496
+  },
+  {
+   "frames": 422,
+   "ftMean": 23.46,
+   "calls": 267,
+   "tris": 2972259,
+   "xSimRun": 2.511,
+   "vmTick": 0.356,
+   "xVis": 1.484,
+   "xSolTick": 0.279,
+   "umw": 1.921,
+   "render:main": 10.05,
+   "loop": 16.155
+  }
+ ]
+}

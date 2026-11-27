@@ -1,0 +1,1097 @@
+{
+ "map": "bind",
+ "gq": "low",
+ "tag": "mlaneQ2",
+ "root": "/workspace/work/vs-lane-three",
+ "mode": "match",
+ "size": [
+  960,
+  540
+ ],
+ "errors": [],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebGLContextLost: WebGL context lost during page\n    at HTMLCanvasElement.<anonymous> (http://127.0.0.1:8961/:73:15)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED"
+ ],
+ "shots": {
+  "vandal_a0": {
+   "calls": 173,
+   "tris": 2707273,
+   "w": 960,
+   "h": 540,
+   "ms": 36576
+  },
+  "vandal_a1": {
+   "calls": 171,
+   "tris": 2701020,
+   "w": 960,
+   "h": 540,
+   "ms": 5400
+  },
+  "vandal_a2": {
+   "calls": 161,
+   "tris": 1510750,
+   "w": 960,
+   "h": 540,
+   "ms": 1934
+  },
+  "vandal_a3": {
+   "calls": 157,
+   "tris": 1287254,
+   "w": 960,
+   "h": 540,
+   "ms": 1861
+  },
+  "vandal_a4": {
+   "calls": 173,
+   "tris": 2699895,
+   "w": 960,
+   "h": 540,
+   "ms": 2315
+  },
+  "vandal_a5": {
+   "calls": 173,
+   "tris": 2669888,
+   "w": 960,
+   "h": 540,
+   "ms": 2339
+  },
+  "vandal_a6": {
+   "calls": 68,
+   "tris": 588707,
+   "w": 960,
+   "h": 540,
+   "ms": 2056
+  },
+  "vandal_a7": {
+   "calls": 97,
+   "tris": 735821,
+   "w": 960,
+   "h": 540,
+   "ms": 1422
+  },
+  "vandal_vm": {
+   "calls": 14,
+   "tris": 27332,
+   "w": 960,
+   "h": 540,
+   "ms": 276
+  },
+  "abil_a0": {
+   "calls": 238,
+   "tris": 2718891,
+   "w": 960,
+   "h": 540,
+   "ms": 6687
+  },
+  "abil_a1": {
+   "calls": 224,
+   "tris": 1522364,
+   "w": 960,
+   "h": 540,
+   "ms": 2788
+  },
+  "abil_a2": {
+   "calls": 238,
+   "tris": 2681506,
+   "w": 960,
+   "h": 540,
+   "ms": 3363
+  }
+ },
+ "cfg": {
+  "UU": 1,
+  "ROOT": "/workspace/work/vs-lane-three",
+  "sha": "13005d5e56f67606de7bc34ee8dfef027f0933db",
+  "W": 960,
+  "H": 540,
+  "VW": "1",
+  "map": "bind",
+  "gq": "low"
+ },
+ "uu": [
+  {
+   "file": "/workspace/work/vs-lane-three/vendor/three/three.min.js",
+   "matched": true,
+   "fn": "Et",
+   "bytesIn": 707152,
+   "bytesOut": 706897
+  }
+ ],
+ "rev": "170",
+ "uuProbe": "function Et(){const t=(globalThis.__u=(globalThis.__u||0)+1).toString(16).padStart(12,\"0\");return\"00000000-0000-4000-8000-\"+t} | __u=20945",
+ "pre": 1,
+ "loadS": 23,
+ "setup": {
+  "pr": 1,
+  "buf": [
+   960,
+   540
+  ],
+  "aa": false,
+  "shadow": false,
+  "shType": 2,
+  "tm": 4,
+  "tme": 1.05,
+  "out": "srgb",
+  "pcl": true
+ },
+ "setupInfo": {
+  "vandal": "{\"hid\":[\"Object3D\",\"Group\",\"Group\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\"],\"a0\":\"KAY/O:idle\",\"a1\":\"Reyna:idle\",\"a2\":\"Yoru:idle\",\"a3\":\"Gekko:idle\",\"a4\":\"Brimstone:idle\",\"a5\":\"Sova:idle\",\"a6\":\"Chamber:idle\",\"a7\":\"Tejo:idle\",\"a8\":\"Miks:idle\",\"vfDrop\":[],\"fpAct\":[\"FP_Core_AK_S0_IdlePose@0.013w1.00\",\"Idle@0.013w1.00\"],\"fp\":\"Vandal:prime.1:idle\",\"views\":8,\"cp\":{\"x\":0.75,\"y\":5.823362691700975,\"z\":70.5,\"gy\":4.223}}"
+ },
+ "loadout": {
+  "vandal_a0": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a1": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a2": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a3": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a4": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a5": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a6": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_a7": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "vandal_vm": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "abil_a0": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "abil_a1": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  },
+  "abil_a2": {
+   "xBotSeed": 4242,
+   "xbvSeed": 4242,
+   "XBVseed": 0,
+   "bots": [
+    [
+     "KAY/O",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Reyna",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Yoru",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Gekko",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Brimstone",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Sova",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Chamber",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Tejo",
+     "bought=Classic",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ],
+    [
+     "Miks",
+     "bought=Ghost",
+     "u.w=Vandal",
+     "xWeapOf=Vandal",
+     "held=Vandal",
+     "gunMesh=AK+RedDot"
+    ]
+   ]
+  }
+ },
+ "ms": 169033
+}

@@ -1,0 +1,72 @@
+mbaseQ1 vs mbaseQ2 vandal_a0: 25273 px bbox x457-940 y226-539
+mbaseQ1 vs mbaseQ2 vandal_a1: 25281 px bbox x498-940 y194-539
+mbaseQ1 vs mbaseQ2 vandal_a2: 28912 px bbox x475-940 y210-539
+mbaseQ1 vs mbaseQ2 vandal_a3: 26642 px bbox x156-940 y220-539
+mbaseQ1 vs mbaseQ2 vandal_a4: 25345 px bbox x376-940 y252-539
+mbaseQ1 vs mbaseQ2 vandal_a5: 25351 px bbox x475-940 y230-539
+mbaseQ1 vs mbaseQ2 vandal_a6: 24747 px bbox x565-940 y302-539
+mbaseQ1 vs mbaseQ2 vandal_a7: 26861 px bbox x426-940 y36-539
+mbaseQ1 vs mbaseQ2 vandal_vm: 24748 px bbox x565-940 y302-539
+mbaseQ1 vs mbaseQ2 abil_a0: 184981 px bbox x0-940 y0-539
+mbaseQ1 vs mbaseQ2 abil_a1: 118120 px bbox x267-959 y37-539
+mbaseQ1 vs mbaseQ2 abil_a2: 160798 px bbox x31-940 y47-539
+mlaneQ1 vs mlaneQ2 vandal_a0: 2805 px bbox x397-615 y225-327
+mlaneQ1 vs mlaneQ2 vandal_a1: 3797 px bbox x361-675 y193-331
+mlaneQ1 vs mlaneQ2 vandal_a2: 16539 px bbox x473-832 y209-470
+mlaneQ1 vs mlaneQ2 vandal_a3: 9257 px bbox x80-486 y202-532
+mlaneQ1 vs mlaneQ2 vandal_a4: 3336 px bbox x356-650 y251-399
+mlaneQ1 vs mlaneQ2 vandal_a5: 2852 px bbox x392-608 y228-405
+mlaneQ1 vs mlaneQ2 vandal_a6: 0 px
+mlaneQ1 vs mlaneQ2 vandal_a7: 45045 px bbox x422-780 y34-539
+mlaneQ1 vs mlaneQ2 vandal_vm: 0 px
+mlaneQ1 vs mlaneQ2 abil_a0: 167696 px bbox x0-644 y0-451
+mlaneQ1 vs mlaneQ2 abil_a1: 105818 px bbox x267-959 y37-470
+mlaneQ1 vs mlaneQ2 abil_a2: 136329 px bbox x31-664 y47-507
+mbaseQ1 vs mlaneQ1 vandal_a0: 27630 px bbox x457-940 y225-539
+mbaseQ1 vs mlaneQ1 vandal_a1: 28580 px bbox x364-940 y193-539
+mbaseQ1 vs mlaneQ1 vandal_a2: 41907 px bbox x473-940 y209-539
+mbaseQ1 vs mlaneQ1 vandal_a3: 34052 px bbox x127-940 y220-539
+mbaseQ1 vs mlaneQ1 vandal_a4: 28142 px bbox x357-940 y251-539
+mbaseQ1 vs mlaneQ1 vandal_a5: 27693 px bbox x403-940 y228-539
+mbaseQ1 vs mlaneQ1 vandal_a6: 24747 px bbox x565-940 y302-539
+mbaseQ1 vs mlaneQ1 vandal_a7: 69804 px bbox x422-940 y34-539
+mbaseQ1 vs mlaneQ1 vandal_vm: 24748 px bbox x565-940 y302-539
+mbaseQ1 vs mlaneQ1 abil_a0: 187201 px bbox x0-940 y0-539
+mbaseQ1 vs mlaneQ1 abil_a1: 132090 px bbox x267-959 y37-539
+mbaseQ1 vs mlaneQ1 abil_a2: 158279 px bbox x31-940 y47-539
+mbaseQ2 vs mlaneQ2 vandal_a0: 58 px bbox x397-611 y226-324
+mbaseQ2 vs mlaneQ2 vandal_a1: 122 px bbox x361-670 y199-322
+mbaseQ2 vs mlaneQ2 vandal_a2: 549 px bbox x475-817 y211-464
+mbaseQ2 vs mlaneQ2 vandal_a3: 1012 px bbox x80-483 y202-532
+mbaseQ2 vs mlaneQ2 vandal_a4: 93 px bbox x356-645 y252-399
+mbaseQ2 vs mlaneQ2 vandal_a5: 122 px bbox x392-602 y229-320
+mbaseQ2 vs mlaneQ2 vandal_a6: 0 px
+mbaseQ2 vs mlaneQ2 vandal_a7: 1466 px bbox x426-778 y36-535
+mbaseQ2 vs mlaneQ2 vandal_vm: 0 px
+mbaseQ2 vs mlaneQ2 abil_a0: 164647 px bbox x0-644 y0-451
+mbaseQ2 vs mlaneQ2 abil_a1: 87334 px bbox x267-959 y37-464
+mbaseQ2 vs mlaneQ2 abil_a2: 133558 px bbox x31-664 y47-507
+mbaseQ2 vs mlaneQ1 vandal_a0: 2803 px bbox x457-615 y225-327
+mbaseQ2 vs mlaneQ1 vandal_a1: 3793 px bbox x364-675 y193-331
+mbaseQ2 vs mlaneQ1 vandal_a2: 16517 px bbox x473-832 y209-470
+mbaseQ2 vs mlaneQ1 vandal_a3: 9070 px bbox x127-486 y220-450
+mbaseQ2 vs mlaneQ1 vandal_a4: 3328 px bbox x357-650 y251-399
+mbaseQ2 vs mlaneQ1 vandal_a5: 2845 px bbox x403-608 y228-405
+mbaseQ2 vs mlaneQ1 vandal_a6: 0 px
+mbaseQ2 vs mlaneQ1 vandal_a7: 45025 px bbox x422-780 y34-539
+mbaseQ2 vs mlaneQ1 vandal_vm: 0 px
+mbaseQ2 vs mlaneQ1 abil_a0: 165738 px bbox x0-644 y0-451
+mbaseQ2 vs mlaneQ1 abil_a1: 100565 px bbox x267-959 y37-470
+mbaseQ2 vs mlaneQ1 abil_a2: 136238 px bbox x31-664 y47-507
+mbaseQ1 vs mlaneQ2 vandal_a0: 25240 px bbox x397-940 y232-539
+mbaseQ1 vs mlaneQ2 vandal_a1: 25209 px bbox x361-940 y194-539
+mbaseQ1 vs mlaneQ2 vandal_a2: 28947 px bbox x492-940 y210-539
+mbaseQ1 vs mlaneQ2 vandal_a3: 27512 px bbox x80-940 y202-539
+mbaseQ1 vs mlaneQ2 vandal_a4: 25278 px bbox x356-940 y263-539
+mbaseQ1 vs mlaneQ2 vandal_a5: 25403 px bbox x392-940 y229-539
+mbaseQ1 vs mlaneQ2 vandal_a6: 24747 px bbox x565-940 y302-539
+mbaseQ1 vs mlaneQ2 vandal_a7: 25490 px bbox x433-940 y41-539
+mbaseQ1 vs mlaneQ2 vandal_vm: 24748 px bbox x565-940 y302-539
+mbaseQ1 vs mlaneQ2 abil_a0: 189053 px bbox x0-940 y0-539
+mbaseQ1 vs mlaneQ2 abil_a1: 122166 px bbox x267-959 y37-539
+mbaseQ1 vs mlaneQ2 abil_a2: 162822 px bbox x32-940 y47-539

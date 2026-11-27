@@ -1,0 +1,63 @@
+{
+ "map": "ascent",
+ "gq": "medium",
+ "root": "/workspace/work/vs-lane-three",
+ "errors": [],
+ "loadS": 51,
+ "cfg": {
+  "pr": 1,
+  "buf": [
+   1280,
+   720
+  ],
+  "gov": false,
+  "xs": {
+   "res": "retina",
+   "shd": "map",
+   "aa": true,
+   "lod": 40
+  }
+ },
+ "noop": 43,
+ "meas": [
+  {
+   "frames": 231,
+   "ftMean": 43.43,
+   "calls": 73,
+   "tris": 660470,
+   "xSimRun": 7.294,
+   "vmTick": 0.518,
+   "xVis": 2.204,
+   "xSolTick": 1.033,
+   "umw": 2.03,
+   "render:main": 9.353,
+   "loop": 22.535
+  },
+  {
+   "frames": 204,
+   "ftMean": 49.1,
+   "calls": 73,
+   "tris": 520344,
+   "xSimRun": 6.133,
+   "vmTick": 0.474,
+   "xVis": 2.45,
+   "xSolTick": 1.142,
+   "umw": 2.109,
+   "render:main": 8.343,
+   "loop": 20.983
+  },
+  {
+   "frames": 286,
+   "ftMean": 35.26,
+   "calls": 87,
+   "tris": 722489,
+   "xSimRun": 3.517,
+   "vmTick": 0.464,
+   "xVis": 1.812,
+   "xSolTick": 0.419,
+   "umw": 2.017,
+   "render:main": 8.759,
+   "loop": 16.86
+  }
+ ]
+}

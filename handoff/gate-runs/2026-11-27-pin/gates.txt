@@ -1,0 +1,20 @@
+# Gate run 2026-11-27-pin
+# PRODUCT tested: LANE = 13005d5e56f67606de7bc34ee8dfef027f0933db content (/workspace/work/vs-lane-three, detached HEAD 13005d5e; git diff --stat 13005d5e 3065a55c touches only handoff/ -> product identical at 3065a55c)
+# BASE = main e2c14eda1cfc339be9cb8c90c22116c26451e3ef (/workspace/work/qa/three/base_wt)
+# HARNESS = 3065a55cdeedb0032fe78c772de2d23caeb78e68 (handoff/qa/three/h.cjs + js/agents_setup.js copied over qa/three for the match runs; all other harness files byte-identical to 3065a55c)
+# CONFIG match: MAP=bind GQ=low 960x540 UU=1 VW=1 WEAP=vandal SETTLE=3 PRE=runmatch.sh (s=777 LCG) ; xBotSeed=4242 (pin) ; STEPS=node:loadout_probe.cjs (read-only observer -> agents.cjs)
+# CONFIG bot_feel: lane, UU=1, NODE_OPTIONS=--require handoff/qa/botfeel/uu_hook.cjs
+# CONFIG perf: QA-README s7, NOOP-GL, MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=qa/cpu/lane.cjs, order base1 lane1 base2 lane2, one session
+[2026-11-27 09:42:49 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 /workspace/work/qa/gates5/runmatchQ.sh bind low 960 540 mbaseQ1 /workspace/work/qa/three/base_wt (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 09:46:19 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 /workspace/work/qa/gates5/runmatchQ.sh bind low 960 540 mlaneQ1 /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 09:49:10 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 /workspace/work/qa/gates5/runmatchQ.sh bind low 960 540 mbaseQ2 /workspace/work/qa/three/base_wt (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 09:52:01 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 /workspace/work/qa/gates5/runmatchQ.sh bind low 960 540 mlaneQ2 /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 09:52:17 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseQ1 mbaseQ2
+[2026-11-27 09:52:21 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mlaneQ1 mlaneQ2
+[2026-11-27 09:52:25 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseQ1 mlaneQ1
+[2026-11-27 09:52:28 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseQ2 mlaneQ2
+[2026-11-27 09:55:54 UTC] exit=0 :: cd /workspace/work/vs-lane-three && UU=1 UU_LOG=/workspace/work/qa/gates5/botfeel/uu_lane.log NODE_OPTIONS='--require /workspace/work/vs-lane-three/handoff/qa/botfeel/uu_hook.cjs' timeout 1500 node work/test_bot_feel_offline.cjs
+[2026-11-27 09:58:20 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/qa/three/base_wt MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates5/perf/perf_base1.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 10:01:42 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/vs-lane-three MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates5/perf/perf_lane1.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 10:04:13 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/qa/three/base_wt MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates5/perf/perf_base2.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 10:07:06 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/vs-lane-three MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates5/perf/perf_lane2.json (attempt 0) [RC 0 meas=3]

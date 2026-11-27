@@ -1,0 +1,38 @@
+11s boot
+62s match loaded 51s
+70s cfg {"pr":1,"buf":[1280,720],"gov":false,"xs":{"res":"retina","shd":"map","aa":true,"lod":40}}
+70s noop 43
+74s warm frames/3s 0
+78s warm frames/3s 0
+81s warm frames/3s 0
+84s warm frames/3s 0
+87s warm frames/3s 0
+91s warm frames/3s 0
+94s warm frames/3s 0
+97s warm frames/3s 0
+102s warm frames/3s 0
+106s warm frames/3s 4
+109s warm frames/3s 0
+112s warm frames/3s 0
+115s warm frames/3s 0
+118s warm frames/3s 0
+123s warm frames/3s 0
+126s warm frames/3s 0
+129s warm frames/3s 0
+132s warm frames/3s 0
+135s warm frames/3s 11
+138s warm frames/3s 20
+141s warm frames/3s 24
+144s warm frames/3s 20
+147s warm frames/3s 25
+150s warm frames/3s 22
+153s warm frames/3s 28
+156s warm frames/3s 30
+159s warm frames/3s 25
+162s warm frames/3s 31
+165s warm frames/3s 38
+169s warm frames/3s 66
+179s meas {"frames":231,"ftMean":43.43,"calls":73,"tris":660470,"xSimRun":7.294,"vmTick":0.518,"xVis":2.204,"xSolTick":1.033,"umw":2.03,"render:main":9.353,"loop":22.535}
+189s meas {"frames":204,"ftMean":49.1,"calls":73,"tris":520344,"xSimRun":6.133,"vmTick":0.474,"xVis":2.45,"xSolTick":1.142,"umw":2.109,"render:main":8.343,"loop":20.983}
+199s meas {"frames":286,"ftMean":35.26,"calls":87,"tris":722489,"xSimRun":3.517,"vmTick":0.464,"xVis":1.812,"xSolTick":0.419,"umw":2.017,"render:main":8.759,"loop":16.86}
+200s done

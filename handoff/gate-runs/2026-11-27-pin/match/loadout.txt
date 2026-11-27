@@ -1,0 +1,46 @@
+Loadout evidence (read-only observer loadout_probe.cjs, evaluated with the loop frozen before every shot).
+bought = FV.bs[name].w (pistol-round buy, driven by xbvSeed); u.w / xWeapOf = logic weapon after VW=1 override; held = M.w of the 3D held model; gunMesh = GN_* mesh prefixes under M.gun (AK=Vandal, Luger(+Silencer)=Ghost).
+
+mbaseQ1: 12 shots logged, 1 distinct snapshot(s); xBotSeed=4242 xbvSeed()=4242 XBV.seed=0 (0 = the Math.random fallback never ran)
+  KAY/O  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Reyna  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Yoru  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Gekko  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Brimstone  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Sova  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Chamber  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Tejo  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Miks  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+
+mlaneQ1: 12 shots logged, 1 distinct snapshot(s); xBotSeed=4242 xbvSeed()=4242 XBV.seed=0 (0 = the Math.random fallback never ran)
+  KAY/O  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Reyna  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Yoru  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Gekko  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Brimstone  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Sova  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Chamber  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Tejo  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Miks  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+
+mbaseQ2: 12 shots logged, 1 distinct snapshot(s); xBotSeed=4242 xbvSeed()=4242 XBV.seed=0 (0 = the Math.random fallback never ran)
+  KAY/O  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Reyna  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Yoru  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Gekko  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Brimstone  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Sova  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Chamber  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Tejo  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Miks  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+
+mlaneQ2: 12 shots logged, 1 distinct snapshot(s); xBotSeed=4242 xbvSeed()=4242 XBV.seed=0 (0 = the Math.random fallback never ran)
+  KAY/O  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Reyna  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Yoru  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Gekko  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Brimstone  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Sova  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Chamber  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Tejo  bought=Classic  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot
+  Miks  bought=Ghost  u.w=Vandal  xWeapOf=Vandal  held=Vandal  gunMesh=AK+RedDot

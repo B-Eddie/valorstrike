@@ -1,0 +1,10 @@
+base3md root /workspace/work/qa/three/base_wt noop 43 fail None errors 0 RC 0
+  meas0: frames 469 ftMean 21.36 loop 14.199 render:main 9.444 umw 2.075 xSimRun 0.964 calls 119 tris 634198
+  meas1: frames 470 ftMean 21.31 loop 11.823 render:main 7.671 umw 2.039 xSimRun 0.816 calls 143 tris 777290
+  meas2: frames 367 ftMean 27.25 loop 16.749 render:main 8.98 umw 1.816 xSimRun 3.658 calls 255 tris 2722855
+  mean of 3: ftMean 23.307 loop 14.257 render:main 8.698 umw 1.977  | ftMean min 21.31 max 27.25 sd 3.415
+lane3md root /workspace/work/vs-lane-three noop 43 fail None errors 0 RC 0
+  meas0: frames 135 ftMean 73.82 loop 21.233 render:main 9.21 umw 2.901 xSimRun 7.411 calls 73 tris 609922
+  meas1: frames 129 ftMean 77.64 loop 28.222 render:main 8.91 umw 1.961 xSimRun 11.327 calls 85 tris 662244
+  meas2: frames 181 ftMean 56.17 loop 19.211 render:main 8.746 umw 1.622 xSimRun 4.845 calls 79 tris 619356
+  mean of 3: ftMean 69.21 loop 22.889 render:main 8.955 umw 2.161  | ftMean min 56.17 max 77.64 sd 11.453

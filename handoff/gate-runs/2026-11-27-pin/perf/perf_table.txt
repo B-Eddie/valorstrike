@@ -1,0 +1,24 @@
+base1 root /workspace/work/qa/three/base_wt fail None errors 0 RC 0
+  meas0: frames 479 ftMean 20.98 loop 11.075 render:main 7.097 umw 1.651 xSimRun 0.748 calls 115 tris 551614
+  meas1: frames 534 ftMean 18.73 loop 11.324 render:main 7.645 umw 1.742 xSimRun 0.691 calls 228 tris 1790530
+  meas2: frames 365 ftMean 27.53 loop 20.798 render:main 11.276 umw 1.741 xSimRun 5.256 calls 228 tris 2716240
+  mean of 3: ftMean 22.413 loop 14.399 render:main 8.673 umw 1.711  | ftMean min 18.73 max 27.53 sd 4.572
+lane1 root /workspace/work/vs-lane-three fail None errors 0 RC 0
+  meas0: frames 231 ftMean 43.43 loop 22.535 render:main 9.353 umw 2.03 xSimRun 7.294 calls 73 tris 660470
+  meas1: frames 204 ftMean 49.1 loop 20.983 render:main 8.343 umw 2.109 xSimRun 6.133 calls 73 tris 520344
+  meas2: frames 286 ftMean 35.26 loop 16.86 render:main 8.759 umw 2.017 xSimRun 3.517 calls 87 tris 722489
+  mean of 3: ftMean 42.597 loop 20.126 render:main 8.818 umw 2.052  | ftMean min 35.26 max 49.1 sd 6.958
+base2 root /workspace/work/qa/three/base_wt fail None errors 0 RC 0
+  meas0: frames 556 ftMean 18.04 loop 11.996 render:main 8.359 umw 1.692 xSimRun 0.655 calls 117 tris 614020
+  meas1: frames 518 ftMean 19.3 loop 10.496 render:main 6.731 umw 1.582 xSimRun 0.747 calls 169 tris 1083479
+  meas2: frames 422 ftMean 23.46 loop 16.155 render:main 10.05 umw 1.921 xSimRun 2.511 calls 267 tris 2972259
+  mean of 3: ftMean 20.267 loop 12.882 render:main 8.38 umw 1.732  | ftMean min 18.04 max 23.46 sd 2.836
+lane2 root /workspace/work/vs-lane-three fail None errors 0 RC 0
+  meas0: frames 223 ftMean 44.99 loop 21.37 render:main 9.517 umw 2.979 xSimRun 6.434 calls 75 tris 614332
+  meas1: frames 235 ftMean 42.84 loop 21.123 render:main 9.769 umw 2.56 xSimRun 6.072 calls 77 tris 521056
+  meas2: frames 275 ftMean 36.48 loop 19.17 render:main 9.931 umw 2.802 xSimRun 4.056 calls 108 tris 1026343
+  mean of 3: ftMean 41.437 loop 20.554 render:main 9.739 umw 2.78  | ftMean min 36.48 max 44.99 sd 4.425
+
+base (2 runs): ftMean 21.34 [20.267..22.413] loop 13.64 [12.882..14.399] render:main 8.527 [8.38..8.673] umw 1.722 [1.711..1.732]
+lane (2 runs): ftMean 42.017 [41.437..42.597] loop 20.34 [20.126..20.554] render:main 9.279 [8.818..9.739] umw 2.416 [2.052..2.78]
+lane - base: ftMean +20.677 (+96.9%) loop +6.700 (+49.1%) render:main +0.752 (+8.8%) umw +0.694 (+40.3%)
