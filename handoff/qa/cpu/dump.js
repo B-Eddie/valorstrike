@@ -1,0 +1,6 @@
+JSON.stringify((()=>{const C=NM.current,mg=C&&C.M&&C.M.g;const units=new Set();for(const b of bots.concat(allies))if(b&&b.g)units.add(b.g);
+const st=(root)=>{let obj=0,auto=0,inv=0,mesh=0,fcOff=0,wau=0;const w=(o,hid)=>{obj++;if(o.matrixAutoUpdate)auto++;if(o.matrixWorldAutoUpdate===false)wau++;const h=hid||!o.visible;if(h)inv++;if(o.isMesh&&o.frustumCulled===false)fcOff++;if(o.isMesh)mesh++;for(const c of o.children)w(c,h);};w(root,false);return {obj,auto,inv,mesh,fcOff,wau};};
+const top=scene.children.map(c=>{const s=st(c);return [c.name||c.type,c.type,c.visible,c===mg?'MAP':units.has(c)?'AGENT':c===camera?'CAM':'',s];}).sort((a,b)=>b[4].obj-a[4].obj);
+const cam=camera.children.map(c=>[c.name||c.type,c.visible,st(c)]);
+const fc={};scene.traverse(o=>{if(o.isMesh&&o.frustumCulled===false){let p=o,k='other';for(;p;p=p.parent){if(p===mg){k='map';break;}if(units.has(p)){k='agent';break;}if(p===camera){k='cam';break;}}const key=k+':'+(o.isSkinnedMesh?'skinned':o.isInstancedMesh?'inst':'mesh')+':'+(o.name||'').replace(/[#@0-9].*$/,'').slice(0,24);fc[key]=(fc[key]||0)+1;}});
+return {scene:{auto:scene.matrixAutoUpdate,pos:scene.position.toArray(),rot:scene.rotation.toArray()},top:top.slice(0,60),ntop:scene.children.length,cam,fc};})())

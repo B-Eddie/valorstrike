@@ -1,0 +1,50 @@
+Jett programs 0 textures 1 charges C/Q/E/ult before C, Q, E, X and at the end: 2/1/1/8 1/1/1/8 1/0/1/8 1/0/0/8 1/0/0/0
+Phoenix programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/1/2/7 0/1/2/7 0/0/2/7 0/0/1/7 0/0/1/0
+Sova programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/2/1/8 0/2/1/8 0/2/1/8 0/2/0/8 0/2/0/0
+Sage programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/2/1/7 0/2/1/7 0/1/1/7 0/1/1/7 0/1/1/7
+Sage: bench casts not landed (known, open) - program / texture check only
+Reyna programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 2/2/1/7 1/2/1/7 1/2/1/7 1/2/1/7 1/2/1/0
+Omen programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 2/1/2/7 1/1/2/7 1/0/2/7 1/0/1/7 1/0/1/0
+Killjoy programs 1 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 2/1/1/9 1/1/1/9 1/0/1/9 1/0/0/9 1/0/0/0
+Raze programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/2/1/8 0/2/1/8 0/1/1/8 0/1/0/8 0/1/0/0
+Skye programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/1/2/8 0/1/2/8 0/0/2/8 0/0/1/8 0/0/1/0
+Breach programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/2/1/8 1/2/1/8 1/2/1/8 1/2/1/8 1/2/1/0
+Cypher programs 0 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 2/2/1/7 2/2/1/7 2/1/1/7 2/1/1/7 2/1/1/7
+Chamber programs 1 textures 0 charges C/Q/E/ult before C, Q, E, X and at the end: 1/8/1/8 0/8/1/8 0/7/1/8 0/6/1/8 0/6/1/0
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Jett: 1 texture upload(s) on the first casts: ["Sprite{spr}<Group<Scene | El 64x64"]
+Killjoy: 1 new program(s) on the first casts: ["Mesh<Group<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]
+Chamber: 1 new program(s) on the first casts: ["Mesh<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]
++ actual - expected
+
++ [
++   'Jett: 1 texture upload(s) on the first casts: ["Sprite{spr}<Group<Scene | El 64x64"]',
++   'Killjoy: 1 new program(s) on the first casts: ["Mesh<Group<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]',
++   'Chamber: 1 new program(s) on the first casts: ["Mesh<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]'
++ ]
+- []
+
+    at Object.<anonymous> (/workspace/work/qa/cpu/base_wt/work/test_ability_first_cast_warm.cjs:25:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'Jett: 1 texture upload(s) on the first casts: ["Sprite{spr}<Group<Scene | El 64x64"]',
+    'Killjoy: 1 new program(s) on the first casts: ["Mesh<Group<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]',
+    'Chamber: 1 new program(s) on the first casts: ["Mesh<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.5

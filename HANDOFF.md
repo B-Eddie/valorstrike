@@ -66,6 +66,9 @@ Plan:
 4. Squash, rebase, fast-forward push to main. Then batching.
 5. Other backlog: bot brain beyond pathing, bot ragdoll cold path, and the missing Valorant sound cues.
 
+## QA gates
+Exact harness files and commands: `handoff/QA-README.md` (originals in `handoff/qa/`).
+
 ## Where things live
 - Repo: github.com/B-Eddie/valorstrike. Local clone `/workspace/work/valorstrike`, lane worktree `/workspace/work/vs-lane-three`.
 - Notes: `handoff/qa/three/PROGRESS.md` (copied from `/workspace/work/qa/three/`). Full screenshots (3.7 GB) are only on the work box.

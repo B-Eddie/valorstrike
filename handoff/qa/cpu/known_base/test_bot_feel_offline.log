@@ -1,0 +1,15 @@
+1. direct: back-off toward the peek spot 0.555,0.832, away 0,1, unsighted hold ok
+2. direct: peek kinds (1 jiggle / 2 wide / 3 tight / 4 hold) {"2":258,"4":42}, vs an Operator {"1":109,"4":41}, hold {"still":1.1,"after":3}
+3. direct: trade the killer [0,0], its spot known, peeks {"2":40}, post-kill reaction 0.231,0.352
+4. direct: walk [true,true,false,false,false]
+5. direct: pre-peek {"ph":"peek","dx":12,"dz":0}, none into nothing, team gap true,false,true, Aftershock [null,[0,0],null], flash on sight 10.5 %
+1. live: reload samples 122, in an enemy's sight 13.9 %, backing away 23.5 % of those
+AssertionError [ERR_ASSERTION]: a reload in an enemy's sight is spent backing away (23.5 % >= 30 %, above every 09a42d4 seed; 09a42d4 seeds 3/5/7: 7 / 23 / 8 %)
+    at /workspace/work/qa/cpu/base_wt/work/test_bot_feel_offline.cjs:116:16 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

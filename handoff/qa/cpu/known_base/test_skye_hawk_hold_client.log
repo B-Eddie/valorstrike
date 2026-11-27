@@ -1,0 +1,17 @@
+evalmachine.<anonymous>:24
+  else if (q.st === "rel") { const nx = q.nx, fb = xEqFb0(); q.nx = null; if (xEqCast(q)) { if (xEqHold(q) === "hawk" && RS.hk && RS.hk.hold) { q.st = "steer"; q.t = 0; } else { q.st = "rec"; q.t = q.rec = xUneqT(q.k); } } else { q.st = "ready"; q.t = 0; xEqFb1(q.k, fb); } if (nx) xEqReplay(nx); }
+                                                   ^
+
+ReferenceError: xEqFb0 is not defined
+    at Object.xEqTick (evalmachine.<anonymous>:24:52)
+    at run (/workspace/work/qa/cpu/base_wt/work/test_skye_hawk_hold_client.cjs:9:190)
+    at Object.<anonymous> (/workspace/work/qa/cpu/base_wt/work/test_skye_hawk_hold_client.cjs:10:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.5
