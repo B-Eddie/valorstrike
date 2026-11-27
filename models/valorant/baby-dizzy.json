@@ -1,0 +1,84 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/baby-dizzy/",
+    "Name": "baby-dizzy.glb"
+  },
+  "Settings": {
+    "FOV": 12.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 1.5
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 90,
+        "Y": -90,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.1,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Cast",
+      "Animation": "FP_AggroBot_S0_E_BabyZamboni_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_E",
+      "Translatable": "Equip",
+      "Animation": "FP_AggroBot_S0_E_BabyZamboni_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_E_BabyZamboni_Equip",
+      "Translatable": "Equip",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_E_BabyZamboni_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_E_BabyZamboni_Cast",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Aggrobot_S0_BabyZamboni_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/baby-dizzy/textures/df.png",
+      "ORM": "../uploads/models/abilities/baby-dizzy/textures/orm.png",
+      "EM": "../uploads/models/abilities/baby-dizzy/textures/em.png",
+      "NM": "../uploads/models/abilities/baby-dizzy/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Aggrobot_S0_BabyZamboni_NonJelly_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/baby-dizzy/textures/df.png",
+      "ORM": "../uploads/models/abilities/baby-dizzy/textures/orm.png",
+      "EM": "../uploads/models/abilities/baby-dizzy/textures/em.png",
+      "NM": "../uploads/models/abilities/baby-dizzy/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

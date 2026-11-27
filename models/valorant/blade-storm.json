@@ -1,0 +1,207 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/blade-storm/",
+    "Name": "blade-storm.glb"
+  },
+  "Settings": {
+    "FOV": 22,
+    "FireRate": 6,
+    "FireRateAlt": 2.222,
+    "EquipLength": 0.5,
+    "ComboTime": 5,
+    "AutomaticWeapon": true,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Bone": "Camera",
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.02,
+    "UseFPIdle": true
+  },
+  "FPExclusiveObjects": [
+    "AB_Wushu_S0_X_Staticmeshmo",
+    "AB_Wushu_S0_X_Staticmeshmo001",
+    "AB_Wushu_S0_X_Staticmeshmo002",
+    "AB_Wushu_S0_X_Staticmeshmo003"
+  ],
+  "Constraints": [
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Knife1",
+      "TargetObject": "AB_Wushu_S0_X_Skelmeshao",
+      "SourceObject": "AB_Wushu_S0_X_Staticmeshmo",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Knife2",
+      "TargetObject": "AB_Wushu_S0_X_Skelmeshao",
+      "SourceObject": "AB_Wushu_S0_X_Staticmeshmo001",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Knife3",
+      "TargetObject": "AB_Wushu_S0_X_Skelmeshao",
+      "SourceObject": "AB_Wushu_S0_X_Staticmeshmo002",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Knife4",
+      "TargetObject": "AB_Wushu_S0_X_Skelmeshao",
+      "SourceObject": "AB_Wushu_S0_X_Staticmeshmo003",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    {
+      "Type": "ObjectToBone",
+      "Bone": "Knife5",
+      "TargetObject": "AB_Wushu_S0_X_Skelmeshao",
+      "SourceObject": "AB_Wushu_S0_X_Staticmeshmo004",
+      "Offset": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      "Rotation": {
+        "X": 90,
+        "Y": 0,
+        "Z": 0
+      }
+    }
+  ],
+  "Keybinds": [
+    {
+      "Type": "CLICK_MELEE",
+      "Translatable": "Attack",
+      "Sequence": [
+        "FP_Wushu_S0_X_Attack01",
+        "FP_Wushu_S0_X_Attack02",
+        "FP_Wushu_S0_X_Attack03",
+        "FP_Wushu_S0_X_Attack04",
+        "FP_Wushu_S0_X_Attack05"
+      ]
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Alt Attack",
+      "Animation": "FP_Wushu_S0_X_RightClickAttack"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_X",
+      "Translatable": "Equip",
+      "Animation": "FP_Wushu_S0_X_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Attack01",
+      "Translatable": "Attack 1",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Attack02",
+      "Translatable": "Attack 2",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Attack03",
+      "Translatable": "Attack 3",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Attack04",
+      "Translatable": "Attack 4",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Wushu_S0_X_Attack05",
+      "Translatable": "Attack 5",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Wushu_S0_X_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/blade-storm/textures/df.png",
+      "ORM": "../uploads/models/abilities/blade-storm/textures/orm.png",
+      "EM": "../uploads/models/abilities/blade-storm/textures/em.png",
+      "NM": "../uploads/models/abilities/blade-storm/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

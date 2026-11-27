@@ -1,0 +1,88 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/gravnet/",
+    "Name": "gravnet.glb"
+  },
+  "Settings": {
+    "FOV": 12.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 1.5
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.06,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Cable_S0_4_NetToss_OverhandThrow"
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Short Throw",
+      "Animation": "FP_Cable_S0_4_NetToss_UnderHandThrow"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_E",
+      "Translatable": "Equip",
+      "Animation": "FP_Cable_S0_4_NetToss_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_4_NetToss_Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_4_NetToss_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Cable_S0_Grenade_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/gravnet/textures/df.png",
+      "ORM": "../uploads/models/abilities/gravnet/textures/orm.png",
+      "EM": "../uploads/models/abilities/gravnet/textures/em.png",
+      "NM": "../uploads/models/abilities/gravnet/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Cable_S0_Grenade_GlassMat_MI",
+      "Type": "GlassWithNM",
+      "NM": "../uploads/models/abilities/gravnet/textures/nm.png",
+      "NormalScale": {
+        "X": 1,
+        "Y": 1
+      },
+      "RepeatNormal": false,
+      "Opacity": 0.2,
+      "Metallic": 1,
+      "Roughness": 0.15,
+      "Color": {
+        "R": 0,
+        "G": 0,
+        "B": 0
+      }
+    }
+  ]
+}

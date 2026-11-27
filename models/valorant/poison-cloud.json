@@ -1,0 +1,73 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/poison-cloud/",
+    "Name": "poison-cloud.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.1
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Core_Grenade_OverhandThrow"
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Short Throw",
+      "Animation": "FP_Core_Grenade_UnderhandThrow"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_Q",
+      "Translatable": "Equip",
+      "Animation": "FP_Pandemic_S0_4_Grenade_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Pandemic_S0_4_Grenade2_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Pandemic_S1_4_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/poison-cloud/textures/df.png",
+      "ORM": "../uploads/models/abilities/poison-cloud/textures/orm.png",
+      "EM": "../uploads/models/abilities/poison-cloud/textures/em.png",
+      "NM": "../uploads/models/abilities/poison-cloud/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "Pandemic_Emissive_Gem_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/poison-cloud/textures/emissive_df.png",
+      "ORM": "../uploads/models/abilities/poison-cloud/textures/emissive_orm.png",
+      "EM": "../uploads/models/abilities/poison-cloud/textures/emissive_df.png",
+      "NM": "../uploads/models/abilities/poison-cloud/textures/emissive_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

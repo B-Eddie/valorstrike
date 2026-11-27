@@ -1,0 +1,88 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/headhunter/",
+    "Name": "headhunter.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "FireRate": 4,
+    "EquipLength": 0.3,
+    "CameraPosition": {
+      "X": -0.136993,
+      "Y": 0,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": -0.136993,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.11,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Fire",
+      "Animation": "FP_Deadeye_S0_Q_DestabilizePistol_Fire"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_Q",
+      "Translatable": "Equip",
+      "Animation": "FP_Deadeye_S0_Q_DestabilizePistol_Equip"
+    },
+    {
+      "Type": "KEYBOARD_INSPECT",
+      "Translatable": "Inspect",
+      "Animation": "FP_Deadeye_S0_Q_DestabilizePistol_Inspect"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_Q_DestabilizePistol_Inspect",
+      "Translatable": "Inspect",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_Q_DestabilizePistol_Fire",
+      "Translatable": "Fire",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_Q_DestabilizePistol_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Deadeye_S0_Revolver_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/headhunter/textures/df.png",
+      "ORM": "../uploads/models/abilities/headhunter/textures/orm.png",
+      "EM": "../uploads/models/abilities/headhunter/textures/em.png",
+      "NM": "../uploads/models/abilities/headhunter/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "AB_Deadeye_S0_EmissiveOrange_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/headhunter/textures/emissive_df.png",
+      "ORM": "../uploads/models/abilities/headhunter/textures/emissive_orm.png",
+      "EM": "../uploads/models/abilities/headhunter/textures/emissive_df.png",
+      "NM": "../uploads/models/abilities/headhunter/textures/emissive_nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

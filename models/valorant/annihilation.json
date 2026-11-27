@@ -1,0 +1,85 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/annihilation/",
+    "Name": "annihilation.glb"
+  },
+  "Settings": {
+    "FOV": 15,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.125,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.125,
+      "Z": 0
+    },
+    "FP": {
+      "Bone": "L_WeaponMaster",
+      "Rotation": {
+        "X": -90,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.08,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Fire",
+      "Animation": "FP_Cable_S0_X_Ultimate_Fire"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_X",
+      "Translatable": "Equip",
+      "Animation": "FP_Cable_S0_X_Ultimate_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_X_Ultimate_Equip",
+      "Translatable": "Equiping Ultimate",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_X_Ultimate_ReEquip",
+      "Translatable": "Reequiping Ultimate",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_X_Ultimate_Idle",
+      "Translatable": "Idling Ultimate",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_X_Ultimate_Fire",
+      "Translatable": "Firing Ultimate",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_X_Ultimate_Timeout",
+      "Translatable": "Timeout Ultimate",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Cable_S0_FishingHook_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/annihilation/textures/df.png",
+      "ORM": "../uploads/models/abilities/annihilation/textures/orm.png",
+      "EM": "../uploads/models/abilities/annihilation/textures/em.png",
+      "NM": "../uploads/models/abilities/annihilation/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

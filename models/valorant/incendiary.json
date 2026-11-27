@@ -1,0 +1,67 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/incendiary/",
+    "Name": "incendiary.glb"
+  },
+  "Settings": {
+    "FOV": 12,
+    "FireRate": 1,
+    "EquipLength": 1.1,
+    "CameraPosition": {
+      "X": -0.181812,
+      "Y": 0,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": -0.181812,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": 0,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Fire",
+      "Animation": "FP_Sarge_S0_Q_Fire"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_Q",
+      "Translatable": "Equip",
+      "Animation": "FP_Sarge_S0_Q_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Sarge_S0_Q_Fire",
+      "Translatable": "Fire",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Sarge_S0_Q_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Sarge_S0_AbilityQ_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/incendiary/textures/df.png",
+      "ORM": "../uploads/models/abilities/incendiary/textures/orm.png",
+      "EM": "../uploads/models/abilities/incendiary/textures/em.png",
+      "NM": "../uploads/models/abilities/incendiary/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

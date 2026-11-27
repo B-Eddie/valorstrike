@@ -1,0 +1,81 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/snake-bite/",
+    "Name": "snake-bite.glb"
+  },
+  "Settings": {
+    "FOV": 12,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Bone": "L_WeaponMaster",
+      "Rotation": {
+        "X": -90,
+        "Y": 90,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.02,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Fire",
+      "Animation": "FP_Pandemic_S0_Q_Fire"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip",
+      "Animation": "FP_Pandemic_S0_Q_Equip_New_Cosmetic"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Pandemic_S0_Q_Equip_New",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Pandemic_S0_Q_Equip_Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Pandemic_S0_Q_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/snake-bite/textures/df.png",
+      "ORM": "../uploads/models/abilities/snake-bite/textures/orm.png",
+      "EM": "../uploads/models/abilities/snake-bite/textures/em.png",
+      "NM": "../uploads/models/abilities/snake-bite/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 0.035,
+          "G": 1,
+          "B": 0
+        },
+        "Intensity": 1
+      }
+    }
+  ]
+}

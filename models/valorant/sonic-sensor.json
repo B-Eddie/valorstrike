@@ -1,0 +1,90 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/sonic-sensor/",
+    "Name": "sonic-sensor.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": -90,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.02,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Cable_S0_Q_SoundSensor_Throw"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_Q",
+      "Translatable": "Equip",
+      "Animation": "FP_Cable_S0_Q_SoundSensor_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_Q_SoundSensor_Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_Q_SoundSensor_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_Q_SoundSensor_Throw",
+      "Translatable": "Throw",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Cable_S0_SoundSensor_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/sonic-sensor/textures/df.png",
+      "ORM": "../uploads/models/abilities/sonic-sensor/textures/orm.png",
+      "EM": "../uploads/models/abilities/sonic-sensor/textures/em.png",
+      "NM": "../uploads/models/abilities/sonic-sensor/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Cable_S0_SoundSensor_Glass_MI",
+      "Type": "AgentGlass",
+      "Opacity": 0.2,
+      "Metallic": 1,
+      "Roughness": 1,
+      "Color": {
+        "R": 0,
+        "G": 0,
+        "B": 0
+      }
+    }
+  ]
+}

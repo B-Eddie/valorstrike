@@ -1,0 +1,160 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/chamber-cards/",
+    "Name": "chamber-cards.glb"
+  },
+  "Settings": {
+    "FOV": 15,
+    "FireRate": 1,
+    "EquipLength": 1,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": 0,
+    "UseFPIdle": true,
+    "DynamicVariants": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Place Trademark",
+      "Animation": "FP_Deadeye_S0_4_WallTrap_Place"
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Place Rendezvous",
+      "Animation": "FP_Deadeye_S0_E_First_Place_ArmsDown"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip Trademark",
+      "Animation": "FP_Deadeye_S0_4_WallTrap_Equip"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_E",
+      "Translatable": "Equip Rendezvous",
+      "Animation": "FP_Deadeye_S0_E_TetherTP_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_4_WallTrap_Place",
+      "Translatable": "Place Trademark",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_4_TetherTP_TPtoTrap",
+      "Translatable": "Rendezvous to Trademark",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_E_TetherTP_TraptoTP",
+      "Translatable": "Trademark to Rendezvous",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_E_TetherTP_First_Place",
+      "Translatable": "Place Rendezvous",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Deadeye_S0_E_TetherTP_Equip",
+      "Translatable": "Equip Rendezvous",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Variants": [
+    {
+      "Name": "trademark-card",
+      "MaterialToReplace": "Deadeye_Card_Default_MI",
+      "Replacement": "Deadeye_Card_Default_MI",
+      "Animation": {
+        "Name": "FP_Deadeye_S0_4_TetherTP_TPtoTrap",
+        "Timeout": 0.35
+      }
+    },
+    {
+      "Name": "business-card",
+      "MaterialToReplace": "Deadeye_Card_Default_MI",
+      "Replacement": "Deadeye_Card_Default_MI_Business"
+    },
+    {
+      "Name": "rendezvous-card",
+      "MaterialToReplace": "Deadeye_Card_Default_MI",
+      "Replacement": "Deadeye_Card_Default_MI_Rendezvous",
+      "Animation": {
+        "Name": "FP_Deadeye_S0_E_TetherTP_TraptoTP",
+        "Timeout": 0.75
+      }
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Deadeye_Card_Default_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/chamber-cards/textures/df.png",
+      "ORM": "../uploads/models/abilities/chamber-cards/textures/orm.png",
+      "EM": "../uploads/models/abilities/chamber-cards/textures/em.png",
+      "NM": "../uploads/models/abilities/chamber-cards/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Offset": {
+        "X": 0.52,
+        "Y": 0.0025
+      }
+    },
+    {
+      "Name": "Deadeye_Card_Default_MI_Business",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/chamber-cards/textures/df.png",
+      "ORM": "../uploads/models/abilities/chamber-cards/textures/orm.png",
+      "EM": "../uploads/models/abilities/chamber-cards/textures/em.png",
+      "NM": "../uploads/models/abilities/chamber-cards/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Offset": {
+        "X": 0,
+        "Y": 0
+      }
+    },
+    {
+      "Name": "Deadeye_Card_Default_MI_Rendezvous",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/chamber-cards/textures/df.png",
+      "ORM": "../uploads/models/abilities/chamber-cards/textures/orm.png",
+      "EM": "../uploads/models/abilities/chamber-cards/textures/em.png",
+      "NM": "../uploads/models/abilities/chamber-cards/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Offset": {
+        "X": 0,
+        "Y": 0.6025
+      }
+    }
+  ]
+}

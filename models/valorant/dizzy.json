@@ -1,0 +1,96 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/dizzy/",
+    "Name": "dizzy.glb"
+  },
+  "Settings": {
+    "FOV": 45,
+    "CameraPosition": {
+      "X": 0,
+      "Y": -0.125,
+      "Z": 1.5
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": -0.125,
+      "Z": 0
+    },
+    "ShadowHeight": -0.65
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_E_Zamboni_Intro",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_E_Zamboni_Non_Active",
+      "Translatable": "Inactive",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_E_Zamboni_Active",
+      "Translatable": "Active",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_E_Zamboni_Fire",
+      "Translatable": "Fire",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_E_Zamboni_Death_Fall",
+      "Translatable": "Death",
+      "Type": "Internal"
+    }
+  ],
+  "Variants": [
+    {
+      "Name": "allied-dizzy",
+      "MaterialToReplace": "FP_AggroBot_S0_Zamboni_MI",
+      "Replacement": "FP_AggroBot_S0_Zamboni_MI"
+    },
+    {
+      "Name": "enemy-dizzy",
+      "MaterialToReplace": "FP_AggroBot_S0_Zamboni_MI",
+      "Replacement": "FP_AggroBot_S0_Zamboni_MI_Enemy"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_AggroBot_S0_Zamboni_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/dizzy/textures/df.png",
+      "ORM": "../uploads/models/abilities/dizzy/textures/orm.png",
+      "EM": "../uploads/models/abilities/dizzy/textures/em.png",
+      "NM": "../uploads/models/abilities/dizzy/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_AggroBot_S0_Zamboni_MI_Enemy",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/dizzy/textures/enemy_df.png",
+      "ORM": "../uploads/models/abilities/dizzy/textures/orm.png",
+      "EM": "../uploads/models/abilities/dizzy/textures/em.png",
+      "NM": "../uploads/models/abilities/dizzy/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Aggrobot_S0_Zamboni_NonJelly_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/dizzy/textures/df.png",
+      "ORM": "../uploads/models/abilities/dizzy/textures/orm.png",
+      "EM": "../uploads/models/abilities/dizzy/textures/em.png",
+      "NM": "../uploads/models/abilities/dizzy/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

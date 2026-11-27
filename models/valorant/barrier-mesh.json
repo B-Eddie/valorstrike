@@ -1,0 +1,92 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/barrier-mesh/",
+    "Name": "barrier-mesh.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": -90,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.05,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Cable_S0_E_CableJam_Throw"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip",
+      "Animation": "FP_Cable_S0_E_CableJam_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_E_CableJam_Equip",
+      "Translatable": "Equip",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_E_CableJam_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Cable_S0_E_CableJam_Throw",
+      "Translatable": "Throw",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Cable_S0_CableJam_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/barrier-mesh/textures/df.png",
+      "ORM": "../uploads/models/abilities/barrier-mesh/textures/orm.png",
+      "EM": "../uploads/models/abilities/barrier-mesh/textures/em.png",
+      "NM": "../uploads/models/abilities/barrier-mesh/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Cable_S0_CableJam_GlassMat_MI",
+      "Type": "GlassWithNM",
+      "NM": "../uploads/models/abilities/barrier-mesh/textures/nm.png",
+      "NormalScale": {
+        "X": 1,
+        "Y": 1
+      },
+      "RepeatNormal": false,
+      "Opacity": 0.2,
+      "Metallic": 1,
+      "Roughness": 0.2,
+      "Color": {
+        "R": 0,
+        "G": 0,
+        "B": 0
+      }
+    }
+  ]
+}

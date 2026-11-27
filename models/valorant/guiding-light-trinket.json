@@ -1,0 +1,69 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/guiding-light-trinket/",
+    "Name": "guiding-light-trinket.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 1.1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": -90,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.01,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Guide_S0_E_Hawk_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_E",
+      "Translatable": "Equip",
+      "Animation": "FP_Guide_S0_E_Hawk_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Guide_S0_E_Hawk_Equip",
+      "Translatable": "Equip",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Guide_S0_E_Hawk_EquipIdle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Uber_FP_HawkTotem_AbilityE_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/guiding-light-trinket/textures/df.png",
+      "ORM": "../uploads/models/abilities/guiding-light-trinket/textures/orm.png",
+      "EM": "../uploads/models/abilities/guiding-light-trinket/textures/df.png",
+      "NM": "../uploads/models/abilities/guiding-light-trinket/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

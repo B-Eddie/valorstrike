@@ -1,0 +1,79 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/baby-wingman/",
+    "Name": "baby-wingman.glb"
+  },
+  "Settings": {
+    "FOV": 18,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": 0,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Cast",
+      "Animation": "FP_AggroBot_S0_Q_BabySpikebot_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_Q",
+      "Translatable": "Equip",
+      "Animation": "FP_AggroBot_S0_Q_BabySpikebot_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_Q_BabySpikebot_Equip",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_Q_BabySpikebot_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_AggroBot_S0_BabySpikeBot_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/baby-wingman/textures/df.png",
+      "ORM": "../uploads/models/abilities/baby-wingman/textures/orm.png",
+      "EM": "../uploads/models/abilities/baby-wingman/textures/em.png",
+      "NM": "../uploads/models/abilities/baby-wingman/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_AggroBot_S0_BabyspikeBot_NonJelly_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/baby-wingman/textures/df.png",
+      "ORM": "../uploads/models/abilities/baby-wingman/textures/orm.png",
+      "EM": "../uploads/models/abilities/baby-wingman/textures/em.png",
+      "NM": "../uploads/models/abilities/baby-wingman/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

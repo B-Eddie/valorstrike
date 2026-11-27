@@ -1,0 +1,136 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/wingman/",
+    "Name": "wingman.glb"
+  },
+  "Settings": {
+    "FOV": 45,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.5,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.5,
+      "Z": 0
+    },
+    "ShadowHeight": -0.01
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Intro",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Run",
+      "Translatable": "Run",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Run_Aggro",
+      "Translatable": "Run with Target",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Run_Bomb",
+      "Translatable": "Run with Spike",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Attack_Aggro_Intro",
+      "Translatable": "Attack Intro",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Attack_Aggro_Loop",
+      "Translatable": "Attack Loop",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Bomb_Activate",
+      "Translatable": "Planting Spike",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Bomb_DeActivate_Intro",
+      "Translatable": "Defusing Spike Intro",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Bomb_DeActivate_Loop",
+      "Translatable": "Defusing spike Loop",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Bomb_DeActivate",
+      "Translatable": "Defusing Spike",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Turn_Straight",
+      "Translatable": "Bounce",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Turn_R",
+      "Translatable": "Turning Right",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_Q_Spikebot_Turn_L",
+      "Translatable": "Turning Left",
+      "Type": "Internal"
+    }
+  ],
+  "Variants": [
+    {
+      "Name": "allied-wingman",
+      "MaterialToReplace": "FP_AggroBot_S0_SpikeBot_MI",
+      "Replacement": "FP_AggroBot_S0_SpikeBot_MI"
+    },
+    {
+      "Name": "enemy-wingman",
+      "MaterialToReplace": "FP_AggroBot_S0_SpikeBot_MI",
+      "Replacement": "FP_AggroBot_S0_SpikeBot_MI_Enemy"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_AggroBot_S0_SpikeBot_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/wingman/textures/df.png",
+      "ORM": "../uploads/models/abilities/wingman/textures/orm.png",
+      "EM": "../uploads/models/abilities/wingman/textures/em.png",
+      "NM": "../uploads/models/abilities/wingman/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_AggroBot_S0_SpikeBot_MI_Enemy",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/wingman/textures/enemy_df.png",
+      "ORM": "../uploads/models/abilities/wingman/textures/orm.png",
+      "EM": "../uploads/models/abilities/wingman/textures/em.png",
+      "NM": "../uploads/models/abilities/wingman/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Aggrobot_S0_Spikebot_NonJelly_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/wingman/textures/df.png",
+      "ORM": "../uploads/models/abilities/wingman/textures/orm.png",
+      "EM": "../uploads/models/abilities/wingman/textures/em.png",
+      "NM": "../uploads/models/abilities/wingman/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

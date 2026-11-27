@@ -1,0 +1,51 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/flashdrive/",
+    "Name": "flashdrive.glb"
+  },
+  "Settings": {
+    "FOV": 12.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0,
+      "Z": 1.5
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": -0.065
+  },
+  "Materials": [
+    {
+      "Name": "Grenadier_Ability4_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/flashdrive/textures/df.png",
+      "ORM": "../uploads/models/abilities/flashdrive/textures/orm.png",
+      "EM": "../uploads/models/abilities/flashdrive/textures/em.png",
+      "NM": "../uploads/models/abilities/flashdrive/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FlashOverlay",
+      "Type": "AbilityGlass",
+      "DF": "../uploads/models/abilities/flashdrive/textures/overlay_df.png",
+      "ORM": "../uploads/models/abilities/flashdrive/textures/overlay_orm.png",
+      "EM": "../uploads/models/abilities/flashdrive/textures/overlay_df.png",
+      "NM": "../uploads/models/abilities/flashdrive/textures/overlay_nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Opacity": 0.75,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 1,
+          "B": 1
+        },
+        "Intensity": 1
+      }
+    }
+  ]
+}

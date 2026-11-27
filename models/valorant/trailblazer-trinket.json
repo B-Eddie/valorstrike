@@ -1,0 +1,70 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/trailblazer-trinket/",
+    "Name": "trailblazer-trinket.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 0
+    },
+    "FP": {
+      "Bone": "L_WeaponMaster"
+    },
+    "ShadowHeight": -0.01,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Guide_S0_Q_Wolf_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_Q",
+      "Translatable": "Equip",
+      "Animation": "FP_Guide_S0_Q_Wolf_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Guide_S0_Q_Wolf_Equip",
+      "Translatable": "Equip",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Guide_S0_Q_Wolf_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Guide_S0_Q_Wolf_Cast",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Uber_Guide_WolfTotem_AbilityQ_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/trailblazer-trinket/textures/df.png",
+      "ORM": "../uploads/models/abilities/trailblazer-trinket/textures/orm.png",
+      "EM": "../uploads/models/abilities/trailblazer-trinket/textures/df.png",
+      "NM": "../uploads/models/abilities/trailblazer-trinket/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

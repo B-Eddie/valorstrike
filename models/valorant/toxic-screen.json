@@ -1,0 +1,32 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/toxic-screen/",
+    "Name": "toxic-screen.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.1,
+      "Z": 0
+    },
+    "ShadowHeight": -0.01
+  },
+  "Materials": [
+    {
+      "Name": "AB_Pandemic_S0_E_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/toxic-screen/textures/df.png",
+      "ORM": "../uploads/models/abilities/toxic-screen/textures/orm.png",
+      "EM": "../uploads/models/abilities/toxic-screen/textures/em.png",
+      "NM": "../uploads/models/abilities/toxic-screen/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

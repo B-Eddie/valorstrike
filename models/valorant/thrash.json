@@ -1,0 +1,126 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/thrash/",
+    "Name": "thrash.glb"
+  },
+  "Settings": {
+    "FOV": 60,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.2,
+      "Z": 2
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.2,
+      "Z": 0
+    },
+    "ShadowHeight": -0.3
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Intro",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Jump",
+      "Translatable": "Jump",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Jump_Land",
+      "Translatable": "Land",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Run_N",
+      "Translatable": "Run towards the North",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Run_W",
+      "Translatable": "Run towards the West",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Run_E",
+      "Translatable": "Run towards the East",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Turn_L_90",
+      "Translatable": "Turning Left",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Turn_R_90",
+      "Translatable": "Turning Right",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Attack",
+      "Translatable": "Attack",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_AggroBot_S0_X_Shark_Attack_Outro",
+      "Translatable": "Attack Outro",
+      "Type": "Internal"
+    }
+  ],
+  "Variants": [
+    {
+      "Name": "allied-thrash",
+      "MaterialToReplace": "FP_AggroBot_S0_Shark_MI",
+      "Replacement": "FP_AggroBot_S0_Shark_MI"
+    },
+    {
+      "Name": "enemy-thrash",
+      "MaterialToReplace": "FP_AggroBot_S0_Shark_MI",
+      "Replacement": "FP_AggroBot_S0_Shark_MI_Enemy"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_AggroBot_S0_Shark_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/thrash/textures/df.png",
+      "ORM": "../uploads/models/abilities/thrash/textures/orm.png",
+      "EM": "../uploads/models/abilities/thrash/textures/em.png",
+      "NM": "../uploads/models/abilities/thrash/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_AggroBot_S0_Shark_MI_Enemy",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/thrash/textures/enemy_df.png",
+      "ORM": "../uploads/models/abilities/thrash/textures/orm.png",
+      "EM": "../uploads/models/abilities/thrash/textures/em.png",
+      "NM": "../uploads/models/abilities/thrash/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "FP_Aggrobot_S0_Shark_NonJelly_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/thrash/textures/df.png",
+      "ORM": "../uploads/models/abilities/thrash/textures/orm.png",
+      "EM": "../uploads/models/abilities/thrash/textures/em.png",
+      "NM": "../uploads/models/abilities/thrash/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

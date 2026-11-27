@@ -1,0 +1,78 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/zeropoint/",
+    "Name": "zeropoint.glb"
+  },
+  "Settings": {
+    "FOV": 22.5,
+    "CameraPosition": {
+      "X": -0.143094,
+      "Y": 0,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": 180,
+        "Z": -90
+      }
+    },
+    "ShadowHeight": -0.06,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_Grenadier_S0_E_Knife_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_E",
+      "Translatable": "Equip",
+      "Animation": "FP_Grenadier_S0_E_Knife_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Grenadier_S0_E_Knife_Equip",
+      "Translatable": "Equip",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Grenadier_S0_E_Knife_Idle",
+      "Translatable": "Idle",
+      "FP": true,
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_Grenadier_S0_E_Knife_Cast",
+      "Translatable": "Throw",
+      "FP": true,
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "Grenadier_AbilityE_S0_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/zeropoint/textures/df.png",
+      "ORM": "../uploads/models/abilities/zeropoint/textures/orm.png",
+      "EM": "../uploads/models/abilities/zeropoint/textures/em.png",
+      "NM": "../uploads/models/abilities/zeropoint/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

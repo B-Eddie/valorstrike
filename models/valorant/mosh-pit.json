@@ -1,0 +1,74 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/mosh-pit/",
+    "Name": "mosh-pit.glb"
+  },
+  "Settings": {
+    "FOV": 12,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.01,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.01,
+      "Z": 0
+    },
+    "FP": {
+      "Rotation": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "ShadowHeight": -0.075,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Throw",
+      "Animation": "FP_AggroBot_S0_4_Bubbletov_ThrowOver"
+    },
+    {
+      "Type": "ALT_CLICK",
+      "Translatable": "Short Throw",
+      "Animation": "FP_AggroBot_S0_4_Bubbletov_ThrowUnder"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_C",
+      "Translatable": "Equip",
+      "Animation": "FP_AggroBot_S0_4_Bubbletov_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_4_Bubbletov_Equip",
+      "Translatable": "Equip",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_4_Bubbletov_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_Aggrobot_S0_Bubbletov_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/mosh-pit/textures/df.png",
+      "ORM": "../uploads/models/abilities/mosh-pit/textures/orm.png",
+      "EM": "../uploads/models/abilities/mosh-pit/textures/em.png",
+      "NM": "../uploads/models/abilities/mosh-pit/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}

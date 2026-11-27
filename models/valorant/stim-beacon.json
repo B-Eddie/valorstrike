@@ -1,0 +1,62 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/stim-beacon/",
+    "Name": "stim-beacon.glb"
+  },
+  "Settings": {
+    "FOV": 45,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 1,
+      "Z": 0
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0,
+      "Z": 0
+    },
+    "ShadowHeight": 0
+  },
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Sarge_S0_E_StimPack_Deploy",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Sarge_S0_E_StimPack_IdleActive",
+      "Translatable": "Active",
+      "Type": "Internal"
+    },
+    {
+      "Name": "ABTP_Sarge_S0_E_StimPack_Outro",
+      "Translatable": "Outro",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "AB_Sarge_S0_E_StimPack_MI1",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/stim-beacon/textures/df.png",
+      "ORM": "../uploads/models/abilities/stim-beacon/textures/orm.png",
+      "EM": "../uploads/models/abilities/stim-beacon/textures/em.png",
+      "NM": "../uploads/models/abilities/stim-beacon/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1,
+      "Emissive": {
+        "Color": {
+          "R": 1,
+          "G": 0.1,
+          "B": 0
+        },
+        "Intensity": 1.6
+      }
+    }
+  ]
+}

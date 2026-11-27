@@ -1,0 +1,72 @@
+{
+  "Model": {
+    "Path": "../uploads/models/abilities/baby-thrash/",
+    "Name": "baby-thrash.glb"
+  },
+  "Settings": {
+    "FOV": 12,
+    "CameraPosition": {
+      "X": 0,
+      "Y": 0.05,
+      "Z": 1
+    },
+    "OrbitTarget": {
+      "X": 0,
+      "Y": 0.05,
+      "Z": 0
+    },
+    "ShadowHeight": -0.02,
+    "UseFPIdle": true
+  },
+  "Keybinds": [
+    {
+      "Type": "CLICK",
+      "Translatable": "Cast",
+      "Animation": "FP_AggroBot_S0_X_BabyShark_Cast"
+    },
+    {
+      "Type": "KEYBOARD_EQUIP_X",
+      "Translatable": "Equip",
+      "Animation": "FP_AggroBot_S0_X_BabyShark_Equip"
+    }
+  ],
+  "Animations": [
+    {
+      "Name": "Idle",
+      "Translatable": "Default Pose",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_X_BabyShark_Cast",
+      "Translatable": "Cast",
+      "Type": "Internal"
+    },
+    {
+      "Name": "AB_AggroBot_S0_X_BabyShark_Idle",
+      "Translatable": "Idle",
+      "Type": "Internal"
+    }
+  ],
+  "Materials": [
+    {
+      "Name": "FP_AggroBot_S0_Babyshark_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/baby-thrash/textures/df.png",
+      "ORM": "../uploads/models/abilities/baby-thrash/textures/orm.png",
+      "EM": "../uploads/models/abilities/baby-thrash/textures/em.png",
+      "NM": "../uploads/models/abilities/baby-thrash/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    },
+    {
+      "Name": "ABCS_AggroBot_S0_Babyshark_NonJelly_MI",
+      "Type": "PBR",
+      "DF": "../uploads/models/abilities/baby-thrash/textures/df.png",
+      "ORM": "../uploads/models/abilities/baby-thrash/textures/orm.png",
+      "EM": "../uploads/models/abilities/baby-thrash/textures/em.png",
+      "NM": "../uploads/models/abilities/baby-thrash/textures/nm.png",
+      "Metallic": 1,
+      "Roughness": 1
+    }
+  ]
+}
