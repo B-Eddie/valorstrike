@@ -47,7 +47,7 @@ function serve() { return new Promise((r) => { const s = http.createServer((q, r
     R.rev = await X('THREE.REVISION'); log('boot rev', R.rev); if (UU) { if (!(R.uu || []).length) throw new Error('UU=1 but no three.min.js went through the patch'); R.uuProbe = await X('String(THREE.MathUtils.generateUUID).slice(0,200)+" | __u="+globalThis.__u'); log('UU probe (no call)', R.uuProbe); if (!/00000000-0000-4000-8000-/.test(R.uuProbe)) throw new Error('UU probe: generateUUID not patched: ' + R.uuProbe); } const tl = Date.now();
     if (process.env.PRE) { R.pre = await X(process.env.PRE); log('pre', String(R.pre).slice(0, 500)); }
     if (MODE === 'match') {
-      await X(`J.pick=${JSON.stringify(process.env.AGENT || 'Jett')};FV.pick=${JSON.stringify(MAP)};FV.srOn=0;FV.repOn=0;setTimeout(()=>xGo(startFive),0);1`);
+      await X(`window.xBotSeed=4242;J.pick=${JSON.stringify(process.env.AGENT || 'Jett')};FV.pick=${JSON.stringify(MAP)};FV.srOn=0;FV.repOn=0;setTimeout(()=>xGo(startFive),0);1`);
       await page.waitForFunction(() => window.__xe('!!(running&&!window.xLdOn&&NM.current&&NM.current.key&&bots.length>0&&!(NM.progress&&NM.progress.style.display==="flex"))'), null, { timeout: 1500000, polling: 2000 });
     } else {
       await X(`window.__nmDone=0;nmEnsure(${JSON.stringify(MAP)}).then(C=>{C.M.g.visible=true;window.__nmDone=1;},e=>{window.__nmDone=String(e);});1`);

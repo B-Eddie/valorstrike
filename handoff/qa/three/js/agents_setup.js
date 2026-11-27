@@ -17,6 +17,9 @@ all.forEach((b,i)=>{const row=Math.floor(i/3),col=i%3;b.g.visible=true;b.g.posit
   if(act){act.reset();act.enabled=true;act.setEffectiveWeight(1);act.setEffectiveTimeScale(1);act.play();}mx.setTime(0.35+0.11*i);out['a'+i]=b.name+':'+k;}
  else out['a'+i]=b.name+':nomixer';
  xm.m.updateMatrixWorld(true);});
+// determinism pin: apply the harness weapon override to every held model and settle the grip blend,
+// so a bot that bought a non-Vandal on the pistol round (or was culled during prep) cannot keep it in shots
+all.forEach(b=>{const xm=b.xm;if(!xm)return;try{if(typeof xgHeldSync==='function')xgHeldSync(xm);if(typeof xgPose==='function')for(let k=0;k<8;k++)xgPose(xm,1/12);}catch(e){out.hsErr=(out.hsErr||'')+String(e).slice(0,120);}});
 // first-person viewmodel: idle at a fixed phase, sway / bob state zeroed
 // viewmodel layer: drop pending warm draws and any rig other than the current one (a stale / prefetched rig left in the
 // layer by the buy race drew a second Vandal: +11..24 calls in some runs, base and lane alike)
