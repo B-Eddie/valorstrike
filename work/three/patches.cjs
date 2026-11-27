@@ -57,6 +57,13 @@ const CORE = [
   { id: 'lights-hemi', file: 'src/renderers/webgl/WebGLLights.js',
     find: "\t\t\t\tuniforms.skyColor.copy( light.color ).multiplyScalar( intensity );\n\t\t\t\tuniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity );",
     replace: "\t\t\t\tuniforms.skyColor.copy( light.color ).multiplyScalar( intensity * scaleFactor );\n\t\t\t\tuniforms.groundColor.copy( light.groundColor ).multiplyScalar( intensity * scaleFactor );" },
+  // 10. ShaderMaterial keeps r149's two-pass draw for transparent DoubleSide materials: r170 sets
+  //    forceSinglePass = true in the ShaderMaterial constructor (r149 has no such line; the Material default is
+  //    false), so the game's transparent DoubleSide FX ShaderMaterials (brx sky-smoke sphere, sgx barrier wall,
+  //    phx blaze ribbons: 10 meshes on a bind ability shot) draw once in index order on the lane instead of
+  //    back-faces-then-front-faces (-10 calls / -1200 tris per ability shot, blending order can differ).
+  { id: 'shadermat-twopass', file: 'src/materials/ShaderMaterial.js',
+    find: "\n\t\tthis.forceSinglePass = true;\n", replace: "\n" },
   // 9. Color.getHex truncates like r149 (clamp + bit-shift truncation), not Math.round (r152+): 8-bit hexes that
   //    transit JS land +1 higher on 124/256 values in r170. The game's damage-flash emissive capture/restore
   //    (m.userData.e0 = m.emissive.getHex(); ... setHex(e0)) round-trips through this, so after any damage flash the
