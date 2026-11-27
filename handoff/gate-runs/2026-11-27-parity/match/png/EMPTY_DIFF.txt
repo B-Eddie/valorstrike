@@ -1,0 +1,8 @@
+mbaseP1-vs-mlaneP1: bind-low-mbaseP1-vs-mlaneP1-vandal_a6: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mbaseP1-vandal_a6.png)
+mbaseP1-vs-mlaneP1: bind-low-mbaseP1-vs-mlaneP1-vandal_vm: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mbaseP1-vandal_vm.png)
+mbaseU1-vs-mbaseP1: bind-low-mbaseU1-vs-mbaseP1-vandal_a6: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mbaseU1-vandal_a6.png)
+mbaseU1-vs-mbaseP1: bind-low-mbaseU1-vs-mbaseP1-vandal_vm: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mbaseU1-vandal_vm.png)
+mbaseU1-vs-mlaneP1: bind-low-mbaseU1-vs-mlaneP1-vandal_a6: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mbaseU1-vandal_a6.png)
+mbaseU1-vs-mlaneP1: bind-low-mbaseU1-vs-mlaneP1-vandal_vm: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mbaseU1-vandal_vm.png)
+mlaneP1-vs-mlaneP2: bind-low-mlaneP1-vs-mlaneP2-vandal_a6: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mlaneP1-vandal_a6.png)
+mlaneP1-vs-mlaneP2: bind-low-mlaneP1-vs-mlaneP2-vandal_vm: 0 px differ (lane/B PNG and diff omitted; identical to bind-low-mlaneP1-vandal_vm.png)

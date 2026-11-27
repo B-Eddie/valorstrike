@@ -1,0 +1,36 @@
+mbaseU1 vs mbaseP1 vandal_a0: 3098 px bbox x522-636 y225-327
+mbaseU1 vs mbaseP1 vandal_a1: 6251 px bbox x534-700 y193-331
+mbaseU1 vs mbaseP1 vandal_a2: 13849 px bbox x473-831 y209-470
+mbaseU1 vs mbaseP1 vandal_a3: 2837 px bbox x277-486 y229-357
+mbaseU1 vs mbaseP1 vandal_a4: 3543 px bbox x529-685 y251-399
+mbaseU1 vs mbaseP1 vandal_a5: 1661 px bbox x533-623 y232-405
+mbaseU1 vs mbaseP1 vandal_a6: 0 px
+mbaseU1 vs mbaseP1 vandal_a7: 47771 px bbox x226-585 y35-539
+mbaseU1 vs mbaseP1 vandal_vm: 0 px
+mbaseU1 vs mbaseP1 abil_a0: 162327 px bbox x0-644 y0-451
+mbaseU1 vs mbaseP1 abil_a1: 104826 px bbox x267-959 y37-470
+mbaseU1 vs mbaseP1 abil_a2: 140800 px bbox x31-664 y48-507
+mbaseU1 vs mlaneP1 vandal_a0: 11 px bbox x389-464 y236-322
+mbaseU1 vs mlaneP1 vandal_a1: 15 px bbox x362-653 y212-303
+mbaseU1 vs mlaneP1 vandal_a2: 177 px bbox x571-687 y229-320
+mbaseU1 vs mlaneP1 vandal_a3: 686 px bbox x105-294 y205-521
+mbaseU1 vs mlaneP1 vandal_a4: 16 px bbox x360-401 y287-342
+mbaseU1 vs mlaneP1 vandal_a5: 55 px bbox x399-575 y229-402
+mbaseU1 vs mlaneP1 vandal_a6: 0 px
+mbaseU1 vs mlaneP1 vandal_a7: 28 px bbox x336-520 y289-482
+mbaseU1 vs mlaneP1 vandal_vm: 0 px
+mbaseU1 vs mlaneP1 abil_a0: 162431 px bbox x0-644 y0-451
+mbaseU1 vs mlaneP1 abil_a1: 90131 px bbox x267-959 y37-410
+mbaseU1 vs mlaneP1 abil_a2: 140481 px bbox x31-664 y47-508
+mlaneP1 vs mlaneP2 vandal_a0: 311 px bbox x412-636 y226-324
+mlaneP1 vs mlaneP2 vandal_a1: 545 px bbox x395-700 y194-321
+mlaneP1 vs mlaneP2 vandal_a2: 2049 px bbox x475-688 y210-465
+mlaneP1 vs mlaneP2 vandal_a3: 2598 px bbox x56-485 y220-521
+mlaneP1 vs mlaneP2 vandal_a4: 435 px bbox x376-685 y252-347
+mlaneP1 vs mlaneP2 vandal_a5: 252 px bbox x406-623 y229-402
+mlaneP1 vs mlaneP2 vandal_a6: 0 px
+mlaneP1 vs mlaneP2 vandal_a7: 8196 px bbox x226-584 y36-535
+mlaneP1 vs mlaneP2 vandal_vm: 0 px
+mlaneP1 vs mlaneP2 abil_a0: 153464 px bbox x0-644 y0-451
+mlaneP1 vs mlaneP2 abil_a1: 84858 px bbox x267-959 y37-465
+mlaneP1 vs mlaneP2 abil_a2: 130109 px bbox x29-664 y48-508

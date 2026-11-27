@@ -1,0 +1,15 @@
+# Gate run 2026-11-27-parity. Tested SHAs: LANE 13005d5e56f67606de7bc34ee8dfef027f0933db (/workspace/work/vs-lane-three, checkout --detach), BASE e2c14eda1cfc339be9cb8c90c22116c26451e3ef (qa/three/base_wt). mbaseU1 reused from 2026-11-27-uuid (base unchanged).
+# Config: UU=1 VW=1, h.cjs (= handoff/qa/three/h.cjs), runmatch.sh bind low 960 540 TAG ROOT (PRE seeds Math.random s=777, agents Sova/Chamber/Tejo/Miks vs KAY/O/Reyna/Yoru/Gekko/Brimstone, Vandal prime.1, Knife blastx), STEPS=agents.cjs SETTLE=3; one Chromium at a time via LOCK-chromium.txt (lock.cjs); success = 12 shots + HUD + uu matched in JSON.
+# bot_feel: NODE_OPTIONS=--require handoff/qa/botfeel/uu_hook.cjs (lane copy), UU=1.
+[2026-11-27 07:45:12 UTC] exit=0 :: cd vendor/scratch && THREE_SRC=/tmp/three170 node work/three/build.cjs ; cmp vs vs-lane-three/vendor/three/* -> all 3 identical
+[2026-11-27 07:48:23 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mbaseP1 /workspace/work/qa/three/base_wt (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 07:51:00 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mlaneP1 /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 07:53:51 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mlaneP2 /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 07:54:13 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mbaseP1
+[2026-11-27 07:54:17 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseP1 mlaneP1
+[2026-11-27 07:54:20 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mlaneP1
+[2026-11-27 07:54:23 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mlaneP1 mlaneP2
+[2026-11-27 07:54:27 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseP1 mlaneP2
+[2026-11-27 07:54:30 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mlaneP2
+[2026-11-27 07:57:59 UTC] exit=0 :: cd /workspace/work/vs-lane-three && UU=1 UU_LOG=/workspace/work/qa/gates4/botfeel/uu_lane.log NODE_OPTIONS='--require /workspace/work/vs-lane-three/handoff/qa/botfeel/uu_hook.cjs' timeout 1500 node work/test_bot_feel_offline.cjs
+[2026-11-27 08:01:39 UTC] exit=0 :: DL=1 UU=1 VW=1 h_drawlist.cjs bind low 960 540 mlaneDL4 ROOT=/workspace/work/vs-lane-three (attempt 0) [shots=12 dl_abil=3 UU=1 uu_matched=True oom_lines=0]

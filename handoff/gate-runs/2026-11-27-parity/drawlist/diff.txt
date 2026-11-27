@@ -1,0 +1,566 @@
+== vandal_a0: base 197/2678385 (sum 197/2678385, gl 197) rev149  lane 176/2678385 (sum 176/2678385, gl 176) rev170  delta calls -21 tris 0
+  BASE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/19108 tris, lane 0/0 -> d -2 calls / -19108 tris
+            base geo [(174291, 93325, (84648, 30069), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, 27255), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/66861 tris, lane 0/0 -> d -2 calls / -66861 tris
+            base geo [(148995, 39184, (0, 36876), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, 163707), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/22039 tris, lane 0/0 -> d -2 calls / -22039 tris
+            base geo [(148995, 39184, (49362, 24861), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (330336, 41256), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/22274 tris, lane 0/0 -> d -2 calls / -22274 tris
+            base geo [(148995, 39184, (99141, 24924), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (412899, 41898), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/16656 tris, lane 0/0 -> d -2 calls / -16656 tris
+            base geo [(309072, 163627, (38232, 38301), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (34551, 11667), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/34225 tris, lane 0/0 -> d -2 calls / -34225 tris
+            base geo [(197280, 50196, (120153, 8481), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (93897, 94194), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/37392 tris, lane 0/0 -> d -2 calls / -37392 tris
+            base geo [(197280, 50196, (162702, 8046), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (209316, 104130), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/120556 tris, lane 0/0 -> d -1 calls / -120556 tris
+            base geo [(1661301, 740994, (0, 361668), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/11567 tris, lane 0/0 -> d -1 calls / -11567 tris
+            base geo [(1661301, 740994, (397464, 34701), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/274225 tris, lane 0/0 -> d -1 calls / -274225 tris
+            base geo [(1661301, 740994, (443892, 822675), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/58330 tris, lane 0/0 -> d -1 calls / -58330 tris
+            base geo [(1661301, 740994, (1278303, 174990), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/65403 tris, lane 0/0 -> d -1 calls / -65403 tris
+            base geo [(1661301, 740994, (1465092, 196209), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/278072 tris, lane 0/0 -> d -1 calls / -278072 tris
+            base geo [(834216, 314413, (0, 834216), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/158063 tris, lane 0/0 -> d -1 calls / -158063 tris
+            base geo [(474189, 259009, (0, 474189), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ArchGrey_11_M0#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/151681 tris, lane 0/0 -> d -1 calls / -151681 tris
+            base geo [(455043, 224168, (0, 455043), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='BathHouse_3_M0_TowelB_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 1 calls/99200 tris, lane 0/0 -> d -1 calls / -99200 tris
+            base geo [(297600, 76288, (0, 297600), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/170865 tris, lane 0/0 -> d -1 calls / -170865 tris
+            base geo [(512595, 252008, (0, 512595), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ColorPalette_M0_GreyDark#0' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 1 calls/26637 tris, lane 0/0 -> d -1 calls / -26637 tris
+            base geo [(79911, 32382, (0, 79911), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#0' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/2944 tris, lane 0/0 -> d -1 calls / -2944 tris
+            base geo [(71928, 27704, (0, 8832), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#1' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/5991 tris, lane 0/0 -> d -1 calls / -5991 tris
+            base geo [(71928, 27704, (35907, 17973), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Grass_4_Small_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14245 tris, lane 0/0 -> d -1 calls / -14245 tris
+            base geo [(42735, 23298, (0, 42735), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/32706 tris, lane 0/0 -> d -1 calls / -32706 tris
+            base geo [(554268, 150356, (19380, 98118), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/59198 tris, lane 0/0 -> d -1 calls / -59198 tris
+            base geo [(554268, 150356, (236415, 177594), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/21095 tris, lane 0/0 -> d -1 calls / -21095 tris
+            base geo [(126525, 24265, (23436, 63285), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/10597 tris, lane 0/0 -> d -1 calls / -10597 tris
+            base geo [(126525, 24265, (94734, 31791), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/12827 tris, lane 0/0 -> d -1 calls / -12827 tris
+            base geo [(309072, 163627, (95781, 38481), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/15955 tris, lane 0/0 -> d -1 calls / -15955 tris
+            base geo [(309072, 163627, (154149, 47865), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3177 tris, lane 0/0 -> d -1 calls / -3177 tris
+            base geo [(309072, 163627, (240633, 9531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6696 tris, lane 0/0 -> d -1 calls / -6696 tris
+            base geo [(309072, 163627, (279105, 20088), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/42262 tris, lane 0/0 -> d -1 calls / -42262 tris
+            base geo [(504288, 127641, (324525, 126786), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14097 tris, lane 0/0 -> d -1 calls / -14097 tris
+            base geo [(504288, 127641, (461997, 42291), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/23004 tris, lane 0/0 -> d -1 calls / -23004 tris
+            base geo [(414942, 181957, (0, 69012), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/109503 tris, lane 0/0 -> d -1 calls / -109503 tris
+            base geo [(414942, 181957, (77463, 328509), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/20331 tris, lane 0/0 -> d -1 calls / -20331 tris
+            base geo [(98568, 74567, (0, 60993), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/4182 tris, lane 0/0 -> d -1 calls / -4182 tris
+            base geo [(98568, 74567, (73428, 12546), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M3_SandPackedDirt_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 1 calls/5177 tris, lane 0/0 -> d -1 calls / -5177 tris
+            base geo [(15531, 4810, (0, 15531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M5_SandSkirts_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 1 calls/16561 tris, lane 0/0 -> d -1 calls / -16561 tris
+            base geo [(49683, 15837, (0, 49683), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 1 calls/8228 tris, lane 0/0 -> d -1 calls / -8228 tris
+            base geo [(24684, 10384, (0, 24684), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 1 calls/49027 tris, lane 0/0 -> d -1 calls / -49027 tris
+            base geo [(147081, 74549, (0, 147081), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 1 calls/18250 tris, lane 0/0 -> d -1 calls / -18250 tris
+            base geo [(54750, 27875, (0, 54750), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='TechElement_27_M0_PropaneTank_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 1 calls/12884 tris, lane 0/0 -> d -1 calls / -12884 tris
+            base geo [(38652, 12038, (0, 38652), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Wood_0_M0_Pole_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3876 tris, lane 0/0 -> d -1 calls / -3876 tris
+            base geo [(44712, 42016, (33084, 11628), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  LANE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/530081 -> d 1 calls / 530081 tris
+            base geo -  lane geo [(1661301, 740994, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ACUnit_0_M0_A_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/278072 -> d 1 calls / 278072 tris
+            base geo -  lane geo [(834216, 314413, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/158063 -> d 1 calls / 158063 tris
+            base geo -  lane geo [(474189, 259009, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ArchGrey_11_M0#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/151681 -> d 1 calls / 151681 tris
+            base geo -  lane geo [(455043, 224168, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='BathHouse_3_M0_TowelB_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/99200 -> d 1 calls / 99200 tris
+            base geo -  lane geo [(297600, 76288, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/170865 -> d 1 calls / 170865 tris
+            base geo -  lane geo [(512595, 252008, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ColorPalette_M0_GreyDark#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/26637 -> d 1 calls / 26637 tris
+            base geo -  lane geo [(79911, 32382, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Concrete_M0_Bare_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/8935 -> d 1 calls / 8935 tris
+            base geo -  lane geo [(71928, 27704, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Grass_4_Small_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/14245 -> d 1 calls / 14245 tris
+            base geo -  lane geo [(42735, 23298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/91904 -> d 1 calls / 91904 tris
+            base geo -  lane geo [(554268, 150356, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantC_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/31692 -> d 1 calls / 31692 tris
+            base geo -  lane geo [(126525, 24265, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Rock_M0_ChippedSurface_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/132507 -> d 1 calls / 132507 tris
+            base geo -  lane geo [(414942, 181957, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sack_0_M0_TeaLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/24513 -> d 1 calls / 24513 tris
+            base geo -  lane geo [(98568, 74567, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M3_SandPackedDirt_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/5177 -> d 1 calls / 5177 tris
+            base geo -  lane geo [(15531, 4810, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M5_SandSkirts_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/16561 -> d 1 calls / 16561 tris
+            base geo -  lane geo [(49683, 15837, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/8228 -> d 1 calls / 8228 tris
+            base geo -  lane geo [(24684, 10384, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/49027 -> d 1 calls / 49027 tris
+            base geo -  lane geo [(147081, 74549, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/18250 -> d 1 calls / 18250 tris
+            base geo -  lane geo [(54750, 27875, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='TechElement_27_M0_PropaneTank_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/12884 -> d 1 calls / 12884 tris
+            base geo -  lane geo [(38652, 12038, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Wood_0_M0_Pole_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/3876 -> d 1 calls / 3876 tris
+            base geo -  lane geo [(44712, 42016, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/19108 -> d 2 calls / 19108 tris
+            base geo -  lane geo [(174291, 93325, (0, None), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantA_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/111174 -> d 2 calls / 111174 tris
+            base geo -  lane geo [(148995, 39184, (0, None), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/55311 -> d 2 calls / 55311 tris
+            base geo -  lane geo [(309072, 163627, (0, None), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/127976 -> d 2 calls / 127976 tris
+            base geo -  lane geo [(197280, 50196, (0, None), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -21, tris 0  (must equal shot delta)
+== abil_a0: base 262/2690003 (sum 262/2690003, gl 262) rev149  lane 241/2690003 (sum 241/2690003, gl 241) rev170  delta calls -21 tris 0
+  BASE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/19108 tris, lane 0/0 -> d -2 calls / -19108 tris
+            base geo [(174291, 93325, (84648, 30069), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, 27255), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/66861 tris, lane 0/0 -> d -2 calls / -66861 tris
+            base geo [(148995, 39184, (0, 36876), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, 163707), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/22039 tris, lane 0/0 -> d -2 calls / -22039 tris
+            base geo [(148995, 39184, (49362, 24861), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (330336, 41256), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/22274 tris, lane 0/0 -> d -2 calls / -22274 tris
+            base geo [(148995, 39184, (99141, 24924), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (412899, 41898), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/16656 tris, lane 0/0 -> d -2 calls / -16656 tris
+            base geo [(309072, 163627, (38232, 38301), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (34551, 11667), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/34225 tris, lane 0/0 -> d -2 calls / -34225 tris
+            base geo [(197280, 50196, (120153, 8481), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (93897, 94194), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/37392 tris, lane 0/0 -> d -2 calls / -37392 tris
+            base geo [(197280, 50196, (162702, 8046), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (209316, 104130), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/120556 tris, lane 0/0 -> d -1 calls / -120556 tris
+            base geo [(1661301, 740994, (0, 361668), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/11567 tris, lane 0/0 -> d -1 calls / -11567 tris
+            base geo [(1661301, 740994, (397464, 34701), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/274225 tris, lane 0/0 -> d -1 calls / -274225 tris
+            base geo [(1661301, 740994, (443892, 822675), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/58330 tris, lane 0/0 -> d -1 calls / -58330 tris
+            base geo [(1661301, 740994, (1278303, 174990), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/65403 tris, lane 0/0 -> d -1 calls / -65403 tris
+            base geo [(1661301, 740994, (1465092, 196209), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/278072 tris, lane 0/0 -> d -1 calls / -278072 tris
+            base geo [(834216, 314413, (0, 834216), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/158063 tris, lane 0/0 -> d -1 calls / -158063 tris
+            base geo [(474189, 259009, (0, 474189), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ArchGrey_11_M0#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/151681 tris, lane 0/0 -> d -1 calls / -151681 tris
+            base geo [(455043, 224168, (0, 455043), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='BathHouse_3_M0_TowelB_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 1 calls/99200 tris, lane 0/0 -> d -1 calls / -99200 tris
+            base geo [(297600, 76288, (0, 297600), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/170865 tris, lane 0/0 -> d -1 calls / -170865 tris
+            base geo [(512595, 252008, (0, 512595), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ColorPalette_M0_GreyDark#0' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 1 calls/26637 tris, lane 0/0 -> d -1 calls / -26637 tris
+            base geo [(79911, 32382, (0, 79911), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#0' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/2944 tris, lane 0/0 -> d -1 calls / -2944 tris
+            base geo [(71928, 27704, (0, 8832), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#1' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/5991 tris, lane 0/0 -> d -1 calls / -5991 tris
+            base geo [(71928, 27704, (35907, 17973), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Grass_4_Small_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14245 tris, lane 0/0 -> d -1 calls / -14245 tris
+            base geo [(42735, 23298, (0, 42735), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/32706 tris, lane 0/0 -> d -1 calls / -32706 tris
+            base geo [(554268, 150356, (19380, 98118), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/59198 tris, lane 0/0 -> d -1 calls / -59198 tris
+            base geo [(554268, 150356, (236415, 177594), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/21095 tris, lane 0/0 -> d -1 calls / -21095 tris
+            base geo [(126525, 24265, (23436, 63285), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/10597 tris, lane 0/0 -> d -1 calls / -10597 tris
+            base geo [(126525, 24265, (94734, 31791), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/12827 tris, lane 0/0 -> d -1 calls / -12827 tris
+            base geo [(309072, 163627, (95781, 38481), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/15955 tris, lane 0/0 -> d -1 calls / -15955 tris
+            base geo [(309072, 163627, (154149, 47865), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3177 tris, lane 0/0 -> d -1 calls / -3177 tris
+            base geo [(309072, 163627, (240633, 9531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6696 tris, lane 0/0 -> d -1 calls / -6696 tris
+            base geo [(309072, 163627, (279105, 20088), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/42262 tris, lane 0/0 -> d -1 calls / -42262 tris
+            base geo [(504288, 127641, (324525, 126786), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14097 tris, lane 0/0 -> d -1 calls / -14097 tris
+            base geo [(504288, 127641, (461997, 42291), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/23004 tris, lane 0/0 -> d -1 calls / -23004 tris
+            base geo [(414942, 181957, (0, 69012), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/109503 tris, lane 0/0 -> d -1 calls / -109503 tris
+            base geo [(414942, 181957, (77463, 328509), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/20331 tris, lane 0/0 -> d -1 calls / -20331 tris
+            base geo [(98568, 74567, (0, 60993), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/4182 tris, lane 0/0 -> d -1 calls / -4182 tris
+            base geo [(98568, 74567, (73428, 12546), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M3_SandPackedDirt_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 1 calls/5177 tris, lane 0/0 -> d -1 calls / -5177 tris
+            base geo [(15531, 4810, (0, 15531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M5_SandSkirts_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 1 calls/16561 tris, lane 0/0 -> d -1 calls / -16561 tris
+            base geo [(49683, 15837, (0, 49683), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 1 calls/8228 tris, lane 0/0 -> d -1 calls / -8228 tris
+            base geo [(24684, 10384, (0, 24684), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 1 calls/49027 tris, lane 0/0 -> d -1 calls / -49027 tris
+            base geo [(147081, 74549, (0, 147081), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 1 calls/18250 tris, lane 0/0 -> d -1 calls / -18250 tris
+            base geo [(54750, 27875, (0, 54750), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='TechElement_27_M0_PropaneTank_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 1 calls/12884 tris, lane 0/0 -> d -1 calls / -12884 tris
+            base geo [(38652, 12038, (0, 38652), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Wood_0_M0_Pole_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3876 tris, lane 0/0 -> d -1 calls / -3876 tris
+            base geo [(44712, 42016, (33084, 11628), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  LANE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/530081 -> d 1 calls / 530081 tris
+            base geo -  lane geo [(1661301, 740994, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ACUnit_0_M0_A_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/278072 -> d 1 calls / 278072 tris
+            base geo -  lane geo [(834216, 314413, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/158063 -> d 1 calls / 158063 tris
+            base geo -  lane geo [(474189, 259009, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ArchGrey_11_M0#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/151681 -> d 1 calls / 151681 tris
+            base geo -  lane geo [(455043, 224168, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='BathHouse_3_M0_TowelB_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/99200 -> d 1 calls / 99200 tris
+            base geo -  lane geo [(297600, 76288, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/170865 -> d 1 calls / 170865 tris
+            base geo -  lane geo [(512595, 252008, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ColorPalette_M0_GreyDark#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/26637 -> d 1 calls / 26637 tris
+            base geo -  lane geo [(79911, 32382, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Concrete_M0_Bare_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/8935 -> d 1 calls / 8935 tris
+            base geo -  lane geo [(71928, 27704, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Grass_4_Small_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/14245 -> d 1 calls / 14245 tris
+            base geo -  lane geo [(42735, 23298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/91904 -> d 1 calls / 91904 tris
+            base geo -  lane geo [(554268, 150356, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantC_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/31692 -> d 1 calls / 31692 tris
+            base geo -  lane geo [(126525, 24265, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Rock_M0_ChippedSurface_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/132507 -> d 1 calls / 132507 tris
+            base geo -  lane geo [(414942, 181957, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sack_0_M0_TeaLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/24513 -> d 1 calls / 24513 tris
+            base geo -  lane geo [(98568, 74567, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M3_SandPackedDirt_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/5177 -> d 1 calls / 5177 tris
+            base geo -  lane geo [(15531, 4810, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M5_SandSkirts_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/16561 -> d 1 calls / 16561 tris
+            base geo -  lane geo [(49683, 15837, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/8228 -> d 1 calls / 8228 tris
+            base geo -  lane geo [(24684, 10384, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/49027 -> d 1 calls / 49027 tris
+            base geo -  lane geo [(147081, 74549, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/18250 -> d 1 calls / 18250 tris
+            base geo -  lane geo [(54750, 27875, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='TechElement_27_M0_PropaneTank_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/12884 -> d 1 calls / 12884 tris
+            base geo -  lane geo [(38652, 12038, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Wood_0_M0_Pole_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/3876 -> d 1 calls / 3876 tris
+            base geo -  lane geo [(44712, 42016, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/19108 -> d 2 calls / 19108 tris
+            base geo -  lane geo [(174291, 93325, (0, None), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantA_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/111174 -> d 2 calls / 111174 tris
+            base geo -  lane geo [(148995, 39184, (0, None), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/55311 -> d 2 calls / 55311 tris
+            base geo -  lane geo [(309072, 163627, (0, None), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/127976 -> d 2 calls / 127976 tris
+            base geo -  lane geo [(197280, 50196, (0, None), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -21, tris 0  (must equal shot delta)
+== abil_a1: base 259/1493476 (sum 259/1493476, gl 259) rev149  lane 227/1493476 (sum 227/1493476, gl 227) rev170  delta calls -32 tris 0
+  BASE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/13963 tris, lane 0/0 -> d -2 calls / -13963 tris
+            base geo [(174291, 93325, (55311, 14634), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, 27255), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/11701 tris, lane 0/0 -> d -2 calls / -11701 tris
+            base geo [(148995, 39184, (49362, 24861), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (247227, 10242), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/39210 tris, lane 0/0 -> d -2 calls / -39210 tris
+            base geo [(309072, 163627, (38232, 105963), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (34551, 11667), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/65211 tris, lane 0/0 -> d -2 calls / -65211 tris
+            base geo [(197280, 50196, (120153, 8481), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (104298, 187152), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/29422 tris, lane 0/0 -> d -2 calls / -29422 tris
+            base geo [(197280, 50196, (145497, 25251), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (335757, 63015), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/69200 tris, lane 0/0 -> d -1 calls / -69200 tris
+            base geo [(1661301, 740994, (0, 207600), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/10922 tris, lane 0/0 -> d -1 calls / -10922 tris
+            base geo [(1661301, 740994, (218493, 32766), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/18618 tris, lane 0/0 -> d -1 calls / -18618 tris
+            base geo [(1661301, 740994, (262353, 55854), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/102820 tris, lane 0/0 -> d -1 calls / -102820 tris
+            base geo [(1661301, 740994, (352053, 308460), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/17022 tris, lane 0/0 -> d -1 calls / -17022 tris
+            base geo [(1661301, 740994, (685953, 51066), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#5' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3550 tris, lane 0/0 -> d -1 calls / -3550 tris
+            base geo [(1661301, 740994, (747441, 10650), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#6' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/15638 tris, lane 0/0 -> d -1 calls / -15638 tris
+            base geo [(1661301, 740994, (1207923, 46914), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#7' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/4251 tris, lane 0/0 -> d -1 calls / -4251 tris
+            base geo [(1661301, 740994, (1547523, 12753), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3123 tris, lane 0/0 -> d -1 calls / -3123 tris
+            base geo [(834216, 314413, (41199, 9369), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/20817 tris, lane 0/0 -> d -1 calls / -20817 tris
+            base geo [(834216, 314413, (82815, 62451), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/20219 tris, lane 0/0 -> d -1 calls / -20219 tris
+            base geo [(834216, 314413, (333177, 60657), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/27068 tris, lane 0/0 -> d -1 calls / -27068 tris
+            base geo [(834216, 314413, (414372, 81204), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/4258 tris, lane 0/0 -> d -1 calls / -4258 tris
+            base geo [(834216, 314413, (734901, 12774), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/9544 tris, lane 0/0 -> d -1 calls / -9544 tris
+            base geo [(474189, 259009, (0, 28632), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6635 tris, lane 0/0 -> d -1 calls / -6635 tris
+            base geo [(474189, 259009, (38958, 19905), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/19701 tris, lane 0/0 -> d -1 calls / -19701 tris
+            base geo [(474189, 259009, (68808, 59103), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6692 tris, lane 0/0 -> d -1 calls / -6692 tris
+            base geo [(474189, 259009, (137904, 20076), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3327 tris, lane 0/0 -> d -1 calls / -3327 tris
+            base geo [(474189, 259009, (296037, 9981), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ArchGrey_11_M0#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/50492 tris, lane 0/0 -> d -1 calls / -50492 tris
+            base geo [(455043, 224168, (0, 151476), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ArchGrey_11_M0#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3350 tris, lane 0/0 -> d -1 calls / -3350 tris
+            base geo [(455043, 224168, (368445, 10050), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='BathHouse_3_M0_TowelB_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 1 calls/24198 tris, lane 0/0 -> d -1 calls / -24198 tris
+            base geo [(297600, 76288, (0, 72594), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/56940 tris, lane 0/0 -> d -1 calls / -56940 tris
+            base geo [(512595, 252008, (0, 170820), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/7152 tris, lane 0/0 -> d -1 calls / -7152 tris
+            base geo [(512595, 252008, (383316, 21456), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ColorPalette_M0_GreyDark#0' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 1 calls/13151 tris, lane 0/0 -> d -1 calls / -13151 tris
+            base geo [(79911, 32382, (0, 39453), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ColorPalette_M0_GreyDark#1' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 1 calls/3501 tris, lane 0/0 -> d -1 calls / -3501 tris
+            base geo [(79911, 32382, (58701, 10503), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#0' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/23976 tris, lane 0/0 -> d -1 calls / -23976 tris
+            base geo [(71928, 27704, (0, 71928), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/2525 tris, lane 0/0 -> d -1 calls / -2525 tris
+            base geo [(174291, 93325, (107142, 7575), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Grass_4_Small_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14245 tris, lane 0/0 -> d -1 calls / -14245 tris
+            base geo [(42735, 23298, (0, 42735), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/13752 tris, lane 0/0 -> d -1 calls / -13752 tris
+            base geo [(496701, 121555, (330336, 41256), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6987 tris, lane 0/0 -> d -1 calls / -6987 tris
+            base geo [(496701, 121555, (433836, 20961), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6490 tris, lane 0/0 -> d -1 calls / -6490 tris
+            base geo [(554268, 150356, (19380, 19470), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/19706 tris, lane 0/0 -> d -1 calls / -19706 tris
+            base geo [(554268, 150356, (58380, 59118), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/18482 tris, lane 0/0 -> d -1 calls / -18482 tris
+            base geo [(126525, 24265, (23436, 55446), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/5340 tris, lane 0/0 -> d -1 calls / -5340 tris
+            base geo [(126525, 24265, (110505, 16020), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/28143 tris, lane 0/0 -> d -1 calls / -28143 tris
+            base geo [(504288, 127641, (419859, 84429), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/46054 tris, lane 0/0 -> d -1 calls / -46054 tris
+            base geo [(414942, 181957, (0, 138162), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/2733 tris, lane 0/0 -> d -1 calls / -2733 tris
+            base geo [(414942, 181957, (189102, 8199), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/5710 tris, lane 0/0 -> d -1 calls / -5710 tris
+            base geo [(414942, 181957, (274440, 17130), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/2893 tris, lane 0/0 -> d -1 calls / -2893 tris
+            base geo [(414942, 181957, (308733, 8679), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/5827 tris, lane 0/0 -> d -1 calls / -5827 tris
+            base geo [(414942, 181957, (326103, 17481), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#5' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3009 tris, lane 0/0 -> d -1 calls / -3009 tris
+            base geo [(414942, 181957, (370086, 9027), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#6' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/2984 tris, lane 0/0 -> d -1 calls / -2984 tris
+            base geo [(414942, 181957, (397020, 8952), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/16190 tris, lane 0/0 -> d -1 calls / -16190 tris
+            base geo [(98568, 74567, (0, 48570), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M3_SandPackedDirt_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 1 calls/5177 tris, lane 0/0 -> d -1 calls / -5177 tris
+            base geo [(15531, 4810, (0, 15531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M5_SandSkirts_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 1 calls/16561 tris, lane 0/0 -> d -1 calls / -16561 tris
+            base geo [(49683, 15837, (0, 49683), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 1 calls/4108 tris, lane 0/0 -> d -1 calls / -4108 tris
+            base geo [(24684, 10384, (0, 12324), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 1 calls/18294 tris, lane 0/0 -> d -1 calls / -18294 tris
+            base geo [(147081, 74549, (0, 54882), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 1 calls/4530 tris, lane 0/0 -> d -1 calls / -4530 tris
+            base geo [(54750, 27875, (13554, 13590), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='TechElement_27_M0_PropaneTank_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 1 calls/2926 tris, lane 0/0 -> d -1 calls / -2926 tris
+            base geo [(38652, 12038, (0, 8778), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  LANE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/242021 -> d 1 calls / 242021 tris
+            base geo -  lane geo [(1661301, 740994, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ACUnit_0_M0_A_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/75485 -> d 1 calls / 75485 tris
+            base geo -  lane geo [(834216, 314413, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/45899 -> d 1 calls / 45899 tris
+            base geo -  lane geo [(474189, 259009, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ArchGrey_11_M0#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/53842 -> d 1 calls / 53842 tris
+            base geo -  lane geo [(455043, 224168, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='BathHouse_3_M0_TowelB_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/24198 -> d 1 calls / 24198 tris
+            base geo -  lane geo [(297600, 76288, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/64092 -> d 1 calls / 64092 tris
+            base geo -  lane geo [(512595, 252008, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ColorPalette_M0_GreyDark#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/16652 -> d 1 calls / 16652 tris
+            base geo -  lane geo [(79911, 32382, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Concrete_M0_Bare_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/23976 -> d 1 calls / 23976 tris
+            base geo -  lane geo [(71928, 27704, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Grass_4_Small_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/14245 -> d 1 calls / 14245 tris
+            base geo -  lane geo [(42735, 23298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/26196 -> d 1 calls / 26196 tris
+            base geo -  lane geo [(554268, 150356, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantC_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/23822 -> d 1 calls / 23822 tris
+            base geo -  lane geo [(126525, 24265, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Rock_M0_ChippedSurface_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/69210 -> d 1 calls / 69210 tris
+            base geo -  lane geo [(414942, 181957, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sack_0_M0_TeaLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/16190 -> d 1 calls / 16190 tris
+            base geo -  lane geo [(98568, 74567, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M3_SandPackedDirt_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/5177 -> d 1 calls / 5177 tris
+            base geo -  lane geo [(15531, 4810, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M5_SandSkirts_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/16561 -> d 1 calls / 16561 tris
+            base geo -  lane geo [(49683, 15837, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/4108 -> d 1 calls / 4108 tris
+            base geo -  lane geo [(24684, 10384, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/18294 -> d 1 calls / 18294 tris
+            base geo -  lane geo [(147081, 74549, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/4530 -> d 1 calls / 4530 tris
+            base geo -  lane geo [(54750, 27875, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='TechElement_27_M0_PropaneTank_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/2926 -> d 1 calls / 2926 tris
+            base geo -  lane geo [(38652, 12038, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/16488 -> d 2 calls / 16488 tris
+            base geo -  lane geo [(174291, 93325, (0, None), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantA_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/32440 -> d 2 calls / 32440 tris
+            base geo -  lane geo [(148995, 39184, (0, None), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/39210 -> d 2 calls / 39210 tris
+            base geo -  lane geo [(309072, 163627, (0, None), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/122776 -> d 2 calls / 122776 tris
+            base geo -  lane geo [(197280, 50196, (0, None), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -32, tris 0  (must equal shot delta)
+== abil_a2: base 266/2652618 (sum 266/2652618, gl 266) rev149  lane 241/2652618 (sum 241/2652618, gl 241) rev170  delta calls -25 tris 0
+  BASE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/19108 tris, lane 0/0 -> d -2 calls / -19108 tris
+            base geo [(174291, 93325, (84648, 30069), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, 27255), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/66861 tris, lane 0/0 -> d -2 calls / -66861 tris
+            base geo [(148995, 39184, (0, 36876), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, 163707), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/22039 tris, lane 0/0 -> d -2 calls / -22039 tris
+            base geo [(148995, 39184, (49362, 24861), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (330336, 41256), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantA_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/22274 tris, lane 0/0 -> d -2 calls / -22274 tris
+            base geo [(148995, 39184, (99141, 24924), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (412899, 41898), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/16656 tris, lane 0/0 -> d -2 calls / -16656 tris
+            base geo [(309072, 163627, (38232, 38301), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (34551, 11667), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/34225 tris, lane 0/0 -> d -2 calls / -34225 tris
+            base geo [(197280, 50196, (120153, 8481), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (93897, 94194), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 2 calls/37392 tris, lane 0/0 -> d -2 calls / -37392 tris
+            base geo [(197280, 50196, (162702, 8046), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (209316, 104130), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/120556 tris, lane 0/0 -> d -1 calls / -120556 tris
+            base geo [(1661301, 740994, (0, 361668), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/11567 tris, lane 0/0 -> d -1 calls / -11567 tris
+            base geo [(1661301, 740994, (397464, 34701), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/274225 tris, lane 0/0 -> d -1 calls / -274225 tris
+            base geo [(1661301, 740994, (443892, 822675), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/58330 tris, lane 0/0 -> d -1 calls / -58330 tris
+            base geo [(1661301, 740994, (1278303, 174990), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/65403 tris, lane 0/0 -> d -1 calls / -65403 tris
+            base geo [(1661301, 740994, (1465092, 196209), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/270638 tris, lane 0/0 -> d -1 calls / -270638 tris
+            base geo [(834216, 314413, (0, 811914), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ACUnit_0_M0_A_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3772 tris, lane 0/0 -> d -1 calls / -3772 tris
+            base geo [(834216, 314413, (822900, 11316), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/127956 tris, lane 0/0 -> d -1 calls / -127956 tris
+            base geo [(474189, 259009, (0, 383868), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/26601 tris, lane 0/0 -> d -1 calls / -26601 tris
+            base geo [(474189, 259009, (394386, 79803), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ArchGrey_11_M0#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/151681 tris, lane 0/0 -> d -1 calls / -151681 tris
+            base geo [(455043, 224168, (0, 455043), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='BathHouse_3_M0_TowelB_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 1 calls/99200 tris, lane 0/0 -> d -1 calls / -99200 tris
+            base geo [(297600, 76288, (0, 297600), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/170865 tris, lane 0/0 -> d -1 calls / -170865 tris
+            base geo [(512595, 252008, (0, 512595), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='ColorPalette_M0_GreyDark#0' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 1 calls/26637 tris, lane 0/0 -> d -1 calls / -26637 tris
+            base geo [(79911, 32382, (0, 79911), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#0' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/2944 tris, lane 0/0 -> d -1 calls / -2944 tris
+            base geo [(71928, 27704, (0, 8832), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Concrete_M0_Bare_MI#1' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 1 calls/5991 tris, lane 0/0 -> d -1 calls / -5991 tris
+            base geo [(71928, 27704, (35907, 17973), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Grass_4_Small_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14245 tris, lane 0/0 -> d -1 calls / -14245 tris
+            base geo [(42735, 23298, (0, 42735), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/26126 tris, lane 0/0 -> d -1 calls / -26126 tris
+            base geo [(554268, 150356, (19380, 78378), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/9688 tris, lane 0/0 -> d -1 calls / -9688 tris
+            base geo [(554268, 150356, (236415, 29064), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6547 tris, lane 0/0 -> d -1 calls / -6547 tris
+            base geo [(554268, 150356, (275352, 19641), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/13183 tris, lane 0/0 -> d -1 calls / -13183 tris
+            base geo [(554268, 150356, (314805, 39549), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6646 tris, lane 0/0 -> d -1 calls / -6646 tris
+            base geo [(554268, 150356, (394071, 19938), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/21095 tris, lane 0/0 -> d -1 calls / -21095 tris
+            base geo [(126525, 24265, (23436, 63285), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantC_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/10597 tris, lane 0/0 -> d -1 calls / -10597 tris
+            base geo [(126525, 24265, (94734, 31791), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/12827 tris, lane 0/0 -> d -1 calls / -12827 tris
+            base geo [(309072, 163627, (95781, 38481), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/15955 tris, lane 0/0 -> d -1 calls / -15955 tris
+            base geo [(309072, 163627, (154149, 47865), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3177 tris, lane 0/0 -> d -1 calls / -3177 tris
+            base geo [(309072, 163627, (240633, 9531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#4' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/6532 tris, lane 0/0 -> d -1 calls / -6532 tris
+            base geo [(309072, 163627, (269769, 19596), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#2' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/42262 tris, lane 0/0 -> d -1 calls / -42262 tris
+            base geo [(504288, 127641, (324525, 126786), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#3' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/14097 tris, lane 0/0 -> d -1 calls / -14097 tris
+            base geo [(504288, 127641, (461997, 42291), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Rock_M0_ChippedSurface_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/135324 tris, lane 0/0 -> d -1 calls / -135324 tris
+            base geo [(414942, 181957, (0, 405972), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/20331 tris, lane 0/0 -> d -1 calls / -20331 tris
+            base geo [(98568, 74567, (0, 60993), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sack_0_M0_TeaLeaves_MI#1' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/4182 tris, lane 0/0 -> d -1 calls / -4182 tris
+            base geo [(98568, 74567, (73428, 12546), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M3_SandPackedDirt_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 1 calls/5177 tris, lane 0/0 -> d -1 calls / -5177 tris
+            base geo [(15531, 4810, (0, 15531), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Sand_M5_SandSkirts_MI#0' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 1 calls/16561 tris, lane 0/0 -> d -1 calls / -16561 tris
+            base geo [(49683, 15837, (0, 49683), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 1 calls/8228 tris, lane 0/0 -> d -1 calls / -8228 tris
+            base geo [(24684, 10384, (0, 24684), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 1 calls/45871 tris, lane 0/0 -> d -1 calls / -45871 tris
+            base geo [(147081, 74549, (0, 137613), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#0' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 1 calls/18250 tris, lane 0/0 -> d -1 calls / -18250 tris
+            base geo [(54750, 27875, (0, 54750), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='TechElement_27_M0_PropaneTank_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 1 calls/12884 tris, lane 0/0 -> d -1 calls / -12884 tris
+            base geo [(38652, 12038, (0, 38652), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  BASE-ONLY obj='Wood_0_M0_Pole_MI#0' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 1 calls/3876 tris, lane 0/0 -> d -1 calls / -3876 tris
+            base geo [(44712, 42016, (33084, 11628), None, None, False, 1, 'screen', 'scene')]  lane geo -
+  LANE-ONLY obj='ABuildingRocks_0_M0_BasillicaMediumShards_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/530081 -> d 1 calls / 530081 tris
+            base geo -  lane geo [(1661301, 740994, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ACUnit_0_M0_A_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/274410 -> d 1 calls / 274410 tris
+            base geo -  lane geo [(834216, 314413, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='AdobeBricks_M1_WearAndTearDark_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/154557 -> d 1 calls / 154557 tris
+            base geo -  lane geo [(474189, 259009, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ArchGrey_11_M0#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/151681 -> d 1 calls / 151681 tris
+            base geo -  lane geo [(455043, 224168, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='BathHouse_3_M0_TowelB_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr3' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/99200 -> d 1 calls / 99200 tris
+            base geo -  lane geo [(297600, 76288, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Ceramic_M0_SquareTilePristineRed_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/170865 -> d 1 calls / 170865 tris
+            base geo -  lane geo [(512595, 252008, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='ColorPalette_M0_GreyDark#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr2' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/26637 -> d 1 calls / 26637 tris
+            base geo -  lane geo [(79911, 32382, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Concrete_M0_Bare_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Concrete_M0_Bare_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/8935 -> d 1 calls / 8935 tris
+            base geo -  lane geo [(71928, 27704, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Grass_4_Small_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/14245 -> d 1 calls / 14245 tris
+            base geo -  lane geo [(42735, 23298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantBDry_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/62190 -> d 1 calls / 62190 tris
+            base geo -  lane geo [(554268, 150356, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantC_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/31692 -> d 1 calls / 31692 tris
+            base geo -  lane geo [(126525, 24265, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Rock_M0_ChippedSurface_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/135324 -> d 1 calls / 135324 tris
+            base geo -  lane geo [(414942, 181957, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sack_0_M0_TeaLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/24513 -> d 1 calls / 24513 tris
+            base geo -  lane geo [(98568, 74567, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M3_SandPackedDirt_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M3_SandPackedDirt_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/5177 -> d 1 calls / 5177 tris
+            base geo -  lane geo [(15531, 4810, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Sand_M5_SandSkirts_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Sand_M5_SandSkirts_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/16561 -> d 1 calls / 16561 tris
+            base geo -  lane geo [(49683, 15837, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlendOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlendOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/8228 -> d 1 calls / 8228 tris
+            base geo -  lane geo [(24684, 10384, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterBlend_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterBlend_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/45871 -> d 1 calls / 45871 tris
+            base geo -  lane geo [(147081, 74549, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Stone_M8_StoneRoundWallPlasterOrange_MI#multi' type=Mesh mat=MeshLambertMaterial mname='Stone_M8_StoneRoundWallPlasterOrange_MI' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/18250 -> d 1 calls / 18250 tris
+            base geo -  lane geo [(54750, 27875, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='TechElement_27_M0_PropaneTank_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr6' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/12884 -> d 1 calls / 12884 tris
+            base geo -  lane geo [(38652, 12038, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Wood_0_M0_Pole_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 1/3876 -> d 1 calls / 3876 tris
+            base geo -  lane geo [(44712, 42016, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Foliage_1_M0_VegetationLeaves_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/19108 -> d 2 calls / 19108 tris
+            base geo -  lane geo [(174291, 93325, (0, None), None, None, False, 1, 'screen', 'scene'), (27255, 9247, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantA_MI#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/111174 -> d 2 calls / 111174 tris
+            base geo -  lane geo [(148995, 39184, (0, None), None, None, False, 1, 'screen', 'scene'), (496701, 121555, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantD_MI_2#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/55147 -> d 2 calls / 55147 tris
+            base geo -  lane geo [(309072, 163627, (0, None), None, None, False, 1, 'screen', 'scene'), (46218, 14656, (0, None), None, None, False, 1, 'screen', 'scene')]
+  LANE-ONLY obj='Plant_0_M0_DesertPlantE_MI_3#multi' type=Mesh mat=MeshLambertMaterial mname='nmArr1' owner='native-bind > <Group>': base 0 calls/0 tris, lane 2/127976 -> d 2 calls / 127976 tris
+            base geo -  lane geo [(197280, 50196, (0, None), None, None, False, 1, 'screen', 'scene'), (504288, 127641, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -25, tris 0  (must equal shot delta)

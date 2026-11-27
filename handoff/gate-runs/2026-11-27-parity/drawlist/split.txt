@@ -1,0 +1,4 @@
+vandal_a0: map-strip (native-bind #N -> #multi) delta calls -21 tris 0; everything else delta calls 0 tris 0
+abil_a0: map-strip (native-bind #N -> #multi) delta calls -21 tris 0; everything else delta calls 0 tris 0
+abil_a1: map-strip (native-bind #N -> #multi) delta calls -32 tris 0; everything else delta calls 0 tris 0
+abil_a2: map-strip (native-bind #N -> #multi) delta calls -25 tris 0; everything else delta calls 0 tris 0

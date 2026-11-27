@@ -1,0 +1,23 @@
+5s UU serve /workspace/work/qa/three.min.js (CDN route https://unpkg.com/three@0.149.0/build/three.min.js) matched yes fn=bt
+15s boot rev 149
+15s UU probe (no call) function bt(){const t=(globalThis.__u=(globalThis.__u||0)+1).toString(16).padStart(12,"0");return"00000000-0000-4000-8000-"+t} | __u=20940
+15s pre 1
+47s loaded 32s
+50s setup {"pr":1,"buf":[960,540],"aa":false,"shadow":false,"shType":2,"tm":4,"tme":1.05,"out":3001,"pcl":true}
+50s prep bought
+77s setup vandal {"hid":["Object3D","Group","Group","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh"],"a0":"KAY/O:idle","a1":"Reyna:idle","a2":"Yoru:idle","a3":"Gekko:idle","a4":"Brimstone:idle","a5":"Sova:idle","a6":"Chamber:idle","a7":"Tejo:idle","a8":"Miks:idle","vfDrop":[],"fpAct":["FP_Core_AK_S0_IdlePose@0.013w1.00","Idle@0.013w1.00"],"fp":"Vandal:prime.1:idle","views":8,"cp":{"x":0.75,"y":5.823362691700975,"z":70.5,"gy":4.223}}
+112s shot vandal_a0 calls 196 tris 2676739 34776ms
+130s shot vandal_a1 calls 197 tris 2671189 18707ms
+133s shot vandal_a2 calls 195 tris 1480216 2863ms
+136s shot vandal_a3 calls 191 tris 1256720 3039ms
+140s shot vandal_a4 calls 196 tris 2669361 3449ms
+145s shot vandal_a5 calls 200 tris 2639354 5211ms
+148s shot vandal_a6 calls 90 tris 540605 3382ms
+151s shot vandal_a7 calls 122 tris 717488 2137ms
+152s shot vandal_vm calls 14 tris 27332 1019ms
+156s hud /workspace/work/qa/three/shots/bind-low-mbaseP1-hud.png
+156s abil {"xCbCloud":"ok","blazeWall":"ok","sgxBarrierWall":"ok","brxSkySmokeAt":"ok","omxCoverDome":"ok"}
+166s shot abil_a0 calls 261 tris 2688357 10026ms
+173s shot abil_a1 calls 258 tris 1491830 7577ms
+178s shot abil_a2 calls 265 tris 2650972 4286ms
+178s done errors 0 console 6
