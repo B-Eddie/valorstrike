@@ -1,0 +1,30 @@
+16s boot rev 149
+34s loaded 18s
+38s setup {"pr":1,"buf":[1280,720],"aa":true,"shadow":true,"shType":2,"tm":4,"tme":1.05,"out":3001,"pcl":true}
+47s shot v0 calls 120 tris 858649 8977ms
+49s shot v1 calls 109 tris 643337 1489ms
+54s shot v2 calls 185 tris 2227256 4954ms
+58s shot v3 calls 161 tris 2426011 4680ms
+61s shot v4 calls 132 tris 855152 2314ms
+62s shot v5 calls 87 tris 509273 1435ms
+65s shot v6 calls 177 tris 1821210 3244ms
+68s shot v7 calls 170 tris 1419383 3008ms
+70s shot v8 calls 150 tris 902127 1898ms
+72s shot v9 calls 115 tris 702918 1597ms
+73s shot v10 calls 83 tris 483769 865ms
+74s shot v11 calls 105 tris 612378 1555ms
+75s shot v12 calls 84 tris 407716 1028ms
+77s shot v13 calls 89 tris 521513 1769ms
+80s shot v14 calls 155 tris 1522303 2985ms
+83s shot v15 calls 155 tris 1549072 3133ms
+87s shot v16 calls 167 tris 2498627 4242ms
+92s shot v17 calls 165 tris 2521266 4552ms
+95s shot v18 calls 152 tris 1294845 3381ms
+99s shot v19 calls 154 tris 1334723 3725ms
+101s shot v20 calls 136 tris 896933 2150ms
+104s shot v21 calls 143 tris 935143 2263ms
+105s shot v22 calls 97 tris 480070 1191ms
+110s shot v23 calls 175 tris 2055652 4750ms
+111s shot v24 calls 137 tris 795291 1792ms
+115s shot v25 calls 165 tris 1652698 3540ms
+115s done errors 0 console 9

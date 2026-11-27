@@ -1,0 +1,52 @@
+{
+ "map": "bind",
+ "gq": "low",
+ "tag": "mbaseG",
+ "root": "/workspace/work/qa/three/base_wt",
+ "mode": "match",
+ "size": [
+  960,
+  540
+ ],
+ "errors": [
+  "page.evaluate: Target page, context or browser has been closed\n    at X (/workspace/work/qa/three/h.cjs:35:27)\n    at global.SHOT (/workspace/work/qa/three/h.cjs:50:90)\n    at shotsFor (/workspace/work/qa/three/agents.cjs:24:46)\n    at async module.exports (/workspace/work/qa/three/agents.cjs:31:3)\n    at /workspace/work/qa/three/async /workspace/work/qa/three/h.cjs:58:65"
+ ],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebGLContextLost: WebGL context lost during page\n    at HTMLCanvasElement.<anonymous> (http://127.0.0.1:8961/:73:15)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED"
+ ],
+ "shots": {
+  "vandal_a0": {
+   "calls": 191,
+   "tris": 2684585,
+   "w": 960,
+   "h": 540,
+   "ms": 44796
+  }
+ },
+ "rev": "149",
+ "pre": 1,
+ "loadS": 24,
+ "setup": {
+  "pr": 1,
+  "buf": [
+   960,
+   540
+  ],
+  "aa": false,
+  "shadow": false,
+  "shType": 2,
+  "tm": 4,
+  "tme": 1.05,
+  "out": 3001,
+  "pcl": true
+ },
+ "setupInfo": {
+  "vandal": "{\"hid\":[\"Object3D\",\"Group\",\"Group\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\"],\"a0\":\"KAY/O:idle\",\"a1\":\"Reyna:idle\",\"a2\":\"Yoru:idle\",\"a3\":\"Gekko:idle\",\"a4\":\"Brimstone:idle\",\"a5\":\"Sova:idle\",\"a6\":\"Chamber:idle\",\"a7\":\"Tejo:idle\",\"a8\":\"Miks:idle\",\"vfDrop\":[],\"fpAct\":[\"FP_Core_AK_S0_IdlePose@0.013w1.00\",\"Idle@0.013w1.00\"],\"fp\":\"Vandal:prime.1:idle\",\"views\":8,\"cp\":{\"x\":0.75,\"y\":5.823362691700975,\"z\":70.5,\"gy\":4.223}}"
+ },
+ "ms": 112102
+}

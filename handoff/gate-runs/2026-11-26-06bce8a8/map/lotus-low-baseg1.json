@@ -1,0 +1,222 @@
+{
+ "map": "lotus",
+ "gq": "low",
+ "tag": "baseg1",
+ "root": "/workspace/work/qa/three/base_wt",
+ "mode": "map",
+ "size": [
+  1280,
+  720
+ ],
+ "errors": [],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED"
+ ],
+ "shots": {
+  "v0": {
+   "calls": 96,
+   "tris": 996092,
+   "w": 1280,
+   "h": 720,
+   "ms": 5990
+  },
+  "v1": {
+   "calls": 130,
+   "tris": 1620546,
+   "w": 1280,
+   "h": 720,
+   "ms": 2384
+  },
+  "v2": {
+   "calls": 128,
+   "tris": 1475399,
+   "w": 1280,
+   "h": 720,
+   "ms": 1700
+  },
+  "v3": {
+   "calls": 80,
+   "tris": 590878,
+   "w": 1280,
+   "h": 720,
+   "ms": 1415
+  },
+  "v4": {
+   "calls": 91,
+   "tris": 914611,
+   "w": 1280,
+   "h": 720,
+   "ms": 1528
+  },
+  "v5": {
+   "calls": 96,
+   "tris": 852450,
+   "w": 1280,
+   "h": 720,
+   "ms": 1870
+  },
+  "v6": {
+   "calls": 98,
+   "tris": 875571,
+   "w": 1280,
+   "h": 720,
+   "ms": 1649
+  },
+  "v7": {
+   "calls": 120,
+   "tris": 1400209,
+   "w": 1280,
+   "h": 720,
+   "ms": 1934
+  },
+  "v8": {
+   "calls": 121,
+   "tris": 1089706,
+   "w": 1280,
+   "h": 720,
+   "ms": 1614
+  },
+  "v9": {
+   "calls": 90,
+   "tris": 669040,
+   "w": 1280,
+   "h": 720,
+   "ms": 1770
+  },
+  "v10": {
+   "calls": 47,
+   "tris": 307562,
+   "w": 1280,
+   "h": 720,
+   "ms": 1193
+  },
+  "v11": {
+   "calls": 51,
+   "tris": 339960,
+   "w": 1280,
+   "h": 720,
+   "ms": 1565
+  },
+  "v12": {
+   "calls": 91,
+   "tris": 764519,
+   "w": 1280,
+   "h": 720,
+   "ms": 1315
+  },
+  "v13": {
+   "calls": 102,
+   "tris": 738954,
+   "w": 1280,
+   "h": 720,
+   "ms": 1939
+  },
+  "v14": {
+   "calls": 123,
+   "tris": 1239353,
+   "w": 1280,
+   "h": 720,
+   "ms": 2113
+  },
+  "v15": {
+   "calls": 125,
+   "tris": 1257282,
+   "w": 1280,
+   "h": 720,
+   "ms": 1885
+  },
+  "v16": {
+   "calls": 113,
+   "tris": 1320630,
+   "w": 1280,
+   "h": 720,
+   "ms": 1940
+  },
+  "v17": {
+   "calls": 116,
+   "tris": 1334627,
+   "w": 1280,
+   "h": 720,
+   "ms": 2053
+  },
+  "v18": {
+   "calls": 112,
+   "tris": 1311307,
+   "w": 1280,
+   "h": 720,
+   "ms": 1892
+  },
+  "v19": {
+   "calls": 111,
+   "tris": 1337264,
+   "w": 1280,
+   "h": 720,
+   "ms": 1912
+  },
+  "v20": {
+   "calls": 117,
+   "tris": 1229617,
+   "w": 1280,
+   "h": 720,
+   "ms": 1808
+  },
+  "v21": {
+   "calls": 117,
+   "tris": 1241062,
+   "w": 1280,
+   "h": 720,
+   "ms": 1872
+  },
+  "v22": {
+   "calls": 96,
+   "tris": 818571,
+   "w": 1280,
+   "h": 720,
+   "ms": 1378
+  },
+  "v23": {
+   "calls": 84,
+   "tris": 541188,
+   "w": 1280,
+   "h": 720,
+   "ms": 1426
+  },
+  "v24": {
+   "calls": 92,
+   "tris": 560572,
+   "w": 1280,
+   "h": 720,
+   "ms": 1277
+  },
+  "v25": {
+   "calls": 121,
+   "tris": 1695360,
+   "w": 1280,
+   "h": 720,
+   "ms": 2431
+  }
+ },
+ "rev": "149",
+ "loadS": 9,
+ "setup": {
+  "pr": 1,
+  "buf": [
+   1280,
+   720
+  ],
+  "aa": false,
+  "shadow": false,
+  "shType": 2,
+  "tm": 4,
+  "tme": 1.05,
+  "out": 3001,
+  "pcl": true
+ },
+ "ms": 73391
+}

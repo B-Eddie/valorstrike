@@ -1,0 +1,1 @@
+Crash report: installed first, CDN scripts CORS-enabled; errors (message, file:line:col, stack, muted source), rejections, WebGLContextLost (named, message + Reload when unrestored), shader link / compile, ws close codes, load stage and GL limits saved to localStorage; next load shows a dismissible "Last match ended" note with Copy

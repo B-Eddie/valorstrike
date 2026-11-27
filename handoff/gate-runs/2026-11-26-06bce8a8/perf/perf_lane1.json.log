@@ -1,0 +1,20 @@
+11s boot
+54s match loaded 43s
+62s cfg {"pr":1,"buf":[1280,720],"gov":false,"xs":{"res":"retina","shd":"map","aa":true,"lod":40}}
+62s noop 43
+66s warm frames/3s 0
+69s warm frames/3s 0
+72s warm frames/3s 0
+75s warm frames/3s 0
+78s warm frames/3s 0
+83s warm frames/3s 1
+86s warm frames/3s 3
+89s warm frames/3s 0
+93s warm frames/3s 0
+97s warm frames/3s 0
+102s warm frames/3s 1
+105s warm frames/3s 138
+115s meas {"frames":421,"ftMean":23.59,"calls":115,"tris":646826,"xSimRun":0.787,"vmTick":0.391,"xVis":1.316,"xSolTick":0.247,"umw":1.912,"render:main":8.06,"loop":12.234}
+125s meas {"frames":475,"ftMean":21.68,"calls":125,"tris":697814,"xSimRun":0.706,"vmTick":0.319,"xVis":1.263,"xSolTick":0.209,"umw":1.907,"render:main":6.839,"loop":10.578}
+135s meas {"frames":384,"ftMean":26.08,"calls":231,"tris":2499386,"xSimRun":2.713,"vmTick":0.282,"xVis":1.438,"xSolTick":0.176,"umw":1.879,"render:main":7.735,"loop":13.756}
+136s done

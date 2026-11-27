@@ -1,0 +1,5 @@
+line-up a: 4 rounds, 317 s; casts ["Fade:0","Killjoy:1","Deadlock:0","Miks:0","Neon:0","Clove:0","Phoenix:4","Cypher:2","Astra:0"]
+line-up b: 4 rounds, 329 s; casts ["Tejo:0","Chamber:4","KAY/O:0","Hush:0","Veto:0","Harbor:0","Vyse:0","Cypher:4","Breach:1"]
+FAIL test_bot_ults_offline
+ - 1. only 6/18 bots cast their ultimate within 4 rounds
+ - 1. agents that never cast: Fade, Deadlock, Miks, Neon, Clove, Astra, Tejo, KAY/O, Hush, Veto, Harbor, Vyse

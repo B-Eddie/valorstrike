@@ -1,0 +1,2 @@
+bind low mbaseG vs mbaseG2 shots 1 total px differ 1041 min SSIM 0.999024
+   ('vandal_a0', 1041, 208, 0.999024, 0.0204)

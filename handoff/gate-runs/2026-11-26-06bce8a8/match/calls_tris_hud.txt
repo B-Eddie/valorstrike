@@ -1,0 +1,15 @@
+errors mbaseG 1 mbaseG2 0 mlaneG 0 rev 149 170
+  vandal_a0 mbaseG2 calls 194 tris 2677789 | mlaneG calls 194 tris 2681339 | mbaseG calls 191
+  vandal_a1 mbaseG2 calls 195 tris 2672239 | mlaneG calls 195 tris 2675789 | mbaseG calls None
+  vandal_a2 mbaseG2 calls 193 tris 1481266 | mlaneG calls 193 tris 1484816 | mbaseG calls None
+  vandal_a3 mbaseG2 calls 189 tris 1257770 | mlaneG calls 189 tris 1261320 | mbaseG calls None
+  vandal_a4 mbaseG2 calls 194 tris 2670411 | mlaneG calls 194 tris 2673961 | mbaseG calls None
+  vandal_a5 mbaseG2 calls 198 tris 2640404 | mlaneG calls 198 tris 2643954 | mbaseG calls None
+  vandal_a6 mbaseG2 calls 95 tris 633611 | mlaneG calls 89 tris 585083 | mbaseG calls None
+  vandal_a7 mbaseG2 calls 115 tris 718784 | mlaneG calls 115 tris 718784 | mbaseG calls None
+  vandal_vm mbaseG2 calls 14 tris 27332 | mlaneG calls 14 tris 27332 | mbaseG calls None
+  abil_a0 mbaseG2 calls 259 tris 2689407 | mlaneG calls 249 tris 2691757 | mbaseG calls None
+  abil_a1 mbaseG2 calls 256 tris 1492880 | mlaneG calls 247 tris 1495232 | mbaseG calls None
+  abil_a2 mbaseG2 calls 263 tris 2652022 | mlaneG calls 253 tris 2654372 | mbaseG calls None
+HUD png sizes (540, 960, 3) (540, 960, 3)
+HUD mbaseG2 vs mlaneG px differ 0 max delta 0 mean abs 0.0

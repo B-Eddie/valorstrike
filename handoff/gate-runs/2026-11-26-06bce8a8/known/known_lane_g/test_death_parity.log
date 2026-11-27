@@ -1,0 +1,3 @@
+FAILED:
+ - camera pulled out of the body >= 1.5 m within 0.8 s: 1.10
+ - own body inside the frame (40.6 deg off centre, vertical half-fov 37.5)

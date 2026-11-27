@@ -1,0 +1,9 @@
+13s boot rev 149
+13s pre 1
+36s loaded 24s
+39s setup {"pr":1,"buf":[960,540],"aa":false,"shadow":false,"shType":2,"tm":4,"tme":1.05,"out":3001,"pcl":true}
+39s prep bought
+63s setup vandal {"hid":["Object3D","Group","Group","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh"],"a0":"KAY/O:idle","a1":"Reyna:idle","a2":"Yoru:idle","a3":"Gekko:idle","a4":"Brimstone:idle","a5":"Sova:idle","a6":"Chamber:idle","a7":"Tejo:idle","a8":"Miks:idle","vfDrop":[],"fpAct":["FP_Core_AK_S0_IdlePose@0.013w1.00","Idle@0.013w1.00"],"fp":"Vandal:prime.1:idle","views":8,"cp":{"x":0.75,"y":5.823362691700975,"z":70.5,"gy":4.223}}
+108s shot vandal_a0 calls 191 tris 2684585 44796ms
+112s ERR Error: page.evaluate: Target page, context or browser has been closed
+112s done errors 1 console 6

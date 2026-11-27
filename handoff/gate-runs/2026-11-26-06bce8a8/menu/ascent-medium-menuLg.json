@@ -1,0 +1,58 @@
+{
+ "map": "ascent",
+ "gq": "medium",
+ "tag": "menuLg",
+ "root": "/workspace/work/vs-lane-three",
+ "mode": "map",
+ "size": [
+  1280,
+  720
+ ],
+ "errors": [],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: WebGLContextLost: WebGL context lost during map-upload\n    at HTMLCanvasElement.<anonymous> (http://127.0.0.1:8961/:73:15)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: WebGLContextLost: WebGL context lost during map-upload\n    at HTMLCanvasElement.<anonymous> (http://127.0.0.1:8961/:73:15)"
+ ],
+ "shots": {
+  "xsk_vandal": {
+   "calls": 11,
+   "tris": 9624,
+   "w": 964,
+   "h": 425
+  },
+  "xsk_knife": {
+   "calls": 1,
+   "tris": 2542,
+   "w": 964,
+   "h": 425
+  },
+  "agv_sova": {
+   "calls": 18,
+   "tris": 48748,
+   "w": 572,
+   "h": 277
+  }
+ },
+ "rev": "170",
+ "loadS": 10,
+ "setup": {
+  "pr": 1,
+  "buf": [
+   1280,
+   720
+  ],
+  "aa": true,
+  "shadow": true,
+  "shType": 2,
+  "tm": 4,
+  "tme": 1.05,
+  "out": "srgb",
+  "pcl": true
+ },
+ "ms": 41864
+}

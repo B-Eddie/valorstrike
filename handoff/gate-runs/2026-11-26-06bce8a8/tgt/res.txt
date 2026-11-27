@@ -1,0 +1,9 @@
+test_loader_retry rc=0 3s
+test_map_load_memory rc=0 1s
+test_crash_report rc=0 0s
+test_map_prefetch rc=0 1s
+test_asset_versions rc=0 0s
+test_renderer_rebind rc=0 0s
+test_render_quality rc=0 0s
+test_frame_governor rc=0 1s
+DONE

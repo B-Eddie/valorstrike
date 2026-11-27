@@ -1,0 +1,10 @@
+Negative control Jett crouch gap: 39.7 cm
+AssertionError [ERR_ASSERTION]: tejo waist edge growth 0.070
+    at /workspace/work/vs-lane-three/work/test_tp_body_stretch.cjs:34:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

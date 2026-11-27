@@ -1,0 +1,20 @@
+base1 root /workspace/work/qa/three/base_wt fail None errors 0
+  meas0: frames 488 ftMean 20.49 loop 12.227 render:main 8.06 umw 1.62 xSimRun 0.832 calls 125 tris 677081
+  meas1: frames 502 ftMean 20.25 loop 10.244 render:main 6.417 umw 1.417 xSimRun 0.673 calls 133 tris 692115
+  meas2: frames 370 ftMean 27.16 loop 16.282 render:main 9.79 umw 1.798 xSimRun 2.44 calls 270 tris 2634029
+  mean of 3: ftMean 22.633 loop 12.918 render:main 8.089 umw 1.612
+lane1 root /workspace/work/vs-lane-three fail None errors 0
+  meas0: frames 421 ftMean 23.59 loop 12.234 render:main 8.06 umw 1.912 xSimRun 0.787 calls 115 tris 646826
+  meas1: frames 475 ftMean 21.68 loop 10.578 render:main 6.839 umw 1.907 xSimRun 0.706 calls 125 tris 697814
+  meas2: frames 384 ftMean 26.08 loop 13.756 render:main 7.735 umw 1.879 xSimRun 2.713 calls 231 tris 2499386
+  mean of 3: ftMean 23.783 loop 12.189 render:main 7.545 umw 1.899
+base2 root /workspace/work/qa/three/base_wt fail None errors 0
+  meas0: frames 427 ftMean 23.42 loop 11.804 render:main 7.702 umw 1.363 xSimRun 0.817 calls 135 tris 761523
+  meas1: frames 404 ftMean 24.79 loop 11.187 render:main 6.628 umw 1.386 xSimRun 0.834 calls 113 tris 542600
+  meas2: frames 366 ftMean 27.37 loop 12.752 render:main 6.791 umw 1.431 xSimRun 2.104 calls 189 tris 1643649
+  mean of 3: ftMean 25.193 loop 11.914 render:main 7.04 umw 1.393
+lane2 root /workspace/work/vs-lane-three fail None errors 0
+  meas0: frames 465 ftMean 21.58 loop 11.774 render:main 7.414 umw 1.547 xSimRun 0.891 calls 109 tris 614004
+  meas1: frames 494 ftMean 20.31 loop 9.619 render:main 5.887 umw 1.416 xSimRun 0.748 calls 151 tris 964141
+  meas2: frames 470 ftMean 21.31 loop 12.6 render:main 7.654 umw 1.43 xSimRun 2.027 calls 247 tris 2806631
+  mean of 3: ftMean 21.067 loop 11.331 render:main 6.985 umw 1.464

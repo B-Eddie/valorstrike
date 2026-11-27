@@ -1,0 +1,4 @@
+ascent medium menuBg vs menuLg shots 3 total px differ 1 min SSIM 1.0
+   ('agv_sova', 0, 0, 1.0, 0.0)
+   ('xsk_knife', 0, 0, 1.0, 0.0)
+   ('xsk_vandal', 1, 1, 1.0, 0.0)

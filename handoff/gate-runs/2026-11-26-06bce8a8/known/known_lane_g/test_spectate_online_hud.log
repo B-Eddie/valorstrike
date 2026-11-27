@@ -1,0 +1,4 @@
+FAIL:
+ - a shot later (row [15]): HUD = Bot Omen {"h":{"sp":true,"cur":"Bot Omen","hp":"73","arm":"25","wn":"Spectre","mag":"…","rs":"20","ab":"Omen abilities (spectating)"},"w":{"hp":"73","arm":"25","wn":"Spectre","mag":"27","rs":"20"}}
+ - right click -> previous: HUD = Bot Omen {"h":{"sp":true,"cur":"Bot Omen","hp":"73","arm":"25","wn":"Spectre","mag":"…","rs":"20","ab":"Omen abilities (spectating)"},"w":{"hp":"73","arm":"25","wn":"Spectre","mag":"27","rs":"20"}}
+ - followed teammate died -> the other: HUD = Bot Omen {"h":{"sp":true,"cur":"Bot Omen","hp":"73","arm":"25","wn":"Spectre","mag":"…","rs":"20","ab":"Omen abilities (spectating)"},"w":{"hp":"73","arm":"25","wn":"Spectre","mag":"27","rs":"20"}}

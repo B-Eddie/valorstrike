@@ -1,0 +1,13 @@
+11s boot rev 170
+21s loaded 10s
+25s setup {"pr":1,"buf":[1280,720],"aa":true,"shadow":true,"shType":2,"tm":4,"tme":1.05,"out":"srgb","pcl":true}
+25s xsk Vandal true
+26s xsk ready Vandal true Vandal|prime.1 ready 964x425
+31s shot xsk_vandal 964x425 calls 11 tris 9624
+31s xsk Knife true
+32s xsk ready Knife true Knife|blastx ready 964x425
+35s shot xsk_knife 964x425 calls 1 tris 2542
+35s agv true
+36s agv ready true
+42s shot agv_sova 572x277 calls 18 tris 48748
+42s done errors 0 console 7

@@ -1,0 +1,2 @@
+ascent-medium-menuBg-vs-menuLg-agv_sova: 0 px differ (lane/B PNG and diff omitted; identical to ascent-medium-menuBg-agv_sova.png)
+ascent-medium-menuBg-vs-menuLg-xsk_knife: 0 px differ (lane/B PNG and diff omitted; identical to ascent-medium-menuBg-xsk_knife.png)

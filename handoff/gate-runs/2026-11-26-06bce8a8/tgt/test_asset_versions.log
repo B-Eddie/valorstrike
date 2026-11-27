@@ -1,0 +1,1 @@
+Asset versions: 3406 files versioned by content, static tags + lobby background carry ?v=, vsAssetUrl leaves CDN / HTML / unknown untouched, vercel immutable only for ?v=, worker worlds ?v= immutable

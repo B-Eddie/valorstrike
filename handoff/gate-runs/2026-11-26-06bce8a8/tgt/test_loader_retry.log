@@ -1,0 +1,4 @@
+  baseline (unpatched three r170): 14/40 textures missing, fetch peak 41, interrupted .bin -> load fails
+  patched Firefox: 120/120 textured after 185 retries, fetch peak 10/10, 307 fetches
+  patched Safari (<img>): 40/40 textured, peak 10/10
+Loader retry: installed after GLTFLoader.js; three r149 + r147 GLTFLoader: interrupted texture / glTF / .bin bodies retried up to 3x with backoff, every material textured, fetches capped at 10 (glTF / buffers first), exhausted retries / 404 -> onError, data: bypass, Cache + dedup kept, Safari <img> path retried, fetch-interruption rejections swallowed

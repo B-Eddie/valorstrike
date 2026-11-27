@@ -1,0 +1,9 @@
+AssertionError [ERR_ASSERTION]: yoru rendered/server head spread
+    at /workspace/work/vs-lane-three/work/test_native_crouch.cjs:20:5 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

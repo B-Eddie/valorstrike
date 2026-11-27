@@ -1,0 +1,15 @@
+== HEAD 06bce8a8bcf71ae767cd5b8b7aab21b39b75dd2c
+== regen
+exit=0
+exit=0
+REGEN_IDENTICAL
+cmp_exit=0
+status_lines=0 (0 = committed index.html already matches regen)
+== diff --check (vs e2c14eda)
+exit=0
+== motor==vendor
+MOTOR_EQ_VENDOR
+exit=0
+== inline parse
+inline scripts 12 parse failures 0
+exit=0

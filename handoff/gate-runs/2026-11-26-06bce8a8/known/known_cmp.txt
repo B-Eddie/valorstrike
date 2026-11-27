@@ -1,0 +1,17 @@
+test_ability_unequip rc=1 SAME
+test_bot_feel_offline rc=1 DIFF
+   base: AssertionError [ERR_ASSERTION]: a reload in an enemy's sight is spent backing away (23.5 % >= 30 %, above every 09a42d4 seed; 09a42d4 seeds 3/5/7: 7 / 23 / 8 %)
+   lane: AssertionError [ERR_ASSERTION]: a mate TRADE.range-2 m from the body trades the killer (killfeed), not the enemy nearest the body: null
+test_ability_first_cast_warm rc=1 SAME
+test_bot_ults_offline rc=1 SAME
+test_client_lifecycle rc=1 SAME
+test_client_online_gunplay rc=1 SAME
+test_client_online_abilities rc=1 SAME
+test_death_parity rc=1 SAME
+test_map_leash rc=1 SAME
+test_native_crouch rc=1 SAME
+test_player_clips rc=1 SAME
+test_skye_hawk_hold_client rc=1 SAME
+test_spectate_online_hud rc=1 SAME
+test_tp_body_stretch rc=1 SAME
+test_combat_stress_perf rc=1 SAME

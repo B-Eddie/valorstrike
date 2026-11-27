@@ -1,0 +1,11 @@
+1. direct: back-off toward the peek spot 0.555,0.832, away 0,1, unsighted hold ok
+2. direct: peek kinds (1 jiggle / 2 wide / 3 tight / 4 hold) {"2":263,"4":37}, vs an Operator {"1":113,"4":37}, hold {"still":1.1,"after":3}
+AssertionError [ERR_ASSERTION]: a mate TRADE.range-2 m from the body trades the killer (killfeed), not the enemy nearest the body: null
+    at /workspace/work/vs-lane-three/work/test_bot_feel_offline.cjs:73:2 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: null,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

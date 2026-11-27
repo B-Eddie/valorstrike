@@ -1,0 +1,58 @@
+Phoenix window 0: objs 3011 (cap 1836), textContent writes 155 (cap 130), programs 0, textures 0, cpu p95 16 ms
+Phoenix window 1: objs 516 (cap 5805), textContent writes 308 (cap 292), programs 0, textures 0, cpu p95 12 ms
+Sage window 0: objs 2345 (cap 6063), textContent writes 177 (cap 437), programs 0, textures 0, cpu p95 16.03 ms
+Sage window 1: objs 1543 (cap 253), textContent writes 333 (cap 147), programs 0, textures 0, cpu p95 12 ms
+Killjoy window 0: objs 3567 (cap 1504), textContent writes 80 (cap 677), programs 1, textures 0, cpu p95 16 ms
+Killjoy window 1: objs 6586 (cap 1114), textContent writes 94 (cap 299), programs 0, textures 0, cpu p95 12.01 ms
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: Phoenix window 0: 3011 THREE objects constructed > cap 1836
+Phoenix window 0: 155 textContent writes > cap 130
+Phoenix window 1: 308 textContent writes > cap 292
+Sage window 1: 1543 THREE objects constructed > cap 253
+Sage window 1: 333 textContent writes > cap 147
+Killjoy window 0: 1 new shader program(s) mid-combat: ["Mesh<Group<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]
+Killjoy window 0: 3567 THREE objects constructed > cap 1504
+Killjoy window 1: 6586 THREE objects constructed > cap 1114
++ actual - expected
+
++ [
++   'Phoenix window 0: 3011 THREE objects constructed > cap 1836',
++   'Phoenix window 0: 155 textContent writes > cap 130',
++   'Phoenix window 1: 308 textContent writes > cap 292',
++   'Sage window 1: 1543 THREE objects constructed > cap 253',
++   'Sage window 1: 333 textContent writes > cap 147',
++   'Killjoy window 0: 1 new shader program(s) mid-combat: ["Mesh<Group<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]',
++   'Killjoy window 0: 3567 THREE objects constructed > cap 1504',
++   'Killjoy window 1: 6586 THREE objects constructed > cap 1114'
++ ]
+- []
+
+    at Object.<anonymous> (/workspace/work/vs-lane-three/work/test_combat_stress_perf.cjs:47:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'Phoenix window 0: 3011 THREE objects constructed > cap 1836',
+    'Phoenix window 0: 155 textContent writes > cap 130',
+    'Phoenix window 1: 308 textContent writes > cap 292',
+    'Sage window 1: 1543 THREE objects constructed > cap 253',
+    'Sage window 1: 333 textContent writes > cap 147',
+    'Killjoy window 0: 1 new shader program(s) mid-combat: ["Mesh<Group<Scene | ShaderMaterial|onBeforeCompile(){}|19|false|false|false|false|false|false|false|false|false|true|false|2|false|false|false|false|false|false"]',
+    'Killjoy window 0: 3567 THREE objects constructed > cap 1504',
+    'Killjoy window 1: 6586 THREE objects constructed > cap 1114'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.5

@@ -1,0 +1,21 @@
+12s boot rev 149
+12s pre 1
+51s loaded 39s
+54s setup {"pr":1,"buf":[960,540],"aa":false,"shadow":false,"shType":2,"tm":4,"tme":1.05,"out":3001,"pcl":true}
+54s prep bought
+104s setup vandal {"hid":["Object3D","Group","Group","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh"],"a0":"KAY/O:idle","a1":"Reyna:idle","a2":"Yoru:idle","a3":"Gekko:idle","a4":"Brimstone:idle","a5":"Sova:idle","a6":"Chamber:idle","a7":"Tejo:idle","a8":"Miks:idle","vfDrop":[],"fpAct":["FP_Core_AK_S0_IdlePose@0.013w1.00","Idle@0.013w1.00"],"fp":"Vandal:prime.1:idle","views":8,"cp":{"x":0.75,"y":5.823362691700975,"z":70.5,"gy":4.223}}
+157s shot vandal_a0 calls 194 tris 2677789 52840ms
+178s shot vandal_a1 calls 195 tris 2672239 21036ms
+181s shot vandal_a2 calls 193 tris 1481266 3000ms
+186s shot vandal_a3 calls 189 tris 1257770 4714ms
+190s shot vandal_a4 calls 194 tris 2670411 4272ms
+195s shot vandal_a5 calls 198 tris 2640404 4867ms
+198s shot vandal_a6 calls 95 tris 633611 3405ms
+200s shot vandal_a7 calls 115 tris 718784 2292ms
+201s shot vandal_vm calls 14 tris 27332 930ms
+207s hud /workspace/work/qa/three/shots/bind-low-mbaseG2-hud.png
+207s abil {"xCbCloud":"ok","blazeWall":"ok","sgxBarrierWall":"ok","brxSkySmokeAt":"ok","omxCoverDome":"ok"}
+214s shot abil_a0 calls 259 tris 2689407 6629ms
+221s shot abil_a1 calls 256 tris 1492880 6454ms
+226s shot abil_a2 calls 263 tris 2652022 5704ms
+227s done errors 0 console 6

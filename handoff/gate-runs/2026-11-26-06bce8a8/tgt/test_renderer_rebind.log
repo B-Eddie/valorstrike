@@ -1,0 +1,1 @@
+Renderer recreation binds fresh draw function, preserves FP second pass/autoClear, idempotent binding, pause/visibility gates, no disposed-renderer reuse

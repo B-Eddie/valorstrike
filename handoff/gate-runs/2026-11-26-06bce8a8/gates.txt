@@ -1,0 +1,50 @@
+# Gate run: handoff-three-r170 @ 06bce8a8 (LANE=/workspace/work/vs-lane-three), 2026-11-26 22:55-23:50 EST (timestamps below are UTC)
+# BASE pixel/perf = /workspace/work/qa/three/base_wt (main e2c14eda); BASE known = qa/cpu/known_base (b016b657, committed 2026-11-23)
+# Driver: drive.sh (this dir). Every command, its exit code and outcome follows. Notes:
+# - runpair.sh / runmatch.sh exit codes are those of their trailing `echo DONE` (the harness output goes to /dev/null), so they
+#   are always 0. Per-side success is read from the harness JSON: [shots=N hud=yes/no] is recorded next to each run.
+# - Match mbaseG: OOM-killed at the first shot in all 3 attempts (initial + 2 reruns, the cap). dmesg: match/oom_dmesg.txt.
+#   The json/rgba left by attempt 2 hold only vandal_a0, so the two required cmp.py calls compare that one shot.
+#   SUPPLEMENTARY (not a substitute for the noise floor): cmp.py mbaseG2 vs mlaneG, all 12 shots.
+#   SUPPLEMENTARY cross-session cmp (mbaseA/mbaseB from earlier on 2026-11-26) show SSIM 0.58-0.65 even base-vs-base, so those
+#   earlier runs are not the same config. Do not use them as a noise floor.
+# - Images: lossless PNG, flip-Y from .rgba. Diff PNGs use cmp.py's heatmap (x8 red over 0.25 grey). For 0-px shots only the base PNG
+#   is kept and the shot is listed in png/EMPTY_DIFF.txt. Total PNG size 76 MB (< 250 MB), so nothing was dropped.
+#   match/png/*-hud-diff.png is the HUD diff (0 px differ).
+# - known/diag_main_e2c14eda: an extra diagnostic run of test_bot_feel_offline on main e2c14eda, to classify the one known_cmp DIFF.
+# - Static gates: static/static_gates.txt (copied from /tmp/static_gates.txt, produced before this run).
+#
+[2026-11-27 03:55:25 UTC] exit=0 :: /workspace/work/qa/three/tgt/run.sh /workspace/work/vs-lane-three /workspace/work/qa/gates/tgt test_loader_retry test_map_load_memory test_crash_report test_map_prefetch test_asset_versions test_renderer_rebind test_render_quality test_frame_governor
+[2026-11-27 03:59:13 UTC] exit=0 :: cd /workspace/work/qa/three && ./runpair.sh ascent medium g1
+[2026-11-27 03:59:13 UTC] exit=0 :: shots in ascent-medium-baseg1.json = 26
+[2026-11-27 03:59:13 UTC] exit=0 :: shots in ascent-medium-laneg1.json = 26
+[2026-11-27 03:59:38 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py ascent medium baseg1 laneg1
+[2026-11-27 04:01:44 UTC] exit=0 :: cd /workspace/work/qa/three && ./runpair.sh bind low g1
+[2026-11-27 04:01:44 UTC] exit=0 :: shots in bind-low-baseg1.json = 26
+[2026-11-27 04:01:44 UTC] exit=0 :: shots in bind-low-laneg1.json = 26
+[2026-11-27 04:01:52 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low baseg1 laneg1
+[2026-11-27 04:04:15 UTC] exit=0 :: cd /workspace/work/qa/three && ./runpair.sh lotus low g1
+[2026-11-27 04:04:15 UTC] exit=0 :: shots in lotus-low-baseg1.json = 26
+[2026-11-27 04:04:15 UTC] exit=0 :: shots in lotus-low-laneg1.json = 26
+[2026-11-27 04:04:24 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py lotus low baseg1 laneg1
+[2026-11-27 04:06:24 UTC] exit=0 :: cd /workspace/work/qa/three && VW=1 ./runmatch.sh bind low 960 540 mbaseG /workspace/work/qa/three/base_wt (attempt 0) [shots=1 hud=no]
+[2026-11-27 04:08:28 UTC] exit=0 :: cd /workspace/work/qa/three && VW=1 ./runmatch.sh bind low 960 540 mbaseG /workspace/work/qa/three/base_wt (attempt 1) [shots=1 hud=no]
+[2026-11-27 04:10:26 UTC] exit=0 :: cd /workspace/work/qa/three && VW=1 ./runmatch.sh bind low 960 540 mbaseG /workspace/work/qa/three/base_wt (attempt 2) [shots=1 hud=no]
+[2026-11-27 04:14:17 UTC] exit=0 :: cd /workspace/work/qa/three && VW=1 ./runmatch.sh bind low 960 540 mbaseG2 /workspace/work/qa/three/base_wt (attempt 0) [shots=12 hud=yes]
+[2026-11-27 04:16:46 UTC] exit=0 :: cd /workspace/work/qa/three && VW=1 ./runmatch.sh bind low 960 540 mlaneG /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes]
+[2026-11-27 04:17:02 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseG mbaseG2
+[2026-11-27 04:17:03 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseG mlaneG
+[2026-11-27 04:19:17 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/qa/three/base_wt MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates/perf/perf_base1.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 04:21:35 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/vs-lane-three MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates/perf/perf_lane1.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 04:23:45 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/qa/three/base_wt MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates/perf/perf_base2.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 04:25:59 UTC] exit=0 :: TMO=1500 ROOT=/workspace/work/vs-lane-three MAP=ascent GQ=medium STEPS=noop,warm,meas MEAS_S=10 MEAS_N=3 HARN=/workspace/work/qa/cpu/lane.cjs /workspace/work/qa/cpu/run.sh /workspace/work/qa/gates/perf/perf_lane2.json (attempt 0) [RC 0 meas=3]
+[2026-11-27 04:27:39 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseG2 mlaneG   (SUPPLEMENTARY: mbaseG OOM-killed 3x, see above)
+[2026-11-27 04:27:54 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseA mbaseG2   (SUPPLEMENTARY cross-session base-vs-base: mbaseA is an earlier base run of the same config from 2026-11-26 ~10:00 EST)
+[2026-11-27 04:27:59 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseB mbaseG2   (SUPPLEMENTARY cross-session base-vs-base: mbaseB is an earlier base run of the same config from 2026-11-26 ~10:00 EST)
+[2026-11-27 04:28:03 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseA mbaseB   (SUPPLEMENTARY cross-session base-vs-base: mbaseA is an earlier base run of the same config from 2026-11-26 ~10:00 EST)
+[2026-11-27 04:38:29 UTC] exit=0 :: /workspace/work/qa/cpu/known.sh /workspace/work/vs-lane-three /workspace/work/qa/assets/known_lane_g
+[2026-11-27 04:38:30 UTC] exit=0 :: /workspace/work/qa/gates/known_cmp_g.sh  (copy of qa/assets/known_cmp.sh with L=/workspace/work/qa/assets/known_lane_g)
+[2026-11-27 04:39:26 UTC] exit=0 :: cd /workspace/work/qa/three && ROOT=/workspace/work/qa/three/base_wt MODE=map MAP=ascent GQ=medium TAG=menuBg STEPS=node:/workspace/work/qa/three/menu.cjs timeout 1500 node h.cjs (attempt 0) [shots=3]
+[2026-11-27 04:40:09 UTC] exit=0 :: cd /workspace/work/qa/three && ROOT=/workspace/work/vs-lane-three MODE=map MAP=ascent GQ=medium TAG=menuLg STEPS=node:/workspace/work/qa/three/menu.cjs timeout 1500 node h.cjs (attempt 0) [shots=3]
+[2026-11-27 04:40:10 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py ascent medium menuBg menuLg
+[2026-11-27 04:47:38 UTC] exit=1 :: cd /workspace/work/qa/three/base_wt && timeout 1800 nice -n 10 node work/test_bot_feel_offline.cjs   (DIAGNOSTIC: main e2c14eda, to classify the known_cmp DIFF; first failure line identical to known_base)

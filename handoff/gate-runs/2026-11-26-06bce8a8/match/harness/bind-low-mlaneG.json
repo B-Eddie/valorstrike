@@ -1,0 +1,127 @@
+{
+ "map": "bind",
+ "gq": "low",
+ "tag": "mlaneG",
+ "root": "/workspace/work/vs-lane-three",
+ "mode": "match",
+ "size": [
+  960,
+  540
+ ],
+ "errors": [],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebGLContextLost: WebGL context lost during page\n    at HTMLCanvasElement.<anonymous> (http://127.0.0.1:8961/:73:15)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED"
+ ],
+ "shots": {
+  "vandal_a0": {
+   "calls": 194,
+   "tris": 2681339,
+   "w": 960,
+   "h": 540,
+   "ms": 29439
+  },
+  "vandal_a1": {
+   "calls": 195,
+   "tris": 2675789,
+   "w": 960,
+   "h": 540,
+   "ms": 13099
+  },
+  "vandal_a2": {
+   "calls": 193,
+   "tris": 1484816,
+   "w": 960,
+   "h": 540,
+   "ms": 3891
+  },
+  "vandal_a3": {
+   "calls": 189,
+   "tris": 1261320,
+   "w": 960,
+   "h": 540,
+   "ms": 2791
+  },
+  "vandal_a4": {
+   "calls": 194,
+   "tris": 2673961,
+   "w": 960,
+   "h": 540,
+   "ms": 3683
+  },
+  "vandal_a5": {
+   "calls": 198,
+   "tris": 2643954,
+   "w": 960,
+   "h": 540,
+   "ms": 3275
+  },
+  "vandal_a6": {
+   "calls": 89,
+   "tris": 585083,
+   "w": 960,
+   "h": 540,
+   "ms": 2099
+  },
+  "vandal_a7": {
+   "calls": 115,
+   "tris": 718784,
+   "w": 960,
+   "h": 540,
+   "ms": 1650
+  },
+  "vandal_vm": {
+   "calls": 14,
+   "tris": 27332,
+   "w": 960,
+   "h": 540,
+   "ms": 1013
+  },
+  "abil_a0": {
+   "calls": 249,
+   "tris": 2691757,
+   "w": 960,
+   "h": 540,
+   "ms": 8140
+  },
+  "abil_a1": {
+   "calls": 247,
+   "tris": 1495232,
+   "w": 960,
+   "h": 540,
+   "ms": 7238
+  },
+  "abil_a2": {
+   "calls": 253,
+   "tris": 2654372,
+   "w": 960,
+   "h": 540,
+   "ms": 4335
+  }
+ },
+ "rev": "170",
+ "pre": 1,
+ "loadS": 25,
+ "setup": {
+  "pr": 1,
+  "buf": [
+   960,
+   540
+  ],
+  "aa": false,
+  "shadow": false,
+  "shType": 2,
+  "tm": 4,
+  "tme": 1.05,
+  "out": "srgb",
+  "pcl": true
+ },
+ "setupInfo": {
+  "vandal": "{\"hid\":[\"Object3D\",\"Group\",\"Group\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\"],\"a0\":\"KAY/O:idle\",\"a1\":\"Reyna:idle\",\"a2\":\"Yoru:idle\",\"a3\":\"Gekko:idle\",\"a4\":\"Brimstone:idle\",\"a5\":\"Sova:idle\",\"a6\":\"Chamber:idle\",\"a7\":\"Tejo:idle\",\"a8\":\"Miks:idle\",\"vfDrop\":[],\"fpAct\":[\"FP_Core_AK_S0_IdlePose@0.013w1.00\",\"Idle@0.013w1.00\"],\"fp\":\"Vandal:prime.1:idle\",\"views\":8,\"cp\":{\"x\":0.75,\"y\":5.823362691700975,\"z\":70.5,\"gy\":4.223}}"
+ },
+ "ms": 145314
+}

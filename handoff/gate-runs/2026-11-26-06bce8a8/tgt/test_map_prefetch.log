@@ -1,0 +1,5 @@
+  prefetched before start: 32/32 handed over, 32 fetches (one per file)
+  start mid-prefetch: 7 handed over, 62 downloads for 62 files
+  map change: 12 ascent fetches aborted, bind prefetched and loaded once each
+  Safari <img> path: 22/22 handed over (object URLs), 22 downloads
+Map prefetch: room assignment fetches the map (scene.gltf, buffers, images) during the countdown; the glTF loaders take the prefetched / in-flight bodies, one download per file; a map change aborts and drops the old prefetch; a broken prefetch body falls back to the loader; the load releases it

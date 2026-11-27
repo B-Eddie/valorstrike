@@ -1,0 +1,4 @@
+  baseline GLTFLoader: 2/2 raw .bin buffers still reachable after the load
+  nmBufRelease + nmParserRelease: raw buffers 2/2 collected during the load, bufferView copies 12/12 collected after the merge, geometry identical
+  nmBufRelease sequential: 4 buffer files fetched in order, raw files held at each fetch 0,1,1,1, geometry identical
+Map load memory: GLTFLoader raw buffers leave the parser cache as soon as their bufferViews are sliced, and the parser (bufferView copies, caches) is dropped once loaded; same geometry

@@ -43,7 +43,7 @@ cmp server/src/motor.cjs vendor/valorant-feel.js && echo MOTOR_EQ_VENDOR
 node /workspace/work/qa/gpu/inline_parse.cjs index.html     # pass: "inline scripts N parse failures 0", exit 0
 ```
 - **Pass:** all four lines print and every exit code is 0.
-- `install_valorant.py` rewrites `index.html`. On the checkpoint the committed index.html has a stale `?v=` hash for three.min.js, so the first regen produces a diff. That's expected; commit the regenerated file before shipping.
+- `install_valorant.py` rewrites `index.html`. As of 06bce8a8 the committed index.html is no longer stale: it matches the regen output byte for byte (first regen produces no diff; see `handoff/gate-runs/2026-11-26-06bce8a8/static/static_gates.txt`).
 
 ## 3. Known-failure set (15 tests)
 ```bash
