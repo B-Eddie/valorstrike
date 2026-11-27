@@ -302,8 +302,12 @@ function nmStripBuild(list){const g0=list[0].geometry,names=Object.keys(g0.attri
  for(const m of list){const g=m.geometry,c=g.attributes.position.count,ix=g.index.array;for(const k of names)out[k].set(g.attributes[k].array,v*g.attributes[k].itemSize);nmOffset(ix,I,n,v);
   chunks.push(nmStripChunk(G,m,n,ix.length));v+=c;n+=ix.length;g.dispose();for(const k of names)g.deleteAttribute(k);g.setIndex(null);/* load memory: the chunk's arrays now live in the strip */}
  G.setIndex(new THREE.BufferAttribute(I,1));G.userData.shared=true;G.boundingSphere=nmSphere(out.position);
- const proxies=[];for(let k=0;k<list.length;k++){const p=new THREE.Mesh(G,list[0].material);p.name=list[0].name.replace(/@.*$/,'')+'#'+k;p.frustumCulled=false;p.matrixAutoUpdate=false;p.receiveShadow=false;Object.defineProperty(p,'castShadow',{get:()=>false,set:()=>{},configurable:true});p.visible=false;p.userData.nmRun={s:0,e:0};p.onBeforeRender=nmRunRange;p.onAfterRender=nmRunReset;proxies.push(p);}
- return {geometry:G,chunks,proxies,runs:0};}
+ // One proxy per strip: nmRuns fills its nmMulti ranges (byte offsets + index counts) every frame and the
+ // renderer issues ONE multi_draw over the strip's visible runs (JS loop when the extension is missing).
+ // Same ascending chunk order as the per-run proxies it replaces, so pixels are identical.
+ const nmM={starts:new Int32Array(list.length),counts:new Int32Array(list.length),count:0};
+ const p=new THREE.Mesh(G,list[0].material);p.name=list[0].name.replace(/@.*$/,'')+'#multi';p.frustumCulled=false;p.matrixAutoUpdate=false;p.receiveShadow=false;Object.defineProperty(p,'castShadow',{get:()=>false,set:()=>{},configurable:true});p.visible=false;p.userData.nmMulti=nmM;
+ return {geometry:G,chunks,proxies:[p],runs:0};}
 // One chunk of a strip: its index range [s, s + n) in the strip geometry G (geometry.index.array is a view of G's index while
 // it is still in the page: nothing keeps a copy once the upload drops it).
 function nmStripChunk(G,m,s,n){return {isNmStripChunk:true,name:m.name,visible:true,material:m.material,s,n,geometry:{isNmStripView:true,attributes:G.attributes,index:{count:n,get array(){const a=G.index&&G.index.array;return a?a.subarray(s,s+n):null;}}},userData:m.userData};}
@@ -312,9 +316,9 @@ function nmRunReset(r,s,c,g){g.drawRange.start=0;g.drawRange.count=Infinity;}
 var NM_RF=null;
 function nmRuns(C,cam){const S=C&&C.scene&&C.scene.userData.nmStrips;if(!S||!S.length||!cam)return;const F=NM_RF||(NM_RF={f:new THREE.Frustum(),m:new THREE.Matrix4(),s:new THREE.Sphere()});
  F.m.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse);F.f.setFromProjectionMatrix(F.m);const sp=F.s;
- for(const st of S){const P=st.proxies;let r=0,u=null;for(const ch of st.chunks){const q=ch.userData.nmChunk;let v=ch.visible;if(v){sp.center.copy(q.c);sp.radius=q.r;v=F.f.intersectsSphere(sp);}
-   if(v){if(u&&u.e===ch.s)u.e=ch.s+ch.n;else{u=P[r++].userData.nmRun;u.s=ch.s;u.e=ch.s+ch.n;}}else u=null;}
-  for(let k=0;k<P.length;k++)P[k].visible=k<r;st.runs=r;}}
+ for(const st of S){const M=st.proxies[0].userData.nmMulti;let r=0,u=-1;for(const ch of st.chunks){const q=ch.userData.nmChunk;let v=ch.visible;if(v){sp.center.copy(q.c);sp.radius=q.r;v=F.f.intersectsSphere(sp);}
+   if(v){if(u>=0&&M.starts[u]+M.counts[u]*4===ch.s*4)M.counts[u]+=ch.n;else{u=r++;M.starts[u]=ch.s*4;M.counts[u]=ch.n;}}else u=-1;}
+  st.proxies[0].visible=r>0;M.count=r;st.runs=r;}}
 // Per frame: one distance compare. Detail chunks (decals, foliage) are re-tested only after the camera has moved 2 m;
 // there is no other per-frame map work (three's own frustum culling does the rest).
 function nmCull(C,cam){const L=C&&C.scene&&C.scene.userData.nmChunks;if(!L||!cam)return;const p=cam.position,last=C.cullAt,sd=nmSmallDist();if(last&&last.sd===sd&&Math.abs(last.x-p.x)+Math.abs(last.y-p.y)+Math.abs(last.z-p.z)<2)return;C.cullAt={x:p.x,y:p.y,z:p.z,shown:0,sd};let shown=0;for(const m of L){const u=m.userData.nmChunk;if(!u.maxDist&&!u.small){m.visible=true;shown++;continue;}const d=Math.hypot(u.c.x-p.x,u.c.y-p.y,u.c.z-p.z)-u.r;const v=(!u.maxDist||d<=u.maxDist)&&(!u.small||!sd||d<=sd);m.visible=v;if(v)shown++;}C.cullAt.shown=shown;}

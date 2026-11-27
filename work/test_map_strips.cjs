@@ -3,14 +3,16 @@
 // frustum culling dropped almost nothing (Ascent LOW 1080: ~3 M map triangles from every view). nmChunkPlan now cuts
 // pieces to at most NM_STRIP.span m (opt.span / opt.spanTris) and nmStrips stores the consecutive chunks of one material
 // group in ONE geometry; nmRuns (scene.onBeforeRender, every frame) tests each chunk against the camera frustum (and its
-// nmCull visibility) and draws each run of visible consecutive chunks as one call (pooled proxy meshes, drawRange).
+// nmCull visibility) and draws each run of visible consecutive chunks as one call; one proxy per strip carries the
+// runs in userData.nmMulti (byte offsets + counts) and the renderer issues ONE multi_draw per strip (loop fallback).
 // Checks run the runtime's own functions (work/native_maps_runtime.js) on a synthetic scene with three.js:
 //  - span: no split piece of a big group is wider than NM_STRIP.span (unless under NM_STRIP.tris triangles)
 //  - every source triangle is drawn exactly once when every chunk is visible; strip chunks' index ranges tile their strip
 //  - every strip chunk's sphere (userData.nmChunk, what nmRuns tests) holds all of its vertices
-//  - nmRuns, many cameras: the proxies drawn cover exactly the visible chunks' triangles (frustum + nmCull distance),
-//    one proxy per run of consecutive visible chunks, nothing hidden drawn, nothing visible dropped
-//  - proxies: never cast shadows, own frustum test off, drawRange set before / reset after their draw
+//  - nmRuns, many cameras: the ranges drawn cover exactly the visible chunks' triangles (frustum + nmCull distance),
+//    one range per run of consecutive visible chunks, nothing hidden drawn, nothing visible dropped
+//  - one multi proxy per strip: never casts shadows, own frustum test off, visible iff it has runs; ranges are
+//    ascending, in bounds, and never mergeable (a missed merge would be two draws where one suffices)
 //  - blended (transparent) chunks keep their own mesh (draw order); a strip chunk keeps no copy of the index
 //  - wiring: the render hook runs nmCull then nmRuns; the generated page carries it
 // RUNTIME=<file> runs it against another runtime (red on fd0793f: no strips).
@@ -24,7 +26,7 @@ const NM_SMALL=val('NM_SMALL'),NM_STRIP=val('NM_STRIP');
 assert(NM_STRIP.on&&NM_STRIP.span>0&&NM_STRIP.span<=30,'strips off or pieces wider than 30 m');
 for(const s of [src,html])assert(s.includes('if(C&&C.M.g.visible){nmCull(C,cam);nmRuns(C,cam);}'),'render hook does not run nmCull then nmRuns');
 assert(html.includes('function nmRuns(')&&html.includes('var NM_STRIP={'),'generated page lacks the strips (run work/install_valorant.py)');
-const NAMES=['nmDetailDistance','nmChunkPlan','nmSpanOver','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptLast','nmOptRelease','nmOptimizeScene','nmStrips','nmStripBuild','nmStripChunk','nmRunRange','nmRunReset','nmRuns'];
+const NAMES=['nmDetailDistance','nmChunkPlan','nmSpanOver','nmMatKey','nmCull','nmSphere','nmCentroids','nmGather','nmOffset','nmCopy3','nmCopy2','nmCopyN','nmSmallDist','nmDetailSplit','nmOptLast','nmOptRelease','nmOptimizeScene','nmStrips','nmStripBuild','nmStripChunk','nmRuns'];
 const NM_OPT={ratio:1,minPiece:2000};// synthetic scene: few source meshes
 const api=new Function('THREE','NM_OPT','NM_SMALL','NM_STRIP','nmQuality','var NM_RF=null;\n'+NAMES.map(fn).join('\n')+'\nreturn {'+NAMES.join(',')+'};')(THREE,NM_OPT,NM_SMALL,NM_STRIP,()=>'high');
 // the page passes span only on the texture-array path (WebGL2); this scene runs the plain path, so pass it the same way
@@ -52,12 +54,16 @@ assert(chunks.some(c=>c.name==='sign'&&c.isMesh),'small whole mesh not reused');
 // strips: index ranges tile the strip geometry; spheres hold their vertices
 const v=new THREE.Vector3();for(const st of strips){let at=0;for(const c of st.chunks){assert(c.isNmStripChunk);assert.equal(c.s,at,'strip chunk ranges must be consecutive');at+=c.n;const P=st.geometry.attributes.position,I=st.geometry.index.array,u=c.userData.nmChunk;for(let t=c.s;t<c.s+c.n;t++){v.fromBufferAttribute(P,I[t]);assert(v.distanceTo(u.c)<=u.r*1.0001+1e-4,'strip chunk sphere misses a vertex: nmRuns would cull a visible piece');}}
  assert.equal(at,st.geometry.index.count,'strip index not fully owned by its chunks');
- for(const p of st.proxies){assert.equal(p.frustumCulled,false);assert.equal(p.geometry,st.geometry);p.castShadow=true;assert.equal(p.castShadow,false,'a proxy casts shadows');assert.equal(p.receiveShadow,false);}}
+ assert.equal(st.proxies.length,1,'one multi proxy per strip');
+ for(const p of st.proxies){assert.equal(p.frustumCulled,false);assert.equal(p.geometry,st.geometry);assert(p.userData.nmMulti&&p.userData.nmMulti.starts instanceof Int32Array&&p.userData.nmMulti.counts instanceof Int32Array,'proxy lacks nmMulti ranges');assert.equal(p.userData.nmMulti.starts.length,st.chunks.length,'range arrays must cover the worst case (every chunk its own run)');p.castShadow=true;assert.equal(p.castShadow,false,'a proxy casts shadows');assert.equal(p.receiveShadow,false);}}
 // drawn triangles with every chunk visible (camera in the middle, looking all ways is not one frustum: use a huge fov box)
+// expand each visible multi proxy to one entry per nmMulti range (element offsets), everything else whole
 const drawn=cam=>{scene.updateMatrixWorld(true);const C={scene,cullAt:null};api.nmCull(C,cam);api.nmRuns(C,cam);const out=[];const fr=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse)),sp=new THREE.Sphere();
  scene.traverse(o=>{if(!o.isMesh||!o.visible)return;const g=o.geometry;if(o.frustumCulled!==false){if(!g.boundingSphere)g.computeBoundingSphere();sp.copy(g.boundingSphere).applyMatrix4(o.matrixWorld);if(!fr.intersectsSphere(sp))return;}
-  let s=0,e=g.index.count;if(o.onBeforeRender===api.nmRunRange||o.userData.nmRun){o.onBeforeRender(null,scene,cam,g,o.material,null);s=g.drawRange.start;e=s+Math.min(g.drawRange.count,g.index.count-s);o.onAfterRender(null,scene,cam,g,o.material,null);assert(g.drawRange.start===0&&g.drawRange.count===Infinity,'drawRange not reset after the proxy draw');}
-  out.push({o,s,e});});return out;};
+  if(o.userData.nmMulti){const M=o.userData.nmMulti;assert(M.count>0,'multi proxy visible with no runs');assert(M.starts.length>=o.userData.nmMultiCountMax||M.starts.length>=M.count,'range arrays undersized');
+   for(let i=0;i<M.count;i++){const s=M.starts[i]/4,c=M.counts[i];assert(Number.isInteger(s),'range start not on an element boundary');assert(s>=0&&s+c<=g.index.count,'range out of bounds');if(i)assert(s>=out[out.length-1].e,'ranges not ascending');assert(!(i&&out[out.length-1].e===s),'two consecutive ranges are mergeable: a missed merge costs a draw');out.push({o,s,e:s+c});}
+   return;}
+  out.push({o,s:0,e:g.index.count});});return out;};
 const tris=list=>{const m=new Map();for(const {o,s,e} of list){const g=o.geometry,P=g.attributes.position.array,U=g.attributes.uv.array,I=g.index.array;for(let t=s;t<e;t+=3){const k=o.material.name+'|'+[0,1,2].map(j=>key(P,U,I[t+j])).join('|');m.set(k,(m.get(k)||0)+1);}}return m;};
 {const cam=new THREE.OrthographicCamera(-500,500,500,-500,-1000,1000);cam.position.set(0,50,0);cam.lookAt(0,0,0);cam.updateMatrixWorld(true);const got=tris(drawn(cam));
  assert.equal(got.size,want.size,'distinct triangles drawn with everything in view');for(const [k,n] of want)assert.equal(got.get(k),n,'triangle drawn '+(got.get(k)||0)+'x, want '+n);
@@ -67,7 +73,7 @@ const tris=list=>{const m=new Map();for(const {o,s,e} of list){const g=o.geometr
   const list=drawn(cam),fr=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse));views++;
   for(const st of strips){const exp=new Set();let rr=0,prev=false;for(const c of st.chunks){const u=c.userData.nmChunk;sp.center.copy(u.c);sp.radius=u.r;const vis=c.visible&&fr.intersectsSphere(sp);if(vis){for(let t=c.s;t<c.s+c.n;t+=3)exp.add(t);if(!prev)rr++;chunkN++;}else culled++;prev=vis;}
    const mine=list.filter(d=>d.o.geometry===st.geometry),got=new Set();for(const d of mine)for(let t=d.s;t<d.e;t+=3){assert(!got.has(t),'a triangle drawn twice');got.add(t);}
-   assert.equal(mine.length,rr,'one draw per run of consecutive visible chunks');assert.equal(got.size,exp.size,'drawn triangles != visible chunks');for(const t of exp)assert(got.has(t),'a visible chunk was not drawn');runs+=rr;}}
+   assert.equal(mine.length,rr,'one range per run of consecutive visible chunks');assert.equal(got.size,exp.size,'drawn triangles != visible chunks');for(const t of exp)assert(got.has(t),'a visible chunk was not drawn');runs+=rr;}}
  assert(culled>0,'no chunk ever culled: the test scene does not exercise culling');
  console.log('nmRuns:',views,'views, avg',(runs/views).toFixed(1),'draws for',(chunkN/views).toFixed(1),'visible strip chunks,',(culled/views).toFixed(1),'culled');}
 // no index copy kept: after the upload drops the strip's index array, its chunks hold nothing

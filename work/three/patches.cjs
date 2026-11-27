@@ -80,6 +80,13 @@ const CORE = [
   { id: 'raycast-instanced', file: 'src/objects/InstancedMesh.js',
     find: "\t\t// test with bounding sphere first\n\n\t\tif ( this.boundingSphere === null ) this.computeBoundingSphere();\n\n\t\t_sphere.copy( this.boundingSphere );\n\t\t_sphere.applyMatrix4( matrixWorld );\n\n\t\tif ( raycaster.ray.intersectsSphere( _sphere ) === false ) return;\n\n",
     replace: "" },
+  // 8. valorstrike native-map strips: one mesh draws several index ranges. When a mesh carries
+  //    userData.nmMulti ({starts: byte offsets, counts: index counts, count: n}), issue ONE
+  //    multiDrawElementsWEBGL over the ranges (extension path) or the same ranges as a JS loop
+  //    (fallback) - identical primitive order either way, so pixels match the per-run proxies.
+  { id: 'nm-multidraw', file: R,
+    find: "\t\t\t} else if ( object.isInstancedMesh ) {\n\n\t\t\t\trenderer.renderInstances( drawStart, drawCount, object.count );",
+    replace: "\t\t\t} else if ( object.userData && object.userData.nmMulti ) {\n\n\t\t\t\tconst nmM = object.userData.nmMulti;\n\n\t\t\t\tif ( ! extensions.get( 'WEBGL_multi_draw' ) ) {\n\n\t\t\t\t\tconst nmB = index ? attributes.get( index ).bytesPerElement : 1;\n\t\t\t\t\tfor ( let nmI = 0; nmI < nmM.count; nmI ++ ) {\n\n\t\t\t\t\t\trenderer.render( nmM.starts[ nmI ] / nmB, nmM.counts[ nmI ] );\n\n\t\t\t\t\t}\n\n\t\t\t\t} else {\n\n\t\t\t\t\trenderer.renderMultiDraw( nmM.starts, nmM.counts, nmM.count );\n\n\t\t\t\t}\n\n\t\t\t} else if ( object.isInstancedMesh ) {\n\n\t\t\t\trenderer.renderInstances( drawStart, drawCount, object.count );" },
 ];
 const GLTF = [
   // 4. Safari decodes glTF textures with TextureLoader (<img>) as GLTFLoader r147 did, not ImageBitmapLoader (r170 on
