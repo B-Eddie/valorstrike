@@ -1,0 +1,24 @@
+# Gate run 2026-11-27-uuid (UU=1 UUID determinism patch). All runs in one session.
+# Tested SHAs: LANE ROOT=/workspace/work/vs-lane-three c6ed1efc179b7221603ad1ac9c392feb16378f8d (worktree held at this SHA for every lane run; origin/handoff-three-r170 moved to d1a9c5fb mid-session and was NOT tested)
+#              BASE ROOT=/workspace/work/qa/three/base_wt e2c14eda1cfc339be9cb8c90c22116c26451e3ef (main; CDN three r149 routed to qa/three.min.js)
+#              NoAO ROOT=/workspace/work/qa/gates2/noao_wt = c6ed1efc + scratch edit (gltf-ao-channel, gltf-ao-uvcopy removed; vendor/three rebuilt), never committed; diff in noao/noao_scratch.diff
+# Config: UU=1 VW=1 MAP=bind GQ=low W=960 H=540 MODE=match WEAP=vandal SETTLE=3 (runmatch.sh), harness handoff/qa/three/h.cjs (UU gate), Chromium SwiftShader, one at a time via LOCK-chromium.txt
+# Match attempts: mbaseU1 1/1 complete, mbaseU2 1/1, mlaneU1 1/1, mlaneU2 1/1, mlaneNoAO 1/1; OOM/incomplete attempts: 0 (dmesg in this container shows boot lines only; no oom-kill lines)
+# bot_feel: hook uu_hook.cjs via NODE_OPTIONS --require; lane exit 0, base_extra exit 0
+[2026-11-27 05:48:31 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mbaseU1 /workspace/work/qa/three/base_wt (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 05:52:11 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mbaseU2 /workspace/work/qa/three/base_wt (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 05:54:45 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mlaneU1 /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 05:57:49 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mlaneU2 /workspace/work/vs-lane-three (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 05:58:05 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mbaseU2
+[2026-11-27 05:58:09 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mlaneU1
+[2026-11-27 05:58:13 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU2 mlaneU1
+[2026-11-27 05:58:16 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mlaneU1 mlaneU2
+[2026-11-27 05:58:19 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU2 mlaneU2
+[2026-11-27 05:58:23 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mlaneU2
+[2026-11-27 06:01:25 UTC] exit=0 :: cd /workspace/work/qa/three && UU=1 VW=1 ./runmatch.sh bind low 960 540 mlaneNoAO /workspace/work/qa/gates2/noao_wt (attempt 0) [shots=12 hud=yes uu_matched=yes]
+[2026-11-27 06:01:40 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mlaneU1 mlaneNoAO
+[2026-11-27 06:01:45 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU1 mlaneNoAO
+[2026-11-27 06:01:49 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mbaseU2 mlaneNoAO
+[2026-11-27 06:01:52 UTC] exit=0 :: cd /workspace/work/qa/three && /workspace/work/venv/bin/python cmp.py bind low mlaneU2 mlaneNoAO
+[2026-11-27 06:05:31 UTC] exit=0 :: cd /workspace/work/vs-lane-three && UU=1 UU_LOG=/workspace/work/qa/gates2/botfeel/uu_lane.log NODE_OPTIONS='--require /workspace/work/qa/gates2/uu_hook.cjs' node work/test_bot_feel_offline.cjs
+[2026-11-27 06:09:02 UTC] exit=0 :: cd /workspace/work/qa/three/base_wt && UU=1 UU_LOG=/workspace/work/qa/gates2/botfeel/uu_base_extra.log NODE_OPTIONS='--require /workspace/work/qa/gates2/uu_hook.cjs' node work/test_bot_feel_offline.cjs

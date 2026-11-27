@@ -1,0 +1,11 @@
+[uu_hook] hook active pid 3603
+[uu_hook] read /workspace/work/qa/three.min.js rev=149 matched=yes variant=4294967295 (Jeff exact) fn=bt bytes 608081->607824
+1. direct: back-off toward the peek spot 0.555,0.832, away 0,1, unsighted hold ok
+2. direct: peek kinds (1 jiggle / 2 wide / 3 tight / 4 hold) {"2":268,"4":32}, vs an Operator {"1":112,"4":38}, hold {"still":1.1,"after":3}
+3. direct: trade the killer [0,0], its spot known, peeks {"2":40}, post-kill reaction 0.264,0.389
+4. direct: walk [true,true,false,false,false]
+5. direct: pre-peek {"ph":"peek","dx":12,"dz":0}, none into nothing, team gap true,false,true, Aftershock [null,[0,0],null], flash on sight 10.5 %
+1. live: reload samples 149, in an enemy's sight 11.4 %, backing away 41.2 % of those
+5. live: 15 casts in 27 bot-rounds (0.56 per bot-round), 0 with 2+ mates casting in the same 2 s
+bots feel like players (reload, corner holds) ok
+EXIT 0 211s

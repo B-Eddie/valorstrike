@@ -1,0 +1,19 @@
+calls / tris per shot (bind low 960x540, VW=1, UU=1); hud = DOM screenshot, not a GL shot
+shot                     mbaseU1               mbaseU2               mlaneU1               mlaneU2             mlaneNoAO
+vandal_a0          197 / 2678385         197 / 2678385         197 / 2678385         197 / 2678385         196 / 2676739
+vandal_a1          198 / 2672835         198 / 2672835         198 / 2672835         198 / 2672835         197 / 2671189
+vandal_a2          196 / 1481862         196 / 1481862         196 / 1481862         196 / 1481862         195 / 1480216
+vandal_a3          192 / 1258366         192 / 1258366         192 / 1258366         192 / 1258366         191 / 1256720
+vandal_a4          197 / 2671007         197 / 2671007         197 / 2671007         197 / 2671007         196 / 2669361
+vandal_a5          201 / 2641000         201 / 2641000         201 / 2641000         201 / 2641000         200 / 2639354
+vandal_a6            90 / 540605           90 / 540605           90 / 540605           90 / 540605           90 / 540605
+vandal_a7           123 / 722684          123 / 722684          123 / 722684          123 / 722684          122 / 717488
+vandal_vm             14 / 27332            14 / 27332            14 / 27332            14 / 27332            14 / 27332
+abil_a0            262 / 2690003         262 / 2690003         252 / 2688803         252 / 2688803         251 / 2687157
+abil_a1            259 / 1493476         259 / 1493476         250 / 1492278         250 / 1492278         249 / 1490632
+abil_a2            266 / 2652618         266 / 2652618         256 / 2651418         256 / 2651418         255 / 2649772
+mbaseU1 rev 149 cfg {"UU": 1, "ROOT": "/workspace/work/qa/three/base_wt", "sha": "e2c14eda1cfc339be9cb8c90c22116c26451e3ef", "W": 960, "H": 540, "VW": "1", "map": "bind", "gq": "low"} uu [{"file": "/workspace/work/qa/three.min.js (CDN route https://unpkg.com/three@0.149.0/build/three.min.js)", "matched": true, "fn": "bt", "bytesIn": 608081, "bytesOut": 607824}] errors 0
+mbaseU2 rev 149 cfg {"UU": 1, "ROOT": "/workspace/work/qa/three/base_wt", "sha": "e2c14eda1cfc339be9cb8c90c22116c26451e3ef", "W": 960, "H": 540, "VW": "1", "map": "bind", "gq": "low"} uu [{"file": "/workspace/work/qa/three.min.js (CDN route https://unpkg.com/three@0.149.0/build/three.min.js)", "matched": true, "fn": "bt", "bytesIn": 608081, "bytesOut": 607824}] errors 0
+mlaneU1 rev 170 cfg {"UU": 1, "ROOT": "/workspace/work/vs-lane-three", "sha": "c6ed1efc179b7221603ad1ac9c392feb16378f8d", "W": 960, "H": 540, "VW": "1", "map": "bind", "gq": "low"} uu [{"file": "/workspace/work/vs-lane-three/vendor/three/three.min.js", "matched": true, "fn": "Et", "bytesIn": 706951, "bytesOut": 706696}] errors 0
+mlaneU2 rev 170 cfg {"UU": 1, "ROOT": "/workspace/work/vs-lane-three", "sha": "c6ed1efc179b7221603ad1ac9c392feb16378f8d", "W": 960, "H": 540, "VW": "1", "map": "bind", "gq": "low"} uu [{"file": "/workspace/work/vs-lane-three/vendor/three/three.min.js", "matched": true, "fn": "Et", "bytesIn": 706951, "bytesOut": 706696}] errors 0
+mlaneNoAO rev 170 cfg {"UU": 1, "ROOT": "/workspace/work/qa/gates2/noao_wt", "sha": "c6ed1efc179b7221603ad1ac9c392feb16378f8d", "W": 960, "H": 540, "VW": "1", "map": "bind", "gq": "low"} uu [{"file": "/workspace/work/qa/gates2/noao_wt/vendor/three/three.min.js", "matched": true, "fn": "Et", "bytesIn": 706951, "bytesOut": 706696}] errors 0
