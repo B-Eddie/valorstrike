@@ -316,8 +316,8 @@ function nmRunReset(r,s,c,g){g.drawRange.start=0;g.drawRange.count=Infinity;}
 var NM_RF=null;
 function nmRuns(C,cam){const S=C&&C.scene&&C.scene.userData.nmStrips;if(!S||!S.length||!cam)return;const F=NM_RF||(NM_RF={f:new THREE.Frustum(),m:new THREE.Matrix4(),s:new THREE.Sphere()});
  F.m.multiplyMatrices(cam.projectionMatrix,cam.matrixWorldInverse);F.f.setFromProjectionMatrix(F.m);const sp=F.s;
- for(const st of S){const M=st.proxies[0].userData.nmMulti;let r=0,u=-1;for(const ch of st.chunks){const q=ch.userData.nmChunk;let v=ch.visible;if(v){sp.center.copy(q.c);sp.radius=q.r;v=F.f.intersectsSphere(sp);}
-   if(v){if(u>=0&&M.starts[u]+M.counts[u]*4===ch.s*4)M.counts[u]+=ch.n;else{u=r++;M.starts[u]=ch.s*4;M.counts[u]=ch.n;}}else u=-1;}
+ for(const st of S){const M=st.proxies[0].userData.nmMulti;/* nmPackGeometry converts a strip's index to Uint16 when it has <= 65535 verts, and drops the CPU arrays after upload: cache the real index element size on the first frame while the array is still there, or the byte offsets below are wrong (x4 on a Uint16 strip draws other chunks' spans) */const B=st.idxB||(st.idxB=(st.proxies[0].geometry.index.array||[]).BYTES_PER_ELEMENT||0);if(!B){st.proxies[0].visible=false;continue;}let r=0,u=-1;for(const ch of st.chunks){const q=ch.userData.nmChunk;let v=ch.visible;if(v){sp.center.copy(q.c);sp.radius=q.r;v=F.f.intersectsSphere(sp);}
+   if(v){if(u>=0&&M.starts[u]+M.counts[u]*B===ch.s*B)M.counts[u]+=ch.n;else{u=r++;M.starts[u]=ch.s*B;M.counts[u]=ch.n;}}else u=-1;}
   st.proxies[0].visible=r>0;M.count=r;st.runs=r;}}
 // Per frame: one distance compare. Detail chunks (decals, foliage) are re-tested only after the camera has moved 2 m;
 // there is no other per-frame map work (three's own frustum culling does the rest).
