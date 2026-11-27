@@ -1,0 +1,209 @@
+{
+ "map": "bind",
+ "gq": "low",
+ "tag": "mlaneDL",
+ "root": "/workspace/work/vs-lane-three",
+ "mode": "match",
+ "size": [
+  960,
+  540
+ ],
+ "errors": [],
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: WebGLContextLost: WebGL context lost during page\n    at HTMLCanvasElement.<anonymous> (http://127.0.0.1:8961/:73:15)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: net::ERR_CONNECTION_REFUSED"
+ ],
+ "shots": {
+  "vandal_a0": {
+   "calls": 197,
+   "tris": 2681935,
+   "w": 960,
+   "h": 540,
+   "ms": 31892
+  },
+  "vandal_a1": {
+   "calls": 198,
+   "tris": 2676385,
+   "w": 960,
+   "h": 540,
+   "ms": 4926
+  },
+  "vandal_a2": {
+   "calls": 196,
+   "tris": 1485412,
+   "w": 960,
+   "h": 540,
+   "ms": 4136
+  },
+  "vandal_a3": {
+   "calls": 192,
+   "tris": 1261916,
+   "w": 960,
+   "h": 540,
+   "ms": 3960
+  },
+  "vandal_a4": {
+   "calls": 197,
+   "tris": 2674557,
+   "w": 960,
+   "h": 540,
+   "ms": 5331
+  },
+  "vandal_a5": {
+   "calls": 201,
+   "tris": 2644550,
+   "w": 960,
+   "h": 540,
+   "ms": 4174
+  },
+  "vandal_a6": {
+   "calls": 90,
+   "tris": 540605,
+   "w": 960,
+   "h": 540,
+   "ms": 2317
+  },
+  "vandal_a7": {
+   "calls": 123,
+   "tris": 722684,
+   "w": 960,
+   "h": 540,
+   "ms": 2244
+  },
+  "vandal_vm": {
+   "calls": 14,
+   "tris": 27332,
+   "w": 960,
+   "h": 540,
+   "ms": 924
+  },
+  "abil_a0": {
+   "calls": 252,
+   "tris": 2692353,
+   "w": 960,
+   "h": 540,
+   "ms": 8581
+  },
+  "abil_a1": {
+   "calls": 250,
+   "tris": 1495828,
+   "w": 960,
+   "h": 540,
+   "ms": 2272
+  },
+  "abil_a2": {
+   "calls": 256,
+   "tris": 2654968,
+   "w": 960,
+   "h": 540,
+   "ms": 4880
+  }
+ },
+ "cfg": {
+  "UU": 1,
+  "ROOT": "/workspace/work/vs-lane-three",
+  "sha": "c6ed1efc179b7221603ad1ac9c392feb16378f8d",
+  "W": 960,
+  "H": 540,
+  "VW": "1",
+  "map": "bind",
+  "gq": "low"
+ },
+ "uu": [
+  {
+   "file": "/workspace/work/vs-lane-three/vendor/three/three.min.js",
+   "matched": true,
+   "fn": "Et",
+   "bytesIn": 706951,
+   "bytesOut": 706696
+  }
+ ],
+ "rev": "170",
+ "uuProbe": "function Et(){const t=(globalThis.__u=(globalThis.__u||0)+1).toString(16).padStart(12,\"0\");return\"00000000-0000-4000-8000-\"+t} | __u=20945",
+ "pre": 1,
+ "loadS": 29,
+ "setup": {
+  "pr": 1,
+  "buf": [
+   960,
+   540
+  ],
+  "aa": false,
+  "shadow": false,
+  "shType": 2,
+  "tm": 4,
+  "tme": 1.05,
+  "out": "srgb",
+  "pcl": true
+ },
+ "setupInfo": {
+  "vandal": "{\"hid\":[\"Object3D\",\"Group\",\"Group\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\",\"Mesh\"],\"a0\":\"KAY/O:idle\",\"a1\":\"Reyna:idle\",\"a2\":\"Yoru:idle\",\"a3\":\"Gekko:idle\",\"a4\":\"Brimstone:idle\",\"a5\":\"Sova:idle\",\"a6\":\"Chamber:idle\",\"a7\":\"Tejo:idle\",\"a8\":\"Miks:idle\",\"vfDrop\":[],\"fpAct\":[\"FP_Core_AK_S0_IdlePose@0.013w1.00\",\"Idle@0.013w1.00\"],\"fp\":\"Vandal:prime.1:idle\",\"views\":8,\"cp\":{\"x\":0.75,\"y\":5.823362691700975,\"z\":70.5,\"gy\":4.223}}"
+ },
+ "dl": {
+  "vandal_a0": {
+   "rows": 197,
+   "sumCalls": 197,
+   "sumTris": 2681935,
+   "info": {
+    "calls": 197,
+    "tris": 2681935,
+    "points": 0,
+    "lines": 0
+   },
+   "glTot": 197,
+   "orphan": 0,
+   "census": 183,
+   "match": true
+  },
+  "abil_a0": {
+   "rows": 252,
+   "sumCalls": 252,
+   "sumTris": 2692353,
+   "info": {
+    "calls": 252,
+    "tris": 2692353,
+    "points": 0,
+    "lines": 0
+   },
+   "glTot": 252,
+   "orphan": 0,
+   "census": 235,
+   "match": true
+  },
+  "abil_a1": {
+   "rows": 250,
+   "sumCalls": 250,
+   "sumTris": 1495828,
+   "info": {
+    "calls": 250,
+    "tris": 1495828,
+    "points": 0,
+    "lines": 0
+   },
+   "glTot": 250,
+   "orphan": 0,
+   "census": 246,
+   "match": true
+  },
+  "abil_a2": {
+   "rows": 256,
+   "sumCalls": 256,
+   "sumTris": 2654968,
+   "info": {
+    "calls": 256,
+    "tris": 2654968,
+    "points": 0,
+    "lines": 0
+   },
+   "glTot": 256,
+   "orphan": 0,
+   "census": 239,
+   "match": true
+  }
+ },
+ "ms": 173470
+}

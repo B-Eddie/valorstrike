@@ -1,0 +1,31 @@
+1s UU serve /workspace/work/vs-lane-three/vendor/three/three.min.js matched yes fn=Et
+11s boot rev 170
+11s UU probe (no call) function Et(){const t=(globalThis.__u=(globalThis.__u||0)+1).toString(16).padStart(12,"0");return"00000000-0000-4000-8000-"+t} | __u=20945
+11s pre 1
+40s loaded 29s
+43s setup {"pr":1,"buf":[960,540],"aa":false,"shadow":false,"shType":2,"tm":4,"tme":1.05,"out":"srgb","pcl":true}
+43s prep bought
+66s setup vandal {"hid":["Object3D","Group","Group","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh"],"a0":"KAY/O:idle","a1":"Reyna:idle","a2":"Yoru:idle","a3":"Gekko:idle","a4":"Brimstone:idle","a5":"Sova:idle","a6":"Chamber:idle","a7":"Tejo:idle","a8":"Miks:idle","vfDrop":[],"fpAct":["FP_Core_AK_S0_IdlePose@0.013w1.00","Idle@0.013w1.00"],"fp":"Vandal:prime.1:idle","views":8,"cp":{"x":0.75,"y":5.823362691700975,"z":70.5,"gy":4.223}}
+74s DL on vandal_a0 dl on
+106s shot vandal_a0 calls 197 tris 2681935 31892ms
+118s DL vandal_a0 rows 197 sum 197 2681935 info 197 2681935 gl 197 MATCH
+123s shot vandal_a1 calls 198 tris 2676385 4926ms
+127s shot vandal_a2 calls 196 tris 1485412 4136ms
+131s shot vandal_a3 calls 192 tris 1261916 3960ms
+136s shot vandal_a4 calls 197 tris 2674557 5331ms
+140s shot vandal_a5 calls 201 tris 2644550 4174ms
+142s shot vandal_a6 calls 90 tris 540605 2317ms
+145s shot vandal_a7 calls 123 tris 722684 2244ms
+146s shot vandal_vm calls 14 tris 27332 925ms
+150s hud /workspace/work/qa/three/shots/bind-low-mlaneDL-hud.png
+150s abil {"xCbCloud":"ok","blazeWall":"ok","sgxBarrierWall":"ok","brxSkySmokeAt":"ok","omxCoverDome":"ok"}
+150s DL on abil_a0 dl on
+159s shot abil_a0 calls 252 tris 2692353 8581ms
+163s DL abil_a0 rows 252 sum 252 2692353 info 252 2692353 gl 252 MATCH
+163s DL on abil_a1 dl on
+165s shot abil_a1 calls 250 tris 1495828 2272ms
+166s DL abil_a1 rows 250 sum 250 1495828 info 250 1495828 gl 250 MATCH
+166s DL on abil_a2 dl on
+171s shot abil_a2 calls 256 tris 2654968 4880ms
+173s DL abil_a2 rows 256 sum 256 2654968 info 256 2654968 gl 256 MATCH
+174s done errors 0 console 6

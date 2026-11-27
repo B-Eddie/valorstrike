@@ -1,0 +1,100 @@
+== vandal_a0: base 197/2678385 (sum 197/2678385, gl 197) rev149  lane 197/2681935 (sum 197/2681935, gl 197) rev170  delta calls 0 tris 3550
+  CHANGED   obj='Bullet_9mm_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/1728 tris, lane 2/1152 -> d -1 calls / -576 tris
+            base geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/844 tris, lane 1/422 -> d -1 calls / -422 tris
+            base geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/8244 tris, lane 1/4122 -> d -1 calls / -4122 tris
+            base geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 2 calls/456 tris, lane 1/228 -> d -1 calls / -228 tris
+            base geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Silencer_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='Silencer_S0_MI' owner='<Group> > <Group>': base 2 calls/2040 tris, lane 1/1020 -> d -1 calls / -1020 tris
+            base geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_762_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/966 tris, lane 4/1288 -> d 1 calls / 322 tris
+            base geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/3228 tris, lane 4/4304 -> d 1 calls / 1076 tris
+            base geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/23451 tris, lane 4/31268 -> d 1 calls / 7817 tris
+            base geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Reddot_S0_MI' owner='<Group> > <Group>': base 3 calls/1893 tris, lane 4/2524 -> d 1 calls / 631 tris
+            base geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 3 calls/216 tris, lane 4/288 -> d 1 calls / 72 tris
+            base geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls 0, tris 3550  (must equal shot delta)
+== abil_a0: base 262/2690003 (sum 262/2690003, gl 262) rev149  lane 252/2692353 (sum 252/2692353, gl 252) rev170  delta calls -10 tris 2350
+  CHANGED   obj='<Mesh>' type=Mesh mat=ShaderMaterial mname='' owner='<Group>': base 12 calls/200 tris, lane 6/100 -> d -6 calls / -100 tris
+            base geo [(270, 96, (0, None), None, None, True, 1, 'screen', 'scene'), (6, 4, (0, None), None, None, True, 1, 'screen', 'scene')]  lane geo [(270, 96, (0, None), None, None, True, 1, 'screen', 'scene'), (6, 4, (0, None), None, None, True, 1, 'screen', 'scene')]
+  CHANGED   obj='<Mesh>' type=Mesh mat=ShaderMaterial mname='' owner='<Scene>': base 10 calls/3744 tris, lane 6/2644 -> d -4 calls / -1100 tris
+            base geo [(1980, 391, (0, None), None, None, False, 0.6, 'screen', 'scene'), (2652, 513, (0, None), None, None, True, 1, 'screen', 'scene'), (3192, 609, (0, None), None, None, True, 1, 'screen', 'scene'), (36, 14, (0, None), None, None, True, 1, 'screen', 'scene')]  lane geo [(1980, 391, (0, None), None, None, False, 0.6, 'screen', 'scene'), (2652, 513, (0, None), None, None, True, 1, 'screen', 'scene'), (3192, 609, (0, None), None, None, True, 1, 'screen', 'scene'), (36, 14, (0, None), None, None, True, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_9mm_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/1728 tris, lane 2/1152 -> d -1 calls / -576 tris
+            base geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/844 tris, lane 1/422 -> d -1 calls / -422 tris
+            base geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/8244 tris, lane 1/4122 -> d -1 calls / -4122 tris
+            base geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 2 calls/456 tris, lane 1/228 -> d -1 calls / -228 tris
+            base geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Silencer_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='Silencer_S0_MI' owner='<Group> > <Group>': base 2 calls/2040 tris, lane 1/1020 -> d -1 calls / -1020 tris
+            base geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_762_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/966 tris, lane 4/1288 -> d 1 calls / 322 tris
+            base geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/3228 tris, lane 4/4304 -> d 1 calls / 1076 tris
+            base geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/23451 tris, lane 4/31268 -> d 1 calls / 7817 tris
+            base geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Reddot_S0_MI' owner='<Group> > <Group>': base 3 calls/1893 tris, lane 4/2524 -> d 1 calls / 631 tris
+            base geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 3 calls/216 tris, lane 4/288 -> d 1 calls / 72 tris
+            base geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -10, tris 2350  (must equal shot delta)
+== abil_a1: base 259/1493476 (sum 259/1493476, gl 259) rev149  lane 250/1495828 (sum 250/1495828, gl 250) rev170  delta calls -9 tris 2352
+  CHANGED   obj='<Mesh>' type=Mesh mat=ShaderMaterial mname='' owner='<Group>': base 10 calls/196 tris, lane 5/98 -> d -5 calls / -98 tris
+            base geo [(270, 96, (0, None), None, None, True, 1, 'screen', 'scene'), (6, 4, (0, None), None, None, True, 1, 'screen', 'scene')]  lane geo [(270, 96, (0, None), None, None, True, 1, 'screen', 'scene'), (6, 4, (0, None), None, None, True, 1, 'screen', 'scene')]
+  CHANGED   obj='<Mesh>' type=Mesh mat=ShaderMaterial mname='' owner='<Scene>': base 10 calls/3744 tris, lane 6/2644 -> d -4 calls / -1100 tris
+            base geo [(1980, 391, (0, None), None, None, False, 0.6, 'screen', 'scene'), (2652, 513, (0, None), None, None, True, 1, 'screen', 'scene'), (3192, 609, (0, None), None, None, True, 1, 'screen', 'scene'), (36, 14, (0, None), None, None, True, 1, 'screen', 'scene')]  lane geo [(1980, 391, (0, None), None, None, False, 0.6, 'screen', 'scene'), (2652, 513, (0, None), None, None, True, 1, 'screen', 'scene'), (3192, 609, (0, None), None, None, True, 1, 'screen', 'scene'), (36, 14, (0, None), None, None, True, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_9mm_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/1728 tris, lane 2/1152 -> d -1 calls / -576 tris
+            base geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/844 tris, lane 1/422 -> d -1 calls / -422 tris
+            base geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/8244 tris, lane 1/4122 -> d -1 calls / -4122 tris
+            base geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 2 calls/456 tris, lane 1/228 -> d -1 calls / -228 tris
+            base geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Silencer_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='Silencer_S0_MI' owner='<Group> > <Group>': base 2 calls/2040 tris, lane 1/1020 -> d -1 calls / -1020 tris
+            base geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_762_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/966 tris, lane 4/1288 -> d 1 calls / 322 tris
+            base geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/3228 tris, lane 4/4304 -> d 1 calls / 1076 tris
+            base geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/23451 tris, lane 4/31268 -> d 1 calls / 7817 tris
+            base geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Reddot_S0_MI' owner='<Group> > <Group>': base 3 calls/1893 tris, lane 4/2524 -> d 1 calls / 631 tris
+            base geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 3 calls/216 tris, lane 4/288 -> d 1 calls / 72 tris
+            base geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -9, tris 2352  (must equal shot delta)
+== abil_a2: base 266/2652618 (sum 266/2652618, gl 266) rev149  lane 256/2654968 (sum 256/2654968, gl 256) rev170  delta calls -10 tris 2350
+  CHANGED   obj='<Mesh>' type=Mesh mat=ShaderMaterial mname='' owner='<Group>': base 12 calls/200 tris, lane 6/100 -> d -6 calls / -100 tris
+            base geo [(270, 96, (0, None), None, None, True, 1, 'screen', 'scene'), (6, 4, (0, None), None, None, True, 1, 'screen', 'scene')]  lane geo [(270, 96, (0, None), None, None, True, 1, 'screen', 'scene'), (6, 4, (0, None), None, None, True, 1, 'screen', 'scene')]
+  CHANGED   obj='<Mesh>' type=Mesh mat=ShaderMaterial mname='' owner='<Scene>': base 10 calls/3744 tris, lane 6/2644 -> d -4 calls / -1100 tris
+            base geo [(1980, 391, (0, None), None, None, False, 0.6, 'screen', 'scene'), (2652, 513, (0, None), None, None, True, 1, 'screen', 'scene'), (3192, 609, (0, None), None, None, True, 1, 'screen', 'scene'), (36, 14, (0, None), None, None, True, 1, 'screen', 'scene')]  lane geo [(1980, 391, (0, None), None, None, False, 0.6, 'screen', 'scene'), (2652, 513, (0, None), None, None, True, 1, 'screen', 'scene'), (3192, 609, (0, None), None, None, True, 1, 'screen', 'scene'), (36, 14, (0, None), None, None, True, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_9mm_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/1728 tris, lane 2/1152 -> d -1 calls / -576 tris
+            base geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1728, 351, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/844 tris, lane 1/422 -> d -1 calls / -422 tris
+            base geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1266, 298, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Luger_S0_MI' owner='<Group> > <Group>': base 2 calls/8244 tris, lane 1/4122 -> d -1 calls / -4122 tris
+            base geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(12366, 3316, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Luger_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 2 calls/456 tris, lane 1/228 -> d -1 calls / -228 tris
+            base geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(684, 225, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_Silencer_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='Silencer_S0_MI' owner='<Group> > <Group>': base 2 calls/2040 tris, lane 1/1020 -> d -1 calls / -1020 tris
+            base geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3060, 783, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='Bullet_762_StaticMeshmo' type=Mesh mat=MeshStandardMaterial mname='Bullets_S0_MI' owner='<Group> > <Group>': base 3 calls/966 tris, lane 4/1288 -> d 1 calls / 322 tris
+            base geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(966, 196, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_Magazine_S0_Staticmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/3228 tris, lane 4/4304 -> d 1 calls / 1076 tris
+            base geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(3228, 951, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_AK_S0_Skelmeshmo' type=Mesh mat=MeshStandardMaterial mname='AK_S0_MI' owner='<Group> > <Group>': base 3 calls/23451 tris, lane 4/31268 -> d 1 calls / 7817 tris
+            base geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(23451, 6388, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd' type=Mesh mat=MeshStandardMaterial mname='Reddot_S0_MI' owner='<Group> > <Group>': base 3 calls/1893 tris, lane 4/2524 -> d 1 calls / 631 tris
+            base geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(1893, 687, (0, None), None, None, False, 1, 'screen', 'scene')]
+  CHANGED   obj='GN_RedDot_S0_Skelmeshmd_1' type=Mesh mat=MeshStandardMaterial mname='Tritium_MI' owner='<Group> > <Group>': base 3 calls/216 tris, lane 4/288 -> d 1 calls / 72 tris
+            base geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]  lane geo [(216, 87, (0, None), None, None, False, 1, 'screen', 'scene')]
+  SUM of listed deltas: calls -10, tris 2350  (must equal shot delta)

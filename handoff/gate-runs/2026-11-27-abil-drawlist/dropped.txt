@@ -1,0 +1,41 @@
+== abil_a0: base 262/2690003  lane 252/2692353
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=270 verts=96: base 2 calls/180 tris (sides [1, 0]), lane 1/90 (sides [2]) -> -1 calls / -90 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=3192 verts=609: base 2 calls/2128 tris (sides [1, 0]), lane 1/1064 (sides [2]) -> -1 calls / -1064 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  ability/non-weapon delta: calls -10, tris -1200
+  weapon-model swap (bot holding AK vs Luger+Silencer, run nondeterminism; see vandal_a0): calls 0, tris 3550
+  total -10 / 2350  == shot delta -10 / 2350: True
+== abil_a1: base 259/1493476  lane 250/1495828
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=270 verts=96: base 2 calls/180 tris (sides [1, 0]), lane 1/90 (sides [2]) -> -1 calls / -90 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=3192 verts=609: base 2 calls/2128 tris (sides [1, 0]), lane 1/1064 (sides [2]) -> -1 calls / -1064 tris
+  ability/non-weapon delta: calls -9, tris -1198
+  weapon-model swap (bot holding AK vs Luger+Silencer, run nondeterminism; see vandal_a0): calls 0, tris 3550
+  total -9 / 2352  == shot delta -9 / 2352: True
+== abil_a2: base 266/2652618  lane 256/2654968
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=270 verts=96: base 2 calls/180 tris (sides [1, 0]), lane 1/90 (sides [2]) -> -1 calls / -90 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=36 verts=14: base 2 calls/24 tris (sides [1, 0]), lane 1/12 (sides [2]) -> -1 calls / -12 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Scene>' mat=ShaderMaterial mname='' transparent=True idx=3192 verts=609: base 2 calls/2128 tris (sides [1, 0]), lane 1/1064 (sides [2]) -> -1 calls / -1064 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  DROPPED obj=<Mesh> chain='<Group> > <Scene>' mat=ShaderMaterial mname='' transparent=True idx=6 verts=4: base 2 calls/4 tris (sides [1, 0]), lane 1/2 (sides [2]) -> -1 calls / -2 tris
+  ability/non-weapon delta: calls -10, tris -1200
+  weapon-model swap (bot holding AK vs Luger+Silencer, run nondeterminism; see vandal_a0): calls 0, tris 3550
+  total -10 / 2350  == shot delta -10 / 2350: True

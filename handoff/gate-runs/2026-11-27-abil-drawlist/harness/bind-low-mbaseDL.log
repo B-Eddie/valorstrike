@@ -1,0 +1,31 @@
+5s UU serve /workspace/work/qa/three.min.js (CDN route https://unpkg.com/three@0.149.0/build/three.min.js) matched yes fn=bt
+15s boot rev 149
+15s UU probe (no call) function bt(){const t=(globalThis.__u=(globalThis.__u||0)+1).toString(16).padStart(12,"0");return"00000000-0000-4000-8000-"+t} | __u=16941
+15s pre 1
+48s loaded 33s
+51s setup {"pr":1,"buf":[960,540],"aa":false,"shadow":false,"shType":2,"tm":4,"tme":1.05,"out":3001,"pcl":true}
+51s prep bought
+74s setup vandal {"hid":["Object3D","Group","Group","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh","Mesh"],"a0":"KAY/O:idle","a1":"Reyna:idle","a2":"Yoru:idle","a3":"Gekko:idle","a4":"Brimstone:idle","a5":"Sova:idle","a6":"Chamber:idle","a7":"Tejo:idle","a8":"Miks:idle","vfDrop":[],"fpAct":["FP_Core_AK_S0_IdlePose@0.013w1.00","Idle@0.013w1.00"],"fp":"Vandal:prime.1:idle","views":8,"cp":{"x":0.75,"y":5.823362691700975,"z":70.5,"gy":4.223}}
+77s DL on vandal_a0 dl on
+105s shot vandal_a0 calls 197 tris 2678385 28718ms
+119s DL vandal_a0 rows 197 sum 197 2678385 info 197 2678385 gl 197 MATCH
+124s shot vandal_a1 calls 198 tris 2672835 5199ms
+131s shot vandal_a2 calls 196 tris 1481862 6367ms
+135s shot vandal_a3 calls 192 tris 1258366 3927ms
+138s shot vandal_a4 calls 197 tris 2671007 3497ms
+141s shot vandal_a5 calls 201 tris 2641000 2803ms
+144s shot vandal_a6 calls 97 tris 588983 2868ms
+146s shot vandal_a7 calls 123 tris 722684 2144ms
+147s shot vandal_vm calls 14 tris 27332 733ms
+151s hud /workspace/work/qa/three/shots/bind-low-mbaseDL-hud.png
+151s abil {"xCbCloud":"ok","blazeWall":"ok","sgxBarrierWall":"ok","brxSkySmokeAt":"ok","omxCoverDome":"ok"}
+151s DL on abil_a0 dl on
+159s shot abil_a0 calls 262 tris 2690003 7535ms
+162s DL abil_a0 rows 262 sum 262 2690003 info 262 2690003 gl 262 MATCH
+162s DL on abil_a1 dl on
+166s shot abil_a1 calls 259 tris 1493476 3793ms
+168s DL abil_a1 rows 259 sum 259 1493476 info 259 1493476 gl 259 MATCH
+168s DL on abil_a2 dl on
+173s shot abil_a2 calls 266 tris 2652618 4598ms
+175s DL abil_a2 rows 266 sum 266 2652618 info 266 2652618 gl 266 MATCH
+176s done errors 0 console 6
