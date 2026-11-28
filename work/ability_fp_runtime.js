@@ -22,6 +22,11 @@ var XAF_SET = {
   bomb: { eq: "FP_Killjoy_S0_X_Bomb_Equip", idle: "FP_Killjoy_S0_X_Bomb_Idle", cast: "FP_Killjoy_S0_X_Bomb_Deploy", hand: "L", rel: 0.3 },
   trade: { eq: "FP_Deadeye_S0_4_WallTrap_Equip", idle: "FP_Deadeye_S0_4_WallTrap_Idle", cast: "FP_Deadeye_S0_4_WallTrap_Place", hand: "R", rel: 0.16 },
   rdv: { eq: "FP_Deadeye_S0_E_TetherTP_Equip", idle: "FP_Deadeye_S0_E_TetherTP_Idle", cast: "FP_Deadeye_S0_E_First_Place_ArmsDown", hand: "R", rel: 0.06 },
+  // Jett's own authored Rocklan sets (fp-rocklan-jett donor, local-only; absent clips fall back to the nade archetype).
+  // Cloudburst smoke: Intro = draw, Loop = hold, Outro = the throw (release estimated mid-clip, no authored marker).
+  smoke: { eq: "FP_Wushu_S0_4_Smoke_Grenade_Intro", idle: "FP_Wushu_S0_4_Smoke_Loop", cast: "FP_Wushu_S0_4_Smoke_Grenade_Outro", hand: "L", rel: 0.35 },
+  // Tailwind dash: directional clips picked from the dash keys captured at cast (XAF.ddir).
+  dash: { cast: "FP_Wushu_S0_E_DashN", hand: "R", rel: 0.3, dirs: { N: "FP_Wushu_S0_E_DashN", E: "FP_Wushu_S0_E_DashE", S: "FP_Wushu_S0_E_DashS", W: "FP_Wushu_S0_E_DashW" } },
   // Sova's bow: the left arm raises the bow (Owl Drone gauntlet raise, left-side tracks) while the right hand holds the
   // bolt (grenade-ready right-side tracks); HOLD FIRE draws the string back with the charge (xAfBowDraw).
   bow: { eq: "FP_Hunter_S0_E_Equip", idle: "FP_Hunter_S0_E_IdleAdd", cast: "FP_Hunter_S0_E_Deploy", hand: "R", rel: 0.05, rEq: "FP_Killjoy_S0_4_Grenade_Equip", rIdle: "FP_Killjoy_S0_4_Swarm_Idle", rCast: "FP_Core_Grenade_UnderhandThrow" },
@@ -33,7 +38,7 @@ var XAF_SET = {
 // Per agent, per key (c q e x): archetype set + held item. prop: native glb (slug) held at its bone (WeaponMaster of the
 // set's hand unless the glb's own FP bone is given) scaled to sz metres; orb: an energy orb in the palm (agent VFX colour).
 var XAF_K = {
-  Jett: { c: { s: "flick", orb: 0xd8f4ff }, q: { s: "gaunt", orb: 0xd8f4ff }, e: { s: "gaunt", orb: 0xd8f4ff } },
+  Jett: { c: { s: "smoke", orb: 0xd8f4ff }, q: { s: "gaunt", orb: 0xd8f4ff }, e: { s: "dash", orb: 0xd8f4ff } },
   Phoenix: { c: { s: "flick", orb: 0xff7a1a }, q: { s: "flick", orb: 0xfff1b0 }, e: { s: "nade", orb: 0xff7a1a }, x: { s: "flick", orb: 0xff7a1a } },
   Sova: { c: { s: "gaunt", prop: "owl-drone", sz: 0.22, bone: "Gauntlet_Socket" }, q: { s: "bow", prop: "shock-dart", sz: 0.32, bolt: 1 }, e: { s: "bow", prop: "recon-bolt", sz: 0.32, bolt: 1 }, x: { s: "bow", orb: 0x4fc3ff } },
   Sage: { c: { s: "place", orb: 0x5fe6c8 }, q: { s: "nade", orb: 0x5fe6c8 }, e: { s: "flick", orb: 0x8dffd8 }, x: { s: "wolf", orb: 0x8dffd8 } },
@@ -50,11 +55,13 @@ var XAF = { rig: {}, cur: null, on: false, t: 0, mode: "", err: null, last: null
 function xAfSpec(ag, k) { const a = XAF_K[ag] || XAF_K.Jett, s = a[k] || a.c; return s; }
 function xAfLoad(ag) { // the agent's native FP arms + the shared ability clips -> one cached ability rig per agent
   if (XAF.rig[ag]) return XAF.rig[ag];
-  const P = Promise.all([xvLoad(ag.toLowerCase() + "-fp"), xvLoad("animations/FP_Abilities")]).then(([arms, don]) => {
+  const P = Promise.all([xvLoad(ag.toLowerCase() + "-fp"), xvLoad("animations/FP_Abilities"), xvLoad("animations/fp-rocklan-" + ag.toLowerCase()).catch(() => null)]).then(([arms, don, rock]) => {
     const sc = THREE.SkeletonUtils.clone(arms.scene), root = new THREE.Group(); root.name = "valorant-ability-viewmodel"; root.add(sc); root.rotation.y = Math.PI / 2;
     sc.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = o.receiveShadow = false; o.raycast = XNR; o.renderOrder = 10; const conv = (m) => new THREE.MeshLambertMaterial({ name: m.name, color: m.color, map: m.map, side: THREE.DoubleSide }); o.material = Array.isArray(o.material) ? o.material.map(conv) : conv(o.material); } });
     const am = new THREE.AnimationMixer(sc), clips = {};
-    (don.animations || []).forEach((c) => { clips[c.name] = c; }); (arms.animations || []).forEach((c) => { clips[c.name] = c; }); // the agent's own authored clip wins
+    (don.animations || []).forEach((c) => { clips[c.name] = c; });
+    if (rock) (rock.animations || []).forEach((c) => { if (!clips[c.name]) clips[c.name] = c; }); // Rocklan donor only fills clips nobody else ships
+    (arms.animations || []).forEach((c) => { clips[c.name] = c; }); // the agent's own authored clip wins
     const R = { ag, root, sc, am, clips, ac: {}, props: {}, sock: {}, cur: "", rcur: "" };
     const cam = sc.getObjectByName("Camera"); am.update(0); sc.updateMatrixWorld(true);
     const pos = cam ? cam.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(0, 1.67, 0); root.position.copy(pos).negate();
@@ -353,17 +360,18 @@ function xAfTick(dt) {
   const k = q ? q.k : XAF.qk || "c", sp = xAfSpec(ag, k), set = XAF_SET[sp.s] || XAF_SET.nade;
   let P;
   if (q) P = xAfPhase(set, q, XABT.rel, q.rec || XABT.rec); // rec: this ability's wiki unequip time (xUneqT)
-  else { const T = XCA.D + XCA.G + XCA.U, u = Math.min(1, XCA.t / T); P = { ph: "quick", clip: set.cast, u, item: u < set.rel }; }
+  else { const T = XCA.D + XCA.G + XCA.U, u = Math.min(1, XCA.t / T), cl = set.dirs ? set.dirs[XAF.ddir || "N"] || set.cast : set.cast; P = { ph: "quick", clip: cl, u, item: u < set.rel }; }
   XAF.on = true; XAF.mode = P.ph;
   const R = xAfReady(ag); if (!R) { if (XAF.cur) XAF.cur.root.visible = false; XAF.last = { ag, k, set: sp.s, ph: P.ph, clip: P.clip, u: P.u, item: false, rig: false }; return; } // still loading (or failed): no hands, never the old primitives
   xAfShow(R);
   const idleU = (name) => { const c = R.clips[name]; return c ? ((XAF.t * 2.5) % c.duration) / c.duration : 0; }; // authored idle loops play ~2.5x their glb time base
   const u = P.u < 0 ? idleU(P.clip) : P.u;
+  let played = P.clip;
   if (sp.s === "bow") { const rc = P.ph === "equip" ? set.rEq : P.ph === "cast" || P.ph === "recover" || P.ph === "quick" ? set.rCast : set.rIdle; xAfPose(R, P.clip, u, rc, P.u < 0 ? idleU(rc) : u); if (q && P.ph === "hold") xAfBowDraw(R, xEqHoldPw(q)); }
-  else if (!xAfPose(R, P.clip, u)) xAfPose(R, XAF_SET.nade[P.ph === "equip" ? "eq" : P.ph === "hold" || P.ph === "idle" ? "idle" : "cast"], u);
+  else if (!xAfPose(R, P.clip, u)) { played = XAF_SET.nade[P.ph === "equip" ? "eq" : P.ph === "hold" || P.ph === "idle" ? "idle" : "cast"]; xAfPose(R, played, u); } // requested clip not in the rig (e.g. the local-only Rocklan donor absent): archetype fallback
   const it = xAfProp(R, sp, set); it.g.visible = !!P.item && it.ok;
   if (it.halo) it.halo.scale.setScalar(1 + 0.12 * Math.sin(XAF.t * 7));
-  XAF.last = { ag, k, set: sp.s, ph: P.ph, clip: P.clip, u, item: it.g.visible, rig: true };
+  XAF.last = { ag, k, set: sp.s, ph: P.ph, clip: P.clip, played, u, item: it.g.visible, rig: true };
 }
 // fire hooks: rsFire is the click path of Showstopper and (wrapped by bcFire) Headhunter / Tour De Force
 { const r0 = rsFire; rsFire = function () { const ss = typeof RS !== "undefined" && RS.ss, k = typeof BC !== "undefined" ? BC.vm : "", n = (J.q | 0) + (BC.td | 0); const r = r0.apply(this, arguments);
@@ -373,7 +381,7 @@ function xAfTick(dt) {
 // Blade Storm ALT FIRE (jBurst offline / 'blade' alt:1 online): the two-handed RightClickAttack clip, the rig stays for its tail while the gun comes back
 { const b0 = jBurst; jBurst = function () { const c = J.cd.x, n0 = J.bsOn ? J.bs | 0 : 0, sl = !(c > 0) && n0 > 0 ? xBtpFpSlots() : null; const r = b0.apply(this, arguments); try { if (J.pick === "Jett" && !(c > 0) && J.cd.x > 0) { xAfGunFire("bs", true, true); xBtpFlyFP(sl, n0, true); } } catch (e) {} return r; }; }
 { const v2 = vmTick; vmTick = function (dt) { v2.apply(this, arguments); try { xAfTick(dt); } catch (e) { if (!XAF.err) { XAF.err = String(e); console.warn("ability viewmodel", e); } } }; }
-{ const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; } catch (e) {} return s1.apply(this, arguments); }; }
+{ const s1 = xCaStart; xCaStart = function () { try { XAF.qk = XAF.nk || "c"; if (XAF.nk === "e" && (J.pick || "Jett") === "Jett" && typeof jDashKeys === "function") { const d = jDashKeys(), i = Math.round(((Math.atan2(-d.s, d.f) / (Math.PI / 2)) + 4) % 4) % 4; XAF.ddir = ["N", "W", "S", "E"][i]; } } catch (e) {} return s1.apply(this, arguments); }; }
 { const k1 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); return k1.apply(this, arguments); }; }
 // the agent's ability rig is warmed with the weapons once a match runs (no hitch on the first equip)
 (window.XHK = window.XHK || []).push(() => { try { if (running && player && jOn()) xAfLoad(J.pick || "Jett"); } catch (e) {} });
