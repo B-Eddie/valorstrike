@@ -372,7 +372,8 @@ function xvFPPlay(F, kind, time) {
   if (F.kind !== kind) { F.am.stopAllAction(); F.gm.stopAllAction(); const ac=F.ac[a.Name],gc=F.gc[a.WeaponAnimName || 'Idle']; if(ac)ac.reset().play(); if(gc)gc.reset().play(); F.kind=kind; F.action=ac; F.gaction=gc; F.age=0; }
   if (time != null) { if(F.action) F.action.time = Math.min(F.action.getClip().duration-.001,Math.max(0,time)*F.action.getClip().duration); if(F.gaction) F.gaction.time = Math.min(F.gaction.getClip().duration-.001,Math.max(0,time)*F.gaction.getClip().duration); F.am.update(0); F.gm.update(0); }
 }
-function xvFPKey(ag,w){const s=typeof xskGet==='function'?xskGet(w):'standard';return ag+'|'+w+(s==='standard'?'':'|'+s);}
+function xvFPArmsOv(ag){return typeof xvFPArmsOverride==='function'?xvFPArmsOverride(ag):null;}
+function xvFPKey(ag,w){const s=typeof xskGet==='function'?xskGet(w):'standard',o=xvFPArmsOv(ag);return ag+'|'+w+(s==='standard'?'':'|'+s)+(o?'|'+o:'');}
 // The assets one native rig is built from: the skin's metadata, the agent's -fp arms, the weapon glTF and the weapon's FP_ / GN_
 // animation files (all through xvLoad's cache). Shared by xvFPLoad (build) and xvFPPreload (loading gate).
 function xvFPData(ag,w) {
@@ -380,7 +381,7 @@ function xvFPData(ag,w) {
   return (asset?xskModelData(asset):Promise.resolve(null)).then(meta=>{
   const slug=asset?asset.model:(w==='Knife'?'melee':w.toLowerCase()), cfg=meta?meta.fp:XV.config.weaponAnimations && XV.config.weaponAnimations[slug]; if(!cfg || !cfg.WEAPONS_ANIMS_JSON) return Promise.reject(new Error('No native animation set for '+w));
   const entries=cfg.WEAPONS_ANIMS_JSON.Animations, files=[...new Set(entries.concat(cfg.MODEL_HELD_JSON.Animations||[]).filter(a=>a.File).map(a=>a.File))];
-  return Promise.all([xvLoad(xvaSlug(ag)+'-fp'),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
+  return Promise.all([xvLoad(xvFPArmsOv(ag)||(xvaSlug(ag)+'-fp')),xvLoad(slug),...files.map(f=>xvLoad('animations/'+f))]).then(([arms,weapon,...anims])=>({skin,cfg,entries,files,arms,weapon,anims}));
   });
 }
 function xvFPLoad(ag,w) {

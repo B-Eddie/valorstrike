@@ -240,7 +240,7 @@ function a18Key(code) {
       if (k === "c") { A.xcut = p; const rm = a18Ring(p, 1, 0xd04a8a, 0.6); try { A.xcutH = jxBind(rm, vtxCrosscut({ x: p.x, y: p.y || 0, z: p.z }), 1); } catch (er) {} }
       else if (k === "q") { let jx = null; try { jx = vtxChokehold({ x: p.x, y: p.y || 0, z: p.z }, C.choke.life); } catch (er) {} a18Fx({ kind: "choke", p, jx, jxEnd: (fe) => { try { if (fe.done) vtxChokeSnare({ x: fe.p.x, y: fe.p.y || 0, z: fe.p.z }, 2.5); } catch (er) {} }, t: C.choke.life, arm: 1 }); }
       else if (k === "e") { const m = a18Ring(p, C.cept.r, 0xd04a8a, 0.3); try { jxBind(m, vtxInterceptor({ x: p.x, y: p.y || 0, z: p.z }, C.cept.r, C.cept.life), 1); } catch (er) {} a18Fx({ kind: "ceptor", m, p, t: C.cept.life }); }
-      else { A.evo = C.evo.life; A.stim = C.evo.life; say("Evolution", 900); try { vtxEvolution({ x: P.x, y: P.y || 0, z: P.z }, C.evo.life, { local: true }); } catch (er) {} }
+      else { A.evo = C.evo.life; A._evoWas = true; try { a18EvoFPRefresh(true); } catch (er) {} A.stim = C.evo.life; say("Evolution", 900); try { vtxEvolution({ x: P.x, y: P.y || 0, z: P.z }, C.evo.life, { local: true }); } catch (er) {} }
       return true; }
     case "Vyse": { spend();
       if (k === "c") { const zm = a18Zone(p, C.vine.life, C.vine.r, C.vine.dps, "Razorvine", 0x8a2af0); try { jxBind(zm, vyxRazorvine({ x: p.x, y: p.y || 0, z: p.z }, C.vine.r, C.vine.life), 1); } catch (er) {} }
@@ -300,7 +300,7 @@ function a18Tick(dt) {
   if (!J.a18) return; const A = J.a18, C = A18C, P = player, T = dt;
   A.haste = Math.max(0, A.haste - dt); A.stim = Math.max(0, A.stim - dt); A.jam = Math.max(0, A.jam - dt); A.supp = Math.max(0, A.supp - dt);
   if (A.gateTp > 0) { A.gateTp -= dt; if (A.gateTp <= 0 && A.gate) { try { yoxGatecrashTP({ x: P.x, y: P.y, z: P.z }); if (A.gateH) yoxEnd(A.gateH); A.gateH = null; } catch (e) {} P.x = A.gate.x; P.y = A.gate.y; P.z = A.gate.z; A.gate = 0; SFX.ab("dash"); } }
-  if (A.drift > 0) { A.drift -= dt; if (A.drift <= 0 && A.driftV !== undefined) { try { yoxDriftExit({ x: P.x, y: P.y, z: P.z }); } catch (e) {} A.driftV = undefined; } } if (A.od > 0) A.od -= dt; if (A.evo > 0) { A.evo -= dt; if (P.hp > 0) P.hp = Math.min(100, P.hp + C.evo.hps * dt); }
+  if (A.drift > 0) { A.drift -= dt; if (A.drift <= 0 && A.driftV !== undefined) { try { yoxDriftExit({ x: P.x, y: P.y, z: P.z }); } catch (e) {} A.driftV = undefined; } } if (A.od > 0) A.od -= dt; if (A.evo > 0) { A.evo -= dt; if (P.hp > 0) P.hp = Math.min(100, P.hp + C.evo.hps * dt); if (A.evo <= 0 && A._evoWas) { A._evoWas = false; try { a18EvoFPRefresh(false); } catch (er) {} } }
   if (A.ncmd > 0) A.ncmd -= dt;
   if (A.shieldT > 0 && (A.shieldT -= dt) <= 0) A.shield = 0;
   if (A.ndy > 0) { A.ndy -= dt; if (A.ndy <= 0 && P.hp <= 0) { P.hp = 100; say("Back.", 800); } }
@@ -592,6 +592,16 @@ function a18NetSync(rows) {
 }
 const a18FxSync0 = netSyncEffects; netSyncEffects = function (rows) { a18FxSync0(rows); try { a18NetSync(rows); } catch (e) { xE(e); } };
 var a18EvoVeil = null;
+
+// Veto ult first-person arms: while Evolution is active the FP rig swaps to the veto-fp-ult arms (same rig
+// layout and weapon attach, mutated arms). xvFPArmsOverride feeds xvFPKey/xvFPData; a18EvoFPRefresh
+// invalidates cached Veto viewmodels on transitions so the next tick rebuilds with the right arms.
+window.xvFPArmsOverride=function(ag){return ag==='Veto'&&typeof XV!=='undefined'&&XV.fpUlt?'veto-fp-ult':null;};
+function a18EvoFPRefresh(on){if(typeof XV==='undefined'||J.pick!=='Veto')return;XV.fpUlt=!!on;
+if(XVFP&&XVFP.c)for(const k of[...XVFP.c.keys()])if(k.startsWith('Veto|')&&!k.endsWith('#')){xvFPClear(XVFP.c.get(k));XVFP.c.delete(k);}
+if(XV.failures)for(const k of Object.keys(XV.failures))if(k.startsWith('Veto|'))delete XV.failures[k];
+if(XV.fp&&XV.fp.ag==='Veto'){xvFPClear(XV.fp);XV.fp=null;}}
+
 function a18EvoSync(st) { const t = st && Number.isFinite(st.evo) ? Math.max(0, Math.min(60, st.evo)) : 0;
   if (!(NET.socket && J.pick === "Veto" && player.hp > 0 && t > 0)) { if (a18EvoVeil) { a18EvoVeil.end(); a18EvoVeil = null; } return; }
   if (a18EvoVeil && vtxLive.indexOf(a18EvoVeil.fx) < 0) a18EvoVeil = null;
