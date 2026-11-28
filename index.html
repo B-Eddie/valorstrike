@@ -29362,7 +29362,17 @@ window.xDmPacks = DMPK; window.xEscPacks = ESCPK;
 // parity6: Golden Gun uses the native Sheriff (one chambered round, two reserves,
 // lethal hits, accurate while moving); this flag never changes the wire weapon names.
 function srGoldenOn(){return !!(SRPW.golden&&wName()==='Sheriff'&&player&&player.hp>0);}
-function srGoldenSet(on){on=!!on;if(on===!!SRPW.golden)return;SRPW.golden=on;const W=WEAP.Sheriff;if(on){SRPW.sheriff={mag:W.mag,rate:W.rate,rld:W.rld};W.mag=1;W.rate=1;W.rld=1;}else if(SRPW.sheriff){Object.assign(W,SRPW.sheriff);SRPW.sheriff=null;}}
+// golden gun visual: tint the ACTIVE first-person Sheriff's weapon meshes gold (an original tint of the
+// already-loaded viewmodel materials - no imported asset). Third-person models are untouched (v1).
+function srGoldenTint(F,on){if(!F||!F.ws)return;F.ws.traverse(o=>{if(!o.isMesh||!o.material)return;
+if(on){if(!o.userData.ggOrig)o.userData.ggOrig=o.material;
+if(!o.userData.ggGold){const cv=m=>{const c=m.clone();if(c.color)c.color.setHex(0xd8b13a);if(c.emissive)c.emissive.setHex(0x40300a);return c;};o.userData.ggGold=Array.isArray(o.userData.ggOrig)?o.userData.ggOrig.map(cv):cv(o.userData.ggOrig);}
+o.material=o.userData.ggGold;}
+else if(o.userData.ggOrig)o.material=o.userData.ggOrig;});}
+function srGoldenTintNow(on){if(typeof XV!=='undefined'&&XV.fp&&XV.fp.w==='Sheriff')srGoldenTint(XV.fp,on);}
+if(typeof xvFPSwap==='function'){const sw0=xvFPSwap;xvFPSwap=function(F){const r=sw0.apply(this,arguments);if(srGoldenOn()&&F&&F.w==='Sheriff')srGoldenTint(F,true);return r;};}
+
+function srGoldenSet(on){on=!!on;if(on===!!SRPW.golden)return;SRPW.golden=on;srGoldenTintNow(on);const W=WEAP.Sheriff;if(on){SRPW.sheriff={mag:W.mag,rate:W.rate,rld:W.rld};W.mag=1;W.rate=1;W.rld=1;}else if(SRPW.sheriff){Object.assign(W,SRPW.sheriff);SRPW.sheriff=null;}}
 if(typeof vfProfile==='function'){const p0=vfProfile;vfProfile=function(w){const p=p0.apply(this,arguments);return w==='Sheriff'&&srGoldenOn()?{...p,magazineSize:1,fireRate:1,reloadTimeSeconds:1,firstBulletAccuracy:0,ignoreMovementSpread:true,adsStats:null}:p;};}
 if(typeof wDmg==='function'){const d0=wDmg;wDmg=function(){if(SRPW.mine>0&&srGoldenOn())return 800;return d0.apply(this,arguments);};}
 if(typeof gSpread==='function'&&typeof gFire==='function'){const s0=gSpread;gSpread=function(w,W,B){if(!B&&srGoldenOn())return 0;return s0.apply(this,arguments);};const f0=gFire;gFire=function(d){if(srGoldenOn())return d;return f0.apply(this,arguments);};}
