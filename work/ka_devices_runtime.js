@@ -63,7 +63,7 @@ function kadCreature(h, slug, opts) {
       root.rotation.y = opts.yaw || 0;
       g.children.forEach(function (o) { o.visible = false; });
       g.add(root);
-      var rec = { root: root, mix: kadMixer(root.children[0], gl.animations), lx: g.position.x, lz: g.position.z, sceneAdd: false };
+      var rec = { root: root, mix: kadMixer(root.children[0], gl.animations), lx: g.position.x, lz: g.position.z, sceneAdd: false, dev: slug };
       KAD.live.push(rec);
       if (rec.mix) {
         var t0 = h.fx.tick;
@@ -100,7 +100,7 @@ function kadStatic(h, slug, opts) {
       root.position.set(p.x, p.y - 0.1, p.z);
       if (opts.hide !== false) kadHideAll(objs, root);
       scene.add(root);
-      var rec = { root: root, mix: kadMixer(root.children[0], gl.animations), sceneAdd: true };
+      var rec = { root: root, mix: kadMixer(root.children[0], gl.animations), sceneAdd: true, dev: slug };
       KAD.live.push(rec);
       if (rec.mix) {
         var t0 = h.fx.tick;
@@ -172,5 +172,71 @@ function kadGlobule(k, h) {
   } else spawn();
 }
 try { if (typeof a18Glob === "function") a18Glob = kadWrapFn(a18Glob, function (h, args) { kadGlobule(args[0], args[1]); }); } catch (e) {}
+// Vyse Arc Rose: the placed trap becomes the real rose model.
+try { if (typeof vyxArcRose === "function") vyxArcRose = kadWrapFn(vyxArcRose, function (h) { kadStatic(h, "arc-rose", { height: 0.45 }); }); } catch (e) {}
+// Deadlock Annihilation: the fired nanowire projectile rides its moving group as the real model.
+try { if (typeof dlxAnnihilation === "function") dlxAnnihilation = kadWrapFn(dlxAnnihilation, function (h) { kadCreature(h, "annihilation", { height: 0.45 }); }); } catch (e) {}
+// Deadlock Barrier Mesh: the state renderer positions its five nodes individually (the group itself
+// never moves), so the model follows the centre node through h.update instead of kadStatic.
+function kadBarrierMesh(h) {
+  if (!h || !h.orbs || !h.orbs[0]) return;
+  var orb = h.orbs[0];
+  if (orb.userData.kad) return;
+  orb.userData.kad = true;
+  xvLoad("barrier-mesh")
+    .then(function (gl) {
+      var root = kadScaled(gl, 0.55);
+      scene.add(root);
+      var rec = { root: root, mix: kadMixer(root.children[0], gl.animations), sceneAdd: true, dev: "barrier-mesh" };
+      KAD.live.push(rec);
+      var u0 = h.update;
+      h.update = function (st) {
+        var r = u0.apply(this, arguments);
+        try {
+          var c = st && st.nodes && st.nodes[0];
+          root.visible = !!(c && c.hp > 0 && !st.dead);
+          if (c) root.position.set(c.p[0], c.p[1] + 0.2, c.p[2]);
+          if (rec.mix) rec.mix.mixer.update(1 / 60);
+        } catch (e) {}
+        return r;
+      };
+      var d0 = h.fx.done;
+      h.fx.done = function () { kadDetach(rec); if (root.parent) root.parent.remove(root); return d0.apply(this, arguments); };
+    })
+    .catch(function () { delete orb.userData.kad; });
+}
+try { if (typeof dlxBarrierState === "function") dlxBarrierState = kadWrapFn(dlxBarrierState, function (h) { kadBarrierMesh(h); }); } catch (e) {}
+// Tejo Stealth Drone: no module fx exists for this cast (generic a18Orb), so build a fly handle the
+// orb carries (a18Orb's fly protocol: move() during flight), then hover in place for sdrone.life.
+function kadSdrone(p) {
+  var grp = new THREE.Group();
+  grp.position.set(p.x, (p.y || 0) + 1.2, p.z);
+  scene.add(grp);
+  var rec = null;
+  xvLoad("stealth-drone")
+    .then(function (gl) {
+      var root = kadScaled(gl, 0.5);
+      grp.add(root);
+      rec = { root: grp, mix: kadMixer(root.children[0], gl.animations), sceneAdd: true, dev: "stealth-drone" };
+      KAD.live.push(rec);
+    })
+    .catch(function () {});
+  var life = (typeof A18C !== "undefined" && A18C.sdrone && A18C.sdrone.life) || 8;
+  var fx = {
+    age: 0,
+    ttl: life + 0.6,
+    tick: function (dt, age) {
+      try {
+        if (age > 0.6) grp.position.y += Math.sin(age * 2.5) * 0.0015;
+        grp.rotation.y += dt * 0.6;
+        if (rec && rec.mix) rec.mix.mixer.update(dt);
+      } catch (e) {}
+    },
+    done: function () { try { if (rec) kadDetach(rec); if (grp.parent) grp.parent.remove(grp); } catch (e) {} },
+  };
+  if (typeof vtxPush === "function") vtxPush(fx);
+  return { fx: fx, move: function (x, y, z) { grp.position.set(x, y, z); }, end: function () { fx.age = fx.ttl; fx.done(); } };
+}
+G_.kadSdrone = kadSdrone;
 })();
 // ---- END KINGDOM ARCHIVES DEVICE MODELS ----

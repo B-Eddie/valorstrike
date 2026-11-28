@@ -226,7 +226,7 @@ function a18Key(code) {
       else { A.stim = C.nullcmd.life; A.ncmd = C.nullcmd.life; const m = a18Ring(new THREE.Vector3(P.x, 0, P.z), C.nullcmd.r, 0x8a2af0, 0.4); a18Fx({ kind: "ncmd", m, t: C.nullcmd.life, next: C.nullcmd.pulse }); }
       return true; }
     case "Tejo": { spend();
-      if (k === "c") a18Orb(p, 0.5, () => { for (const b of a18BotsIn(p, C.sdrone.r)) { b.mark = C.sdrone.reveal; b.blind = Math.max(b.blind || 0, 1); } SFX.ab("cbPop", p); });
+      if (k === "c") a18Orb(p, 0.5, () => { for (const b of a18BotsIn(p, C.sdrone.r)) { b.mark = C.sdrone.reveal; b.blind = Math.max(b.blind || 0, 1); } SFX.ab("cbPop", p); }, false, typeof kadSdrone === "function" ? kadSdrone(p) : null);
       else if (k === "q") a18Orb(p, 0.4, () => { for (const b of a18BotsIn(p, C.sd.r)) { jHit(b, C.sd.dmg, "Special Delivery"); b.blind = Math.max(b.blind || 0, C.sd.concuss); } SFX.ab("cbPop", p); });
       else if (k === "e") a18Salvo(p);
       else a18Fx({ kind: "armag", p: new THREE.Vector3(P.x, 0, P.z), d: new THREE.Vector3(d.x, 0, d.z).normalize(), t: C.armag.wind });

@@ -42,22 +42,24 @@ grounded list of gameplay gaps that remain. Assets (c) Riot Games, sourced via t
 4. Mosh pit: CLOSED (this branch): gkxMoshThrow rides the arc as mosh-pit.glb; the landed pool
    keeps the procedural goo (zone readability) with the model in the middle.
 5. Homescreen videos: see Downloads table. Stills are shipped and presented as stills.
-6. Newer-agent device coverage, per ability (corrected 2026-11-28: the earlier wording wrongly
-   said no matching glbs existed; several DO exist locally from the earlier import pass):
-   - Downloaded but NOT WIRED (glb present in models/valorant/, spawn path still procedural):
-     Tejo C stealth-drone.glb (cast at agents18_runtime a18Orb sdrone), Vyse C arc-rose.glb
-     (vyxArcRose), Deadlock C barrier-mesh.glb (dlxBarrierMesh), Deadlock X annihilation.glb
-     (dlxAnnihilation).
+6. Newer-agent device coverage, per ability: CLOSED (this branch). Every downloaded device glb
+   is now wired; coverage by work/test_ka_devices2.cjs (attach + cleanup per cast).
+   - Wired in the final pass: Vyse E arc-rose.glb (kadStatic on vyxArcRose), Deadlock C
+     barrier-mesh.glb (follows the live wall's centre node via the dlxBarrierState wrap;
+     the wall gameplay indicator stays procedural), Deadlock X annihilation.glb (kadCreature
+     on the dlxAnnihilation projectile; the detain cocoon stays procedural), Tejo C
+     stealth-drone.glb (new kadSdrone fly handle the a18Orb throw carries, then hovers for
+     sdrone.life; the reveal pop mechanic is untouched).
    - No model exists anywhere (procedural is the correct implementation): Tejo Q Special
      Delivery / E Guided Salvo / X Armageddon, Vyse Q Shear, Waylay (all four abilities are
      light effects, no device geometry), Veto C Crosscut.
-   - Wired on this branch: Gekko wingman/dizzy/thrash/mosh-pit/baby-*, Deadlock sonic-sensor /
-     gravnet, Vyse razorvine, Veto veto-fp-ult (FP arms).
+   - Wired earlier on this branch: Gekko wingman/dizzy/thrash/mosh-pit/baby-*, Deadlock
+     sonic-sensor / gravnet, Vyse razorvine, Veto veto-fp-ult (FP arms).
 
 ## Verification state
 
 - install_valorant.py regen: idempotent; index.html parses (12 inline scripts, 0 bad).
-- node tests: test_global_names, test_audio_valorant, test_fx_modules_real, test_agents18 pass.
+- node tests: test_global_names, test_audio_valorant, test_fx_modules_real, test_agents18, test_ka_globules, test_ka_devices2, test_veto_fp_ult, test_veto_evo_client, test_fp_native, test_gun_draw_warm pass.
 - Vercel preview: see parent report for screenshot-verified checkpoint (playercard picker,
   banner picker + preview overlay, lobby bg, device models). Branch previews required widening
   the project's Ignored Build Step to include content-ka (restored to main-only after verify).
