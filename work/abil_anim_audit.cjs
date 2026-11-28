@@ -34,7 +34,7 @@ async function offline(){
  xe(REC);const AG=xe('Object.keys(KITS)').filter(a=>!ONLY||ONLY.includes(a)),out={};
  for(const agent of AG){H.$('pm5v5').click();await adv(50);if(!(await through(agent))){out[agent]={err:'no match'};continue;}xe('FV.buy=0.05;true');await adv(300);out[agent]={};
   for(const code of ['KeyC','KeyQ','KeyE','KeyX']){const k=code[3].toLowerCase();
-   xe(`(()=>{const M=K().mx;J.c=Math.max(J.c|0,M.c||1);J.q=Math.max(J.q|0,M.q||1);J.e=Math.max(J.e|0,M.e||1);J.ult=K().u;J.cd={c:0,q:0,e:0,x:0};player.hp=Math.max(player.hp,100);})()`);await adv(150);
+   xe(`(()=>{const M=K().mx;J.c=Math.max(J.c|0,M.c||1);J.q=Math.max(J.q|0,M.q||1);J.e=Math.max(J.e|0,M.e||1);J.ult=K().u;J.cd={c:0,q:0,e:0,x:0};player.hp=Math.max(player.hp,100);J.dr=null;J.ftp=false;})()`);await adv(150); // J.dr: Sova's drone from the C pass would otherwise keep piloting and swallow Q/E
    xe('window.__aa.on=1;window.__aa.fr=[];window.__aa.tp=[];true');
    // the relay path: what a third-person observer of this player gets (P2P host / trusted server replay both end in mpFx)
    const relay=xe(`(()=>{const u=allies.find(a=>a&&a.alive&&a.xm);if(!u)return null;const n0=window.__aa.tp.length;try{xEqTpGo(u,J.pick,${JSON.stringify(k)});}catch(e){return String(e);}return window.__aa.tp.slice(n0).map(x=>x.k);})()`);

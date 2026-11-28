@@ -60,8 +60,9 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
   brimstone:['FP_Sarge_S0_E_Throw','FP_Sarge_S0_Q_Fire','FP_Sarge_S0_4_Smoke_Fire','FP_Sarge_S0_X_StarCannon_Fire'],
   gekko:['FP_AggroBot_S0_4_Bubbletov_ThrowOver','FP_AggroBot_S0_4_Bubbletov_ThrowUnder','FP_AggroBot_S0_Q_BabySpikebot_Cast','FP_AggroBot_S0_E_BabyZamboni_Cast','FP_AggroBot_S0_X_BabyShark_Cast'],
   yoru:['FP_Stealth_S0_E_DimensionalPull_Teleport'],
+  sova:['FP_Hunter_S0_Q_Bow_EquipV2','FP_Hunter_S0_Q_Bow_IdleV2','FP_Hunter_S0_Q_Bow_DrawV2','FP_Hunter_S0_Q_Bow_DrawHoldV2','FP_Hunter_S0_Q_Bow_Fire','FP_Hunter_S0_X_Bow_Super_Equip','FP_Hunter_S0_X_Bow_Charge','FP_Hunter_S0_X_Bow_Charge_Idle','FP_Hunter_S0_X_Bow_Super_Fire'],
  };
- const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire',killjoy:'FP_Killjoy_S0_E_Cast',raze:'FP_Clay_Quickcast_C4',skye:'FP_Guide_S0_X_Ult_Cast',breach:'FP_Breach_S0_E_LineFissure_Fire',cypher:'FP_Gumshoe_S0_Q_Fire',astra:'FP_Rift_S0_X_Wall_Cast',brimstone:'FP_Sarge_S0_X_StarCannon_Fire',gekko:'FP_AggroBot_S0_4_Bubbletov_ThrowOver',yoru:'FP_Stealth_S0_E_DimensionalPull_Teleport'};
+ const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire',killjoy:'FP_Killjoy_S0_E_Cast',raze:'FP_Clay_Quickcast_C4',skye:'FP_Guide_S0_X_Ult_Cast',breach:'FP_Breach_S0_E_LineFissure_Fire',cypher:'FP_Gumshoe_S0_Q_Fire',astra:'FP_Rift_S0_X_Wall_Cast',brimstone:'FP_Sarge_S0_X_StarCannon_Fire',gekko:'FP_AggroBot_S0_4_Bubbletov_ThrowOver',yoru:'FP_Stealth_S0_E_DimensionalPull_Teleport',sova:'FP_Hunter_S0_Q_Bow_Fire'};
  for(const ag of Object.keys(AG)){
   const dp=path.join(root,'models/valorant/animations/fp-rocklan-'+ag+'.glb');
   ok(fs.existsSync(dp),'donor glb present locally (fp-rocklan-'+ag+'.glb; local-only converted asset)');
@@ -98,7 +99,8 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
   Astra:{x:'FP_Rift_S0_X_Wall_Cast'}, // C/Q/E activate a placed Star: the plain audit never fires them (rig-level checks above still cover their clips)
   Brimstone:{c:'FP_Sarge_S0_E_Throw',e:'FP_Sarge_S0_4_Smoke_Fire',x:'FP_Sarge_S0_X_StarCannon_Fire'},
   Gekko:{c:'FP_AggroBot_S0_4_Bubbletov_ThrowOver',q:'FP_AggroBot_S0_Q_BabySpikebot_Cast',e:'FP_AggroBot_S0_E_BabyZamboni_Cast',x:'FP_AggroBot_S0_X_BabyShark_Cast'},
-  Yoru:{e:'FP_Stealth_S0_E_DimensionalPull_Teleport'}};
+  Yoru:{e:'FP_Stealth_S0_E_DimensionalPull_Teleport'},
+  Sova:{q:'FP_Hunter_S0_Q_Bow_Fire',x:'FP_Hunter_S0_X_Bow_Super_Fire'}}; // the bow taps FIRE at ~zero charge: the authored release clip plays (Draw / DrawHold need a real hold, not covered by the tap)
   const r=cp.spawnSync(process.execPath,[path.join(__dirname,'abil_anim_audit.cjs')],{env:{...process.env,AGENTS:Object.keys(WANT).join(',')},encoding:'utf8',timeout:240000});
   ok(r.status===0,'Phoenix/Sage/Reyna/Omen audit runs ('+String(r.stderr||'').slice(-120)+')');
   if(r.status===0){const out=JSON.parse(r.stdout.slice(r.stdout.indexOf('{')));

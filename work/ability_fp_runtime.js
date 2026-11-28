@@ -87,6 +87,12 @@ var XAF_SET = {
   // Sova's bow: the left arm raises the bow (Owl Drone gauntlet raise, left-side tracks) while the right hand holds the
   // bolt (grenade-ready right-side tracks); HOLD FIRE draws the string back with the charge (xAfBowDraw).
   bow: { eq: "FP_Hunter_S0_E_Equip", idle: "FP_Hunter_S0_E_IdleAdd", cast: "FP_Hunter_S0_E_Deploy", hand: "R", rel: 0.05, rEq: "FP_Killjoy_S0_4_Grenade_Equip", rIdle: "FP_Killjoy_S0_4_Swarm_Idle", rCast: "FP_Core_Grenade_UnderhandThrow" },
+  // Sova's AUTHORED bow sets (Rocklan Hunter donor): full two-arm clips, no left/right split. HOLD FIRE charges the
+  // bolt: the draw clip tracks the charge power (u = pw), the hold loops once full. Fire is the release. bowA: the
+  // Shock / Recon bolt bow (Q set); bowX: Hunter's Fury (X set). When the local-only donor glb is absent the rig
+  // lacks set.eq and the borrowed two-arm split above runs instead (xAfTick).
+  bowA: { eq: "FP_Hunter_S0_Q_Bow_EquipV2", idle: "FP_Hunter_S0_Q_Bow_IdleV2", cast: "FP_Hunter_S0_Q_Bow_Fire", draw: "FP_Hunter_S0_Q_Bow_DrawV2", drawHold: "FP_Hunter_S0_Q_Bow_DrawHoldV2", hand: "L", rel: 0.05 },
+  bowX: { eq: "FP_Hunter_S0_X_Bow_Super_Equip", idle: "FP_Hunter_S0_X_Bow_Charge_Idle", cast: "FP_Hunter_S0_X_Bow_Super_Fire", draw: "FP_Hunter_S0_X_Bow_Charge", drawHold: "FP_Hunter_S0_X_Bow_Charge_Idle", hand: "L", rel: 0.05 },
 };
 // Borrowed sets follow how each ability is cast in Valorant: Phoenix Curveball (Q) is a quick side flick (hawk-cast, as Skye's
 // thrown flash) and Hot Hands (E) a lobbed throw with an underhand ALT (grenade set); Sage Resurrection (X) pushes the hand
@@ -97,7 +103,7 @@ var XAF_SET = {
 var XAF_K = {
   Jett: { c: { s: "smoke", orb: 0xd8f4ff }, q: { s: "gaunt", orb: 0xd8f4ff }, e: { s: "dash", orb: 0xd8f4ff } },
   Phoenix: { c: { s: "blaze", orb: 0xff7a1a }, q: { s: "firebomb", orb: 0xfff1b0 }, e: { s: "curveball", orb: 0xff7a1a }, x: { s: "flick", orb: 0xff7a1a } },
-  Sova: { c: { s: "gaunt", prop: "owl-drone", sz: 0.22, bone: "Gauntlet_Socket" }, q: { s: "bow", prop: "shock-dart", sz: 0.32, bolt: 1 }, e: { s: "bow", prop: "recon-bolt", sz: 0.32, bolt: 1 }, x: { s: "bow", orb: 0x4fc3ff } },
+  Sova: { c: { s: "gaunt", prop: "owl-drone", sz: 0.22, bone: "Gauntlet_Socket" }, q: { s: "bowA", prop: "shock-dart", sz: 0.32, bolt: 1 }, e: { s: "bowA", prop: "recon-bolt", sz: 0.32, bolt: 1 }, x: { s: "bowX", orb: 0x4fc3ff } },
   Sage: { c: { s: "barrier", orb: 0x5fe6c8 }, q: { s: "sloworb", orb: 0x5fe6c8 }, e: { s: "heal", orb: 0x8dffd8 }, x: { s: "resurrect", orb: 0x8dffd8 } },
   Reyna: { c: { s: "leer", orb: 0xb05cff }, q: { s: "devour", orb: 0xb05cff }, e: { s: "dismiss", orb: 0xb05cff }, x: { s: "empress", orb: 0xb05cff } },
   Omen: { c: { s: "shrouded", orb: 0x6a4cff }, q: { s: "paranoia", orb: 0x6a4cff }, e: { s: "darkcover", orb: 0x6a4cff }, x: { s: "shadows", orb: 0x6a4cff } },
@@ -437,6 +443,10 @@ function xAfTick(dt) {
   const u = P.u < 0 ? idleU(P.clip) : P.u;
   let played = P.clip;
   if (sp.s === "bow") { const rc = P.ph === "equip" ? set.rEq : P.ph === "cast" || P.ph === "recover" || P.ph === "quick" ? set.rCast : set.rIdle; xAfPose(R, P.clip, u, rc, P.u < 0 ? idleU(rc) : u); if (q && P.ph === "hold") xAfBowDraw(R, xEqHoldPw(q)); }
+  else if (sp.s === "bowA" || sp.s === "bowX") {
+    if (!R.clips[set.eq]) { const bs = XAF_SET.bow, lc = P.ph === "equip" ? bs.eq : P.ph === "cast" || P.ph === "recover" || P.ph === "quick" ? bs.cast : bs.idle, rc = P.ph === "equip" ? bs.rEq : P.ph === "cast" || P.ph === "recover" || P.ph === "quick" ? bs.rCast : bs.rIdle; played = lc; xAfPose(R, lc, P.u < 0 ? idleU(lc) : u, rc, P.u < 0 ? idleU(rc) : u); if (q && P.ph === "hold") xAfBowDraw(R, xEqHoldPw(q)); } // no donor: the borrowed split
+    else { let cl = P.clip, uu = u; if (q && P.ph === "hold") { const pw = xEqHoldPw(q); cl = pw < 1 ? set.draw : set.drawHold; uu = pw < 1 ? Math.min(0.999, Math.max(0.001, pw)) : idleU(set.drawHold); }
+      played = cl; if (!xAfPose(R, cl, uu)) { played = XAF_SET.nade[P.ph === "equip" ? "eq" : P.ph === "hold" || P.ph === "idle" ? "idle" : "cast"]; xAfPose(R, played, P.u < 0 ? idleU(played) : u); } } }
   else if (!xAfPose(R, P.clip, u)) { played = XAF_SET.nade[P.ph === "equip" ? "eq" : P.ph === "hold" || P.ph === "idle" ? "idle" : "cast"]; xAfPose(R, played, u); } // requested clip not in the rig (e.g. the local-only Rocklan donor absent): archetype fallback
   const it = xAfProp(R, sp, set); it.g.visible = !!P.item && it.ok;
   if (it.halo) it.halo.scale.setScalar(1 + 0.12 * Math.sin(XAF.t * 7));

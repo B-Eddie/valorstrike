@@ -59,7 +59,26 @@ function a18Ring(p, r, col, op) { const m = new THREE.Mesh(ringGeo, fireMat(col 
 // casts open the shared xTac overlay (work/ability_target_runtime.js) instead of throwing from the hand.
 // Online the picked points ride the cast message as m.p (server human-only branches); offline they cast locally.
 const A18TAC = { mode: null, arm: "e", wall: null, pts: null };
-function a18TacSend(k, p) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { const m = { t: "ab", k }; if (p) m.p = p; netSend(m); } else a18TacLocal(k, p); }
+// A trusted-server cast request ('ab') wired into the ABILITY ANIM confirm pipeline (XABC / xAbcAo): the
+// request's seq entry is marked answerable (el=1, not yet animated), and when the kit looks ready the
+// first-person quick cast starts at once (the same optimistic gesture the legacy agents get; xAbcAo cuts it
+// when the server refuses), otherwise the server's 'ao' answer starts it late. Was: a18 presses sent the
+// request bare and returned before the ability-anim key wrapper could run, so the entry stayed "animated by
+// its own path" and the confirmed cast's first-person animation never played online. Mechanics stay the
+// server's; this only drives the local gesture and the refusal feedback.
+function a18CastReq(k, fk) {
+  const m = { t: "ab", k }; if (fk) m.fk = fk; netSend(m);
+  try {
+    const s = typeof XABA !== "undefined" && XABA.sent; if (typeof XABA !== "undefined") XABA.sent = null;
+    if (!s || s.k !== k || typeof XABC === "undefined") return;
+    const p = XABC.pend.find((x) => x.n === s.n); if (p) { p.el = 1; p.a = 0; }
+    if (typeof xAbaReady === "function" && typeof xAbaQuick === "function" && xAbaReady(k)) { xAbaQuick(k, p); XABC.n.press++; }
+  } catch (e) {}
+}
+// Map-placed casts (Astra stars / activations, Tejo salvo / Armageddon): the server gates the points, so no
+// optimistic gesture - the entry is marked answerable and the 'ao' answer starts the cast late (or says why
+// it was refused). k outside cqex (Astra's "s" star placement) keeps its own look: no first-person cast.
+function a18TacSend(k, p) { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { const m = { t: "ab", k }; if (p) m.p = p; netSend(m); try { const s = typeof XABA !== "undefined" && XABA.sent; if (typeof XABA !== "undefined") XABA.sent = null; if (s && s.k === k && typeof XABC !== "undefined" && "cqex".includes(k)) { const q = XABC.pend.find((x) => x.n === s.n); if (q) { q.el = 1; q.a = 0; } } } catch (e) {} } else a18TacLocal(k, p); }
 function a18TacLocal(k, p) { // offline mirror of the server's m.p casts
   const A = J.a18, C = A18C;
   if (J.pick === "Astra") {
@@ -368,7 +387,7 @@ const a18Round0 = jRound; jRound = function (match) { a18Round0(match); a18FxCle
 // kill credit: signature 2-kill resets (Iso Double Tap, Waylay Refract, Yoru Gatecrash), Neon slide charges, Clove Pick-me-up window
 const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick) || !J.a18) return; const A = J.a18; J.lastKillT = performance.now() / 1000; if (["Iso", "Waylay", "Yoru"].includes(J.pick) && J.e < 1 && ++J.tk >= 2) { J.e = 1; J.tk = 0; say(K().n[2] + " ready", 700); } if (J.pick === "Neon" && A.slides < 1 && ++A.slideK >= 2) { A.slides = 1; A.slideK = 0; } };
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
-const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code === "KeyC" && !XABT.casting) return a18KeyJ(code); if (A18SET.has(J.pick) && typeof code === "string" && /^Key[CQEX]$/.test(code)) { /* only the ability keys reach the 18-agent kit: slot keys (1/2/3), reload and the rest fall through (a18Key read any other code as the ult) */ if (mode === "five" && FV.buy > 0 && FV.menu) return true; /* buy menu open: its keys buy, never cast (= main jKey / xEqKey); the buy phase itself allows abilities (VALORANT; user 2026-11-06) */ if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
+const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code === "KeyC" && !XABT.casting) return a18KeyJ(code); if (A18SET.has(J.pick) && typeof code === "string" && /^Key[CQEX]$/.test(code)) { /* only the ability keys reach the 18-agent kit: slot keys (1/2/3), reload and the rest fall through (a18Key read any other code as the ult) */ if (mode === "five" && FV.buy > 0 && FV.menu) return true; /* buy menu open: its keys buy, never cast (= main jKey / xEqKey); the buy phase itself allows abilities (VALORANT; user 2026-11-06) */ if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0) a18CastReq(k0); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
 { const bpK0 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code) && typeof xBpBlock === "function" && xBpBlock(code[3].toLowerCase())) return true; return bpK0.apply(this, arguments); }; } // outermost: the buy phase casts only the VALORANT setup abilities (XBPA, base page; = server BUY_PHASE), placement only where listed
 // FP ability anims for the 18 agents (work/ability_fp_runtime.js XAF): the a18 wrapper above returns
 // before the core cast-signature hook can run, so C/Q/E/X casts of these agents never reached the
@@ -383,7 +402,7 @@ const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code
 // Equip release must reach this final dispatch, not the pre-A18 captured jKey. Other kits retain their prior release path.
 const a18CastKey0 = XABT.castKey; XABT.castKey = code => J.pick === "Deadlock" && code === "KeyC" ? jKey(code) : (a18CastKey0 || xEqKey0)(code);
 // USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up
-const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru" && xBpOn() && player && player.hp > 0) return xBpNo("Gatecrash · placement only in the buy phase"), true; if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu)) netSend({ t: "ab", k: "e", fk: 1 }); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
+const a18Use0 = xdUse; xdUse = function () { if (J.pick === "Yoru" && xBpOn() && player && player.hp > 0) return xBpNo("Gatecrash · placement only in the buy phase"), true; if (J.pick === "Yoru") { if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (running && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu)) a18CastReq("e", 1); return true; } if (J.a18 && J.a18.gate && !(J.a18.gateTp > 0)) { const g = J.a18.gate; SFX.ab("dash"); a18Fx({ kind: "gfk", m: a18Ring(new THREE.Vector3(g.x, 0, g.z), 1.2, 0x8a92ff, 0.6), t: 30 }); say("Fake teleport", 900); return true; } } return a18Use0.apply(this, arguments); };
 const a18TickJ = jTick; jTick = function (dt) { a18TickJ(dt); try { a18Tick(dt); } catch (e) { xE(e); } };
 
 // ---- AGENTS 18 ONLINE ----

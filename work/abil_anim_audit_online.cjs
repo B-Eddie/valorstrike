@@ -4,7 +4,7 @@
 // equipped ability); then the remote human casts the same key on the server (sim command), and the page's per-frame
 // record shows what its first-person layer did and what its third-person view of the remote human was asked to play.
 const fs=require('fs'),path=require('path'),vm=require('vm');
-async function online(REC,summarise,ONLY){
+async function online(REC,summarise,ONLY,BLOCKED){
  const audit=fs.readFileSync(path.join(__dirname,'audit.js'),'utf8'),boot=audit.slice(0,audit.indexOf('// ---------- audit ----------')).replace(/^"use strict";/,'');
  const log=console.log;console.log=()=>{};const proc=Object.create(process,{env:{value:{...process.env,REAL3:'1',REAL3_DIR:process.env.REAL3_DIR||require('path').join(__dirname,'..','vendor','three')}}});const H=new Function('require','__dirname','process','module',boot+'\nreturn {win,context,errors,xErrCalls,advance,mkEvent,dispatch,setPhase:p=>{phase=p;}};')(require,__dirname,proc,module);console.log=log;
  const xe=code=>vm.runInContext('__xe',H.context)(code),e0=H.errors.length;/* boot-time harness notes (external scripts) are not page errors */
@@ -46,6 +46,20 @@ async function online(REC,summarise,ONLY){
    await step(1200);const fr=xe('window.__aa.fr.slice()'),tp=xe('window.__aa.tp.slice()');xe('window.__aa.on=0;true');
    out[agent][k]={equip,press:summarise(fr1),all:summarise(fr),foeCast:ok,tp:[...new Set(tp.filter(x=>x.n==='FoeB').map(x=>x.k))]};
    await tap('Digit1',60);await step(300);}
+  if(BLOCKED&&BLOCKED.includes(agent)){const ub=me();if(ub){const A=ub.ability;A.c=0;A.q=0;A.e=0;A.ult=0;} // blocked request: the server holds no charge
+   xe('J.c=0;J.q=0;J.e=0;J.ult=0;true');await step(300); // and the page's mirror agrees, so nothing is predicted
+   xe('window.__aa.on=1;window.__aa.fr=[];true');await tap('KeyC',100);await step(900);
+   const frB=xe('window.__aa.fr.slice()');xe('window.__aa.on=0;true');
+   const ref=xe('(window.xAbilityAnim&&window.xAbilityAnim.XABC&&window.xAbilityAnim.XABC.last)||null');
+   out[agent].blocked={press:summarise(frB),refusal:ref};await step(300);
+   // predict-then-refuse (cut): a cooldown the page cannot see (its own mirror says ready) - the gesture starts
+   // on the press guess, then the server's refusal must cut it (XABC.n.cut) and name the reason.
+   const uc=me();if(uc){uc.ability.cool=uc.ability.cool||{};uc.ability.cool.c=sim.time+30;}
+   const cut0=xe('(window.xAbilityAnim&&window.xAbilityAnim.XABC.n.cut)||0');
+   xe('window.__aa.on=1;window.__aa.fr=[];J.c=2;J.cd={c:0,q:0,e:0,x:0};true');await tap('KeyC',100);await step(900); // the mirror lie lands with the recording, no frame for the stream to correct it before the press
+   const frC=xe('window.__aa.fr.slice()');xe('window.__aa.on=0;true');
+   const cut1=xe('(window.xAbilityAnim&&window.xAbilityAnim.XABC.n.cut)||0'),refC=xe('(window.xAbilityAnim&&window.xAbilityAnim.XABC.last)||null'),xcaOn=xe('!!XCA.on');
+   out[agent].cut={press:summarise(frC),cuts:cut1-cut0,refusal:refC,xcaOn};if(uc)delete uc.ability.cool.c;await step(300);}
   for(const h of humans.splice(0))try{h.leave();}catch(e){}xe('mpReset()');await step(500);xe('try{toLobby()}catch(e){}');await step(200);}
  out.__err=xe('window.__aa.err||null');out.__pageErrors=H.errors.slice(e0,e0+5).map(e=>String(e&&e.stack||e&&e.message||JSON.stringify(e)).slice(0,300));return out;
 }

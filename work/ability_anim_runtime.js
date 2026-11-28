@@ -28,6 +28,10 @@ var XABA_TY = {
   Sage: { c: "place", q: "throw", e: "cast", x: "cast" }, Reyna: { c: "flick", q: "buff", e: "buff", x: "buff" }, Omen: { c: "cast", q: "cast", e: "cast", x: "cast" },
   Killjoy: { c: "throw", q: "place", e: "place", x: "place" }, Raze: { c: "under", q: "throw", e: "throw", x: "cast" }, Skye: { c: "cast", q: "cast", e: "flick", x: "cast" },
   Breach: { c: "gaunt", q: "gaunt", e: "gaunt", x: "gaunt" }, Cypher: { c: "place", q: "under", e: "throw", x: "throw" }, Chamber: { c: "place", q: "cast", e: "place", x: "cast" },
+  // the wired a18 agents (0603915): Brimstone tosses the Stim Beacon and works the bracer for the smokes / strike,
+  // Gekko throws Mosh Pit and Dizzy and releases Wingman / Thrash from his hands, Yoru sends the decoy and the
+  // Gatecrash tether and flicks Blindside underhand (the drift mask is its own cast)
+  Brimstone: { c: "throw", q: "cast", e: "cast", x: "cast" }, Gekko: { c: "throw", q: "cast", e: "throw", x: "cast" }, Yoru: { c: "cast", q: "under", e: "throw", x: "cast" },
 };
 // Key poses per style: u (0..1 of T s) -> right / left hand offsets from that shoulder in the agent frame (+x the agent's left,
 // +y up, +z forward; m at the 1.92 m rig), torso twist (rad about up, + turns the chest left) and lean (rad, + forward),

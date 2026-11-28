@@ -22,6 +22,10 @@ const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.
 const A0='// ---- ABILITY ANIM ----',B0='// ---- END ABILITY ANIM ----',a0=html.indexOf(A0),b0=html.indexOf(B0);
 let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);if(process.env.VERBOSE)console.log('FAIL',m);}};
 const AG=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye','Breach','Cypher','Chamber'],KEYS='cqex';
+// the a18 agents with authored Rocklan donor sets (0603915), covered since their cast hook: offline they reach the FP
+// layer through the agents18 sig-check wrapper, online through the XABC confirm pipeline (a18CastReq). Astra stays out:
+// her casts need a placed star / the tactical map, which this flow does not drive.
+const AGX=['Brimstone','Gekko','Yoru'];
 (async()=>{
  // ---- 1. installed ------------------------------------------------------------------------------------------------
  ok(a0>0&&b0>a0,'ABILITY ANIM block installed in index.html');
@@ -32,7 +36,7 @@ const AG=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye',
   ok(/xEqType\(k, ag\)/.test(rest)&&!/function xEqType\(/.test(rest),'base page calls xEqType without defining it (the relay ReferenceError this block fixes)');}
  // ---- 2. pure key poses -------------------------------------------------------------------------------------------
  const P={THREE:require('./valorant_rigs').T,window:{},console,Math};vm.createContext(P);vm.runInContext(BLOCK,P);const L=P.window.xAbilityAnim;ok(!!L,'block export');
- for(const ag of AG)for(const k of KEYS){if(ag==='Jett'&&k==='x')continue;const t=L.type(ag,k);ok(!!L.XABA_ST[t]&&L.XABA_TY[ag]&&L.XABA_TY[ag][k]===t,`${ag} ${k}: typed third-person cast style (${t})`);}
+ for(const ag of AG.concat(AGX))for(const k of KEYS){if(ag==='Jett'&&k==='x')continue;const t=L.type(ag,k);ok(!!L.XABA_ST[t]&&L.XABA_TY[ag]&&L.XABA_TY[ag][k]===t,`${ag} ${k}: typed third-person cast style (${t})`);}
  const d=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2]);
  for(const ty in L.XABA_ST){const S=L.XABA_ST[ty],r0=L.key(ty,0),r1=L.key(ty,1);let far=0;for(let u=0;u<=1;u+=.02)far=Math.max(far,d(L.key(ty,u).R,r0.R),d(L.key(ty,u).L,r0.L));
   ok(far>.25,`${ty}: a hand leaves the rest pose by ${far.toFixed(2)} m`);ok(d(r0.R,r1.R)<1e-9&&Math.abs(r1.tw)<1e-9&&Math.abs(r1.le)<1e-9,`${ty}: ends at rest`);ok(L.env(0,S.T)===0&&L.env(S.T,S.T)===0&&L.env(S.T/2,S.T)===1,`${ty}: envelope 0 -> 1 -> 0`);}
@@ -100,7 +104,7 @@ const AG=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye',
  }
  // ---- 4. first person on real FP rigs -----------------------------------------------------------------------------
  {const FP=await import(path.join(root,'server/tools/ability-fp-view.mjs')),api=FP.runtime();
-  for(const ag of (process.env.AGENTS?process.env.AGENTS.split(','):AG)){const B=await FP.build(ag,api);
+  for(const ag of (process.env.AGENTS?process.env.AGENTS.split(','):AG.concat(AGX))){const B=await FP.build(ag,api);
    for(const k of KEYS){if(ag==='Jett'&&k==='x')continue;const e=await FP.pose(B,k,'equip',.05),i=await FP.pose(B,k,'idle',.3),c=await FP.pose(B,k,'cast',.6);const mv=Math.max(d(e.palm,i.palm),d(i.palm,c.palm),d(e.palm,c.palm));
     ok(mv>.03,`${ag} ${k} FP: the holding palm moves ${mv.toFixed(3)} m between equip / idle / cast (${e.clip} / ${i.clip} / ${c.clip})`);}}}
  // ---- 5. the live page offline ------------------------------------------------------------------------------------
@@ -112,7 +116,7 @@ const AG=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye',
   xe(`window.__fr=[];{const v0=vmTick;vmTick=function(dt){const r=v0.apply(this,arguments);try{if(window.__rec){const L=XAF.last;window.__fr.push({on:!!XAF.on,c:XAF.on&&L?L.clip:"",u:XAF.on&&L?+L.u:-1,sus:XABA.fp.on?XABA.fp.ph:""});}}catch(e){}return r;};}true`);
   const fpOf=fr=>{const on=fr.filter(f=>f.on&&f.c),us=on.map(f=>f.u).filter(u=>u>=0);return {n:on.length,mv:us.length>1?Math.max(...us)-Math.min(...us):0,clips:[...new Set(on.map(f=>f.c))]};};
   const e0=H.errors.length;
-  for(const agent of (process.env.AGENTS?process.env.AGENTS.split(','):AG)){H.$('pm5v5').click();await adv(50);if(!(await through(agent))){ok(false,agent+': offline match did not start');continue;}xe('FV.buy=0.05;true');await adv(300);
+  for(const agent of (process.env.AGENTS?process.env.AGENTS.split(','):AG.concat(AGX))){H.$('pm5v5').click();await adv(50);if(!(await through(agent))){ok(false,agent+': offline match did not start');continue;}xe('FV.buy=0.05;true');await adv(300);
    for(const code of ['KeyC','KeyQ','KeyE','KeyX']){const k=code[3].toLowerCase(),tag=`${agent} ${k}`;
     xe(`(()=>{const M=K().mx;J.c=Math.max(J.c|0,M.c||1);J.q=Math.max(J.q|0,M.q||1);J.e=Math.max(J.e|0,M.e||1);J.ult=K().u;J.cd={c:0,q:0,e:0,x:0};player.hp=Math.max(player.hp,100);J.dr=null;J.ftp=false;
      if(J.pick==="Reyna"){for(let i=0;i<2;i++){const b=bots.find(x=>x&&x.g);if(b)rySoul(b);}for(const s of J.so){s.p.set(player.x+1,1.2,player.z);s.t=9;}}})()`);await adv(150);
@@ -140,8 +144,10 @@ const AG=['Jett','Phoenix','Sova','Sage','Reyna','Omen','Killjoy','Raze','Skye',
  if(!process.env.QUICK){const {online}=require('./abil_anim_audit_online.cjs');
   const REC=fs.readFileSync(path.join(__dirname,'abil_anim_audit.cjs'),'utf8').match(/const REC=`([\s\S]*?)`;/)[1];
   const sum=fr=>{const on=fr.filter(f=>f.on&&f.c),us=on.map(f=>f.u).filter(u=>u>=0);return {n:on.length,mv:us.length>1?Math.max(...us)-Math.min(...us):0,clips:[...new Set(on.map(f=>f.c))]};};
-  const want={Jett:'qe',Reyna:'x',Skye:'c'};const O=await online(REC,sum,Object.keys(want));
+  const want0={Jett:'qe',Reyna:'x',Skye:'c',Brimstone:'cqe',Gekko:'x',Yoru:'e'},ONLY6=process.env.AGENTS?process.env.AGENTS.split(','):null,want=ONLY6?Object.fromEntries(Object.entries(want0).filter(([a])=>ONLY6.includes(a))):want0,BLOCKED=['Brimstone'].filter(a=>Object.keys(want).includes(a));const O=await online(REC,sum,Object.keys(want),BLOCKED);
   for(const ag in want)for(const k of want[ag]){const r=O[ag]&&O[ag][k];ok(r&&r.press.n>=8&&r.press.mv>.1,`ONLINE ${ag} ${k} FP: quick cast on the ability arms (${r&&r.press.n} frames, span ${r&&r.press.mv.toFixed(2)})`);}
+  for(const ag of BLOCKED){const b=O[ag]&&O[ag].blocked;ok(b&&b.press.n===0&&b.refusal&&b.refusal.k==='c'&&b.refusal.r==='charges',`ONLINE ${ag} blocked cast (server holds no charge): no first-person clip claimed (${b&&b.press.n} frames), refusal reason reaches the player (${b&&b.refusal&&b.refusal.r})`);
+   const cu=O[ag]&&O[ag].cut;ok(cu&&cu.cuts>=1&&!cu.xcaOn&&cu.refusal&&cu.refusal.r==='cooldown',`ONLINE ${ag} refused AFTER a predicted start (hidden cooldown): the gesture is cut by the server's answer (${cu&&cu.cuts} cuts, xca on ${cu&&cu.xcaOn}, reason ${cu&&cu.refusal&&cu.refusal.r}; the in-process answer lands inside one frame, so ${cu&&cu.press.n} frames were recorded - the cut, not frame count, is the assertion)`);}
   ok(!O.__err&&!(O.__pageErrors||[]).length,'online page: no errors '+JSON.stringify([O.__err,O.__pageErrors]));}
  if(fails.length){console.error(fails.slice(0,40).join('\n')+`\n${fails.length} failed, ${n} passed`);process.exit(1);}
  console.log(`Ability animations: ${n} checks - every agent x C/Q/E/X has a typed third-person cast pose (real Jett / Breach rigs: hands move, gun holstered, exact hand-back, legs untouched) and a moving first-person ability clip (offline page, real FP rigs${process.env.QUICK?'':', online server-cast keys'})`);
