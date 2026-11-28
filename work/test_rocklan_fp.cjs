@@ -45,6 +45,31 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
  {const p=cname=>{const mx=new T.AnimationMixer(scene),a=mx.clipAction(clips[cname]);a.play();mx.setTime(clips[cname].duration*0.5);scene.updateMatrixWorld(true);const w=scene.getObjectByName('R_Hand').getWorldPosition(new T.Vector3()).toArray();mx.stopAllAction();mx.uncacheClip(clips[cname]);return w;};
   const dN=p('FP_Wushu_S0_E_DashN'),dE=p('FP_Wushu_S0_E_DashE');
   ok(Math.hypot(dN[0]-dE[0],dN[1]-dE[1],dN[2]-dE[2])>0.02,'dash N and E are different poses (mid-clip R_Hand '+Math.hypot(dN[0]-dE[0],dN[1]-dE[1],dN[2]-dE[2]).toFixed(3)+' m apart)');}
+ // ---- 1b. the other wired agents' donors (phoenix / sage / reyna / omen) -----------------------------------------
+ const AG={
+  phoenix:['FP_Phoenix_S0_Q_Wall_Equip','FP_Phoenix_S0_Q_Wall_Fire','FP_Phoenix_S0_E_FlashBang_ThrowRight','FP_Phoenix_S0_E_FlashBang_ThrowLeft','FP_Phoenix_S0_4_FireBomb_Equip','FP_Phoenix_S0_4_FireBomb_Idle'],
+  sage:['FP_Thorne_S0_E_Wall_Cast','FP_Thorne_S0_4_SlowGrenade_Activate','FP_Thorne_S0_Q_Self_Cast','FP_Thorne_S0_Q_Ally_Cast','FP_Thorne_S0_X_Resurrect_Activate'],
+  reyna:['FP_Vampire_S0_4_Cast','FP_Vampire_S0_Q_Activate','FP_Vampire_S0_E_Escape_Activate','FP_Vampire_S0_X_Steroid_Cast'],
+  omen:['FP_Wraith_S0_Q_DarkSight_Fire','FP_Wraith_4_SmokeMissile_Activate','FP_Wraith_S0_X_Teleport_Activate','FP_Wraith_S0_E_ShortTeleport_Equip'],
+ };
+ const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire'};
+ for(const ag of Object.keys(AG)){
+  const dp=path.join(root,'models/valorant/animations/fp-rocklan-'+ag+'.glb');
+  ok(fs.existsSync(dp),'donor glb present locally (fp-rocklan-'+ag+'.glb; local-only converted asset)');
+  const [a2,d2]=await Promise.all([parse(path.join(root,'models/valorant/'+ag+'-fp.glb')),parse(dp)]);
+  const dn=new Set(d2.animations.map(x=>x.name));
+  for(const c of AG[ag])ok(dn.has(c),ag+' donor clip '+c);
+  const merged={};(abil.animations||[]).forEach(c=>merged[c.name]=c);d2.animations.forEach(c=>{if(!merged[c.name])merged[c.name]=c;});(a2.animations||[]).forEach(c=>merged[c.name]=c);
+  let kept=0,own=0;for(const c of a2.animations||[])if(dn.has(c.name)){own++;if(merged[c.name]===c)kept++;}
+  ok(kept===own,ag+': donor never overrides the agent\'s own clips ('+kept+'/'+own+')');
+  const sc2=a2.scene,c2=merged[PLAY1[ag]];
+  const mx=new T.AnimationMixer(sc2),act=mx.clipAction(c2);act.play();
+  const B=['R_Hand','L_Hand'].map(b=>sc2.getObjectByName(b));let tr=0,prev=null,bad=0;
+  for(let i=0;i<=20;i++){mx.setTime(c2.duration*i/20);sc2.updateMatrixWorld(true);const p=B.map(b=>{const w=b.getWorldPosition(new T.Vector3());if(!isFinite(w.x+w.y+w.z))bad++;return w.toArray();});
+   if(prev)tr+=Math.max(...p.map((q,bi)=>Math.hypot(q[0]-prev[bi][0],q[1]-prev[bi][1],q[2]-prev[bi][2])));prev=p;}
+  mx.stopAllAction();mx.uncacheClip(c2);
+  ok(tr>0.02&&bad===0,ag+' '+PLAY1[ag]+' plays on the real '+ag+'-fp rig (hand travel '+tr.toFixed(3)+' m)');
+ }
  // ---- 3. offline real page (behavioral) ------------------------------------------------------------------------
  {const r=cp.spawnSync(process.execPath,[path.join(__dirname,'abil_anim_audit.cjs')],{env:{...process.env,AGENTS:'Jett'},encoding:'utf8',timeout:240000});
   ok(r.status===0,'Jett audit runs ('+String(r.stderr||'').slice(-120)+')');
@@ -52,6 +77,16 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
    ok(c.clips.includes('FP_Wushu_S0_4_Smoke_Grenade_Outro'),'Jett C requests the authored Cloudburst throw: '+c.clips.join(','));
    ok(e.clips.includes('FP_Wushu_S0_E_DashN'),'Jett E (no move keys -> forward) requests the authored dash: '+e.clips.join(','));
    ok(c.xca&&e.xca,'both casts run through the quick-cast window');}}
+ {const WANT={Phoenix:{c:'FP_Phoenix_S0_Q_Wall_Fire',e:'FP_Phoenix_S0_E_FlashBang_ThrowRight'},
+  Sage:{c:'FP_Thorne_S0_E_Wall_Cast',q:'FP_Thorne_S0_4_SlowGrenade_Activate',e:'FP_Thorne_S0_Q_Self_Cast',x:'FP_Thorne_S0_X_Resurrect_Activate'},
+  Reyna:{c:'FP_Vampire_S0_4_Cast',x:'FP_Vampire_S0_X_Steroid_Cast'}, // Devour / Dismiss need a soul orb in range: the plain audit never fires them (rig-level checks above still cover their clips)
+  Omen:{q:'FP_Wraith_S0_Q_DarkSight_Fire',e:'FP_Wraith_4_SmokeMissile_Activate'}};
+  const r=cp.spawnSync(process.execPath,[path.join(__dirname,'abil_anim_audit.cjs')],{env:{...process.env,AGENTS:Object.keys(WANT).join(',')},encoding:'utf8',timeout:240000});
+  ok(r.status===0,'Phoenix/Sage/Reyna/Omen audit runs ('+String(r.stderr||'').slice(-120)+')');
+  if(r.status===0){const out=JSON.parse(r.stdout.slice(r.stdout.indexOf('{')));
+   for(const ag of Object.keys(WANT))for(const k of Object.keys(WANT[ag])){
+    const rec=out[ag]&&out[ag][k]&&(out[ag][k].press||out[ag][k]);
+    ok(rec&&rec.clips&&rec.clips.includes(WANT[ag][k]),ag+' '+k.toUpperCase()+' requests the authored clip '+WANT[ag][k]+': '+(rec&&rec.clips?rec.clips.join(','):'no press recorded'));}}}
  // ---- 4. dash direction mapping (xCaStart wrapper formula) ------------------------------------------------------
  const dir=(f,s)=>{const i=Math.round(((Math.atan2(-s,f)/(Math.PI/2))+4)%4)%4;return ['N','W','S','E'][i];};
  ok(dir(1,0)==='N'&&dir(-1,0)==='S'&&dir(0,1)==='E'&&dir(0,-1)==='W','dash keys -> N/E/S/W ('+[dir(1,0),dir(-1,0),dir(0,1),dir(0,-1)].join(',')+')');

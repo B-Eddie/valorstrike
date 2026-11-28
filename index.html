@@ -22914,6 +22914,28 @@ var XAF_SET = {
   smoke: { eq: "FP_Wushu_S0_4_Smoke_Grenade_Intro", idle: "FP_Wushu_S0_4_Smoke_Loop", cast: "FP_Wushu_S0_4_Smoke_Grenade_Outro", hand: "L", rel: 0.35 },
   // Tailwind dash: directional clips picked from the dash keys captured at cast (XAF.ddir).
   dash: { cast: "FP_Wushu_S0_E_DashN", hand: "R", rel: 0.3, dirs: { N: "FP_Wushu_S0_E_DashN", E: "FP_Wushu_S0_E_DashE", S: "FP_Wushu_S0_E_DashS", W: "FP_Wushu_S0_E_DashW" } },
+  // Phoenix (fp-rocklan-phoenix donor): Blaze wall cast with the left hand; Curveball flicked with the right (left
+  // variant as ALT); Hot Hands has authored equip/idle but no throw clip in the pack, so the core grenade throw stays.
+  blaze: { eq: "FP_Phoenix_S0_Q_Wall_Equip", idle: "FP_Phoenix_S0_Q_Wall_Idle", cast: "FP_Phoenix_S0_Q_Wall_Fire", hand: "L", rel: 0.03 },
+  firebomb: { eq: "FP_Phoenix_S0_4_FireBomb_Equip", idle: "FP_Phoenix_S0_4_FireBomb_Idle", cast: "FP_Core_Grenade_OverhandThrow", alt: "FP_Core_Grenade_UnderhandThrow", hand: "R", rel: 0.13, arel: 0.14 },
+  curveball: { eq: "FP_Phoenix_S0_E_FlashBang_Equip", idle: "FP_Phoenix_S0_E_FlashBang_Idle", cast: "FP_Phoenix_S0_E_FlashBang_ThrowRight", alt: "FP_Phoenix_S0_E_FlashBang_ThrowLeft", hand: "R", rel: 0.18, arel: 0.2 },
+  // Sage (fp-rocklan-sage; Thorne): Barrier pushed out two-handed (orb right), Slow Orb tossed with the left,
+  // Heal self-cast (ally variant as ALT), Resurrection pushes out at the end of the activate.
+  barrier: { eq: "FP_Thorne_S0_E_Equip", idle: "FP_Thorne_S0_E_Idle", cast: "FP_Thorne_S0_E_Wall_Cast", hand: "R", rel: 0.53 },
+  sloworb: { eq: "FP_Thorne_S0_4_SlowGrenade_Equip", idle: "FP_Thorne_S0_4_SlowGrenade_Idle", cast: "FP_Thorne_S0_4_SlowGrenade_Activate", hand: "L", rel: 0.02 },
+  heal: { eq: "FP_Thorne_S0_Q_Equip", idle: "FP_Thorne_S0_Q_Idle", cast: "FP_Thorne_S0_Q_Self_Cast", alt: "FP_Thorne_S0_Q_Ally_Cast", hand: "R", rel: 0.05, arel: 0.05 },
+  resurrect: { eq: "FP_Thorne_S0_X_Resurrect_Equip", idle: "FP_Thorne_S0_X_Resurrect_Idle", cast: "FP_Thorne_S0_X_Resurrect_Activate", hand: "R", rel: 0.9 },
+  // Reyna (fp-rocklan-reyna; Vampire): Leer cast with the left hand; Devour / Dismiss / Empress are instant activates.
+  leer: { eq: "FP_Vampire_S0_4_Equip", idle: "FP_Vampire_S0_4_Idle", cast: "FP_Vampire_S0_4_Cast", hand: "L", rel: 0.12 },
+  devour: { cast: "FP_Vampire_S0_Q_Activate", hand: "L", rel: 0.05 },
+  dismiss: { cast: "FP_Vampire_S0_E_Escape_Activate", hand: "R", rel: 0.05 },
+  empress: { cast: "FP_Vampire_S0_X_Steroid_Cast", hand: "R", rel: 0.87 },
+  // Omen (fp-rocklan-omen; Wraith): Paranoia thrown from the left, Dark Cover placed from the right, Shrouded Step
+  // quick teleport, From the Shadows channels then activates.
+  shrouded: { eq: "FP_Wraith_S0_E_ShortTeleport_Equip", idle: "FP_Wraith_S0_E_ShortTeleport_Equip", cast: "FP_Wraith_S0_E_ShortTeleport_Arrive", hand: "R", rel: 0.08 },
+  paranoia: { eq: "FP_Wraith_S0_Q_DarkSight_Equip", idle: "FP_Wraith_S0_Q_DarkSight_IdleAnim", cast: "FP_Wraith_S0_Q_DarkSight_Fire", hand: "L", rel: 0.12 },
+  darkcover: { cast: "FP_Wraith_4_SmokeMissile_Activate", hand: "R", rel: 0.52 },
+  shadows: { eq: "FP_Wraith_S0_X_Teleport_Equip", idle: "FP_Wraith_S0_X_Teleport_Idle", cast: "FP_Wraith_S0_X_Teleport_Activate", hand: "R", rel: 0.82 },
   // Sova's bow: the left arm raises the bow (Owl Drone gauntlet raise, left-side tracks) while the right hand holds the
   // bolt (grenade-ready right-side tracks); HOLD FIRE draws the string back with the charge (xAfBowDraw).
   bow: { eq: "FP_Hunter_S0_E_Equip", idle: "FP_Hunter_S0_E_IdleAdd", cast: "FP_Hunter_S0_E_Deploy", hand: "R", rel: 0.05, rEq: "FP_Killjoy_S0_4_Grenade_Equip", rIdle: "FP_Killjoy_S0_4_Swarm_Idle", rCast: "FP_Core_Grenade_UnderhandThrow" },
@@ -22926,11 +22948,11 @@ var XAF_SET = {
 // set's hand unless the glb's own FP bone is given) scaled to sz metres; orb: an energy orb in the palm (agent VFX colour).
 var XAF_K = {
   Jett: { c: { s: "smoke", orb: 0xd8f4ff }, q: { s: "gaunt", orb: 0xd8f4ff }, e: { s: "dash", orb: 0xd8f4ff } },
-  Phoenix: { c: { s: "flick", orb: 0xff7a1a }, q: { s: "flick", orb: 0xfff1b0 }, e: { s: "nade", orb: 0xff7a1a }, x: { s: "flick", orb: 0xff7a1a } },
+  Phoenix: { c: { s: "blaze", orb: 0xff7a1a }, q: { s: "firebomb", orb: 0xfff1b0 }, e: { s: "curveball", orb: 0xff7a1a }, x: { s: "flick", orb: 0xff7a1a } },
   Sova: { c: { s: "gaunt", prop: "owl-drone", sz: 0.22, bone: "Gauntlet_Socket" }, q: { s: "bow", prop: "shock-dart", sz: 0.32, bolt: 1 }, e: { s: "bow", prop: "recon-bolt", sz: 0.32, bolt: 1 }, x: { s: "bow", orb: 0x4fc3ff } },
-  Sage: { c: { s: "place", orb: 0x5fe6c8 }, q: { s: "nade", orb: 0x5fe6c8 }, e: { s: "flick", orb: 0x8dffd8 }, x: { s: "wolf", orb: 0x8dffd8 } },
-  Reyna: { c: { s: "flick", orb: 0xb05cff }, q: { s: "flick", orb: 0xb05cff }, e: { s: "flick", orb: 0xb05cff }, x: { s: "flick", orb: 0xb05cff } },
-  Omen: { c: { s: "flick", orb: 0x6a4cff }, q: { s: "flick", orb: 0x6a4cff }, e: { s: "nade", orb: 0x6a4cff }, x: { s: "flick", orb: 0x6a4cff } },
+  Sage: { c: { s: "barrier", orb: 0x5fe6c8 }, q: { s: "sloworb", orb: 0x5fe6c8 }, e: { s: "heal", orb: 0x8dffd8 }, x: { s: "resurrect", orb: 0x8dffd8 } },
+  Reyna: { c: { s: "leer", orb: 0xb05cff }, q: { s: "devour", orb: 0xb05cff }, e: { s: "dismiss", orb: 0xb05cff }, x: { s: "empress", orb: 0xb05cff } },
+  Omen: { c: { s: "shrouded", orb: 0x6a4cff }, q: { s: "paranoia", orb: 0x6a4cff }, e: { s: "darkcover", orb: 0x6a4cff }, x: { s: "shadows", orb: 0x6a4cff } },
   Killjoy: { c: { s: "nade", prop: "nanoswarm", sz: 0.11 }, q: { s: "place", prop: "alarmbot", sz: 0.16 }, e: { s: "place", prop: "turret", sz: 0.2 }, x: { s: "bomb", prop: "lockdown", sz: 0.24 } },
   Raze: { c: { s: "boom", prop: "boom-bot", sz: 0.22 }, q: { s: "nade", prop: "blast-pack", sz: 0.12 }, e: { s: "paint", prop: "paintshell", sz: 0.13 }, x: { s: "flick", orb: 0xff8a1f } },
   Skye: { c: { s: "flick", orb: 0x8aff5a }, q: { s: "wolf", orb: 0x8aff5a }, e: { s: "flick", orb: 0xc8ff8a }, x: { s: "flick", orb: 0x8aff5a } },
