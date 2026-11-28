@@ -27,17 +27,20 @@ grounded list of gameplay gaps that remain. Assets (c) Riot Games, sourced via t
 
 ## Remaining gaps (grounded, not closed by this branch)
 
-1. Golden Gun model: the Spike Rush Golden Gun powerup is fully implemented in mechanics
-   (work/game_rules_runtime.js srGoldenSet/srGoldenOn: one-shot 800-damage Sheriff), but it
-   renders the native Sheriff; the imported models/valorant/golden-gun.glb is not yet wired as
-   the viewmodel/world model while the powerup is active. Asset available, swap not done.
-2. Veto FP ult binding: Veto's Evolution ult has world fx (work/veto_fx_runtime.js) but no
-   first-person binding/visual for the caster (no veto entry in work/ability_fp_runtime.js).
-3. Gekko globules: creature death/reclaim globules (a18Glob state) still use procedural visuals;
-   baby-wingman/baby-dizzy/baby-thrash models are imported but the globule spawn path has no
-   clean fx handle to wrap (state-only a18Glob), needs a small spawn-side hook.
-4. Mosh pit: gkxMoshThrow arcs a projectile then lands; the mosh-pit.glb is imported but not
-   attached (the thrown glob needs the projectile, the pit needs a post-landing hook).
+1. Golden Gun model: CLOSED as an original tint (d34e57a): while the powerup is active the
+   first-person Sheriff viewmodel renders gold-tinted (cloned existing materials; no imported
+   asset, safe under the rights pause). The imported golden-gun.glb stays unwired pending rights.
+   Third-person model not tinted (accepted v1 limit).
+2. Veto FP ult binding: CLOSED (365574e, hardened 5a5da6a): while Evolution is active the FP rig
+   builds from veto-fp-ult.glb (xvFPArmsOverride hook); offline + online transitions covered,
+   race-tested (work/test_veto_fp_ult.cjs). Third-person model not swapped (accepted v1 limit).
+3. Gekko globules: CLOSED (this branch): a18Glob(k, fxHandle) spawns the baby-wingman /
+   baby-dizzy / small mosh-pit glb at the creature's end position until the reclaim timer
+   returns the charge (game-dt via vtxPush). Covered by work/test_ka_globules.cjs.
+   baby-thrash.glb remains unused: Thrash has no reclaim path in this codebase (mechanics
+   parity question, out of scope here).
+4. Mosh pit: CLOSED (this branch): gkxMoshThrow rides the arc as mosh-pit.glb; the landed pool
+   keeps the procedural goo (zone readability) with the model in the middle.
 5. Homescreen videos: see Downloads table. Stills are shipped and presented as stills.
 6. Remaining newer-agent device kinds without imported geometry (tejo sdrone/xcut, vyse mesh,
    waylay, etc.): audited in the KA models catalog; no matching glb was published by KA at

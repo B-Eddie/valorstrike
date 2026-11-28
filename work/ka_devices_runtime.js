@@ -114,26 +114,63 @@ function kadStatic(h, slug, opts) {
     })
     .catch(function () { delete objs[0].userData.kad; });
 }
-function kadWrap(fname, fn) {
-  try {
-    var f0 = G_[fname];
-    if (typeof f0 !== "function") return;
-    G_[fname] = function () {
-      var h = f0.apply(this, arguments);
-      try { fn(h, arguments); } catch (e) {}
-      return h;
-    };
-  } catch (e) {}
+function kadWrapFn(f0, fn) {
+  return function () {
+    var h = f0.apply(this, arguments);
+    try { fn(h, arguments); } catch (e) {}
+    return h;
+  };
 }
-kadWrap("gkxWingman", function (h) { kadCreature(h, "wingman", { height: 0.8, yaw: Math.PI }); });
-kadWrap("gkxDizzy", function (h) { kadCreature(h, "dizzy", { height: 0.7, yaw: Math.PI }); });
-kadWrap("gkxThrash", function (h) { kadCreature(h, "thrash", { height: 1.4, yaw: Math.PI }); });
-kadWrap("dlxSonicSensor", function (h) { kadStatic(h, "sonic-sensor", { height: 0.4 }); });
+// The wraps below use direct lexical references on purpose: every runtime block is concatenated into
+// one classic script, so the bindings are visible here; global-object/eval lookup is NOT reliable in
+// every environment (the vm test harness keeps function declarations off the global object).
+try { if (typeof gkxWingman === "function") gkxWingman = kadWrapFn(gkxWingman, function (h) { kadCreature(h, "wingman", { height: 0.8, yaw: Math.PI }); }); } catch (e) {}
+try { if (typeof gkxDizzy === "function") gkxDizzy = kadWrapFn(gkxDizzy, function (h) { kadCreature(h, "dizzy", { height: 0.7, yaw: Math.PI }); }); } catch (e) {}
+try { if (typeof gkxThrash === "function") gkxThrash = kadWrapFn(gkxThrash, function (h) { kadCreature(h, "thrash", { height: 1.4, yaw: Math.PI }); }); } catch (e) {}
+try { if (typeof dlxSonicSensor === "function") dlxSonicSensor = kadWrapFn(dlxSonicSensor, function (h) { kadStatic(h, "sonic-sensor", { height: 0.4 }); }); } catch (e) {}
 // GravNet: keep the procedural dome/net/ring (they show the slow zone) and just sit the real
 // grenade model in the middle of the field.
-kadWrap("dlxGravNet", function (h) { kadStatic(h, "gravnet", { height: 0.35, hide: false }); });
-kadWrap("vyxRazorvine", function (h, args) {
-  kadStatic(h, "razorvine", { height: 0.9, diameter: (args[1] || 6) * 2 });
-});
+try { if (typeof dlxGravNet === "function") dlxGravNet = kadWrapFn(dlxGravNet, function (h) { kadStatic(h, "gravnet", { height: 0.35, hide: false }); }); } catch (e) {}
+try { if (typeof vyxRazorvine === "function") vyxRazorvine = kadWrapFn(vyxRazorvine, function (h, args) { kadStatic(h, "razorvine", { height: 0.9, diameter: (args[1] || 6) * 2 }); }); } catch (e) {}
+// Mosh pit: the thrown glob rides its arc as the real mosh-pit model; the landed pool keeps its
+// procedural goo (it shows the damage zone) with the creature model sitting in the middle.
+try { if (typeof gkxMoshThrow === "function") gkxMoshThrow = kadWrapFn(gkxMoshThrow, function (h) { kadCreature(h, "mosh-pit", { height: 0.5 }); }); } catch (e) {}
+try { if (typeof gkxMoshPool === "function") gkxMoshPool = kadWrapFn(gkxMoshPool, function (h) { kadStatic(h, "mosh-pit", { height: 0.4, hide: false }); }); } catch (e) {}
+// Gekko reclaim globules: when a creature's fx ends, its globule (baby model) stays at the end
+// position until the reclaim timer returns the charge. Driven by game dt through vtxPush, so it
+// follows pause/fake timers like every other fx. a18Glob(k, fxHandle) carries the creature handle.
+var KAD_GLOB = { q: ["baby-wingman", 0.45], e: ["baby-dizzy", 0.4], c: ["mosh-pit", 0.35] };
+function kadGlobule(k, h) {
+  var cfg = KAD_GLOB[k];
+  if (!cfg) return;
+  var spawn = function () {
+    var p = h && h.fx && h.fx.objs && h.fx.objs[0] && h.fx.objs[0].position;
+    if (!p) return;
+    var gx = p.x, gy = p.y, gz = p.z;
+    xvLoad(cfg[0])
+      .then(function (gl) {
+        var root = kadScaled(gl, cfg[1]);
+        root.position.set(gx, gy, gz);
+        scene.add(root);
+        var rec = { root: root, mix: kadMixer(root.children[0], gl.animations), sceneAdd: true, globule: k };
+        KAD.live.push(rec);
+        var ttl = (typeof J !== "undefined" && J.a18gl && J.a18gl[k]) || (typeof A18C !== "undefined" && A18C.globule.reclaim) || 10;
+        if (typeof vtxPush === "function") {
+          vtxPush({
+            age: 0,
+            ttl: Math.max(0.5, ttl),
+            tick: function (dt) { try { if (rec.mix) rec.mix.mixer.update(dt); } catch (e) {} },
+            done: function () { kadDetach(rec); if (root.parent) root.parent.remove(root); },
+          });
+        }
+      })
+      .catch(function () {});
+  };
+  if (h && h.fx && typeof h.fx.done === "function") {
+    var d0 = h.fx.done;
+    h.fx.done = function () { var r = d0.apply(this, arguments); try { spawn(); } catch (e) {} return r; };
+  } else spawn();
+}
+try { if (typeof a18Glob === "function") a18Glob = kadWrapFn(a18Glob, function (h, args) { kadGlobule(args[0], args[1]); }); } catch (e) {}
 })();
 // ---- END KINGDOM ARCHIVES DEVICE MODELS ----
