@@ -49,6 +49,23 @@ var XAF_SET = {
   paranoia: { eq: "FP_Wraith_S0_Q_DarkSight_Equip", idle: "FP_Wraith_S0_Q_DarkSight_IdleAnim", cast: "FP_Wraith_S0_Q_DarkSight_Fire", hand: "L", rel: 0.12 },
   darkcover: { cast: "FP_Wraith_4_SmokeMissile_Activate", hand: "R", rel: 0.52 },
   shadows: { eq: "FP_Wraith_S0_X_Teleport_Equip", idle: "FP_Wraith_S0_X_Teleport_Idle", cast: "FP_Wraith_S0_X_Teleport_Activate", hand: "R", rel: 0.82 },
+  // Killjoy (fp-rocklan-killjoy): authored Alarmbot + Turret (Nanoswarm / Lockdown clips already shipped with her rig).
+  alarmbot: { eq: "FP_Killjoy_S0_Q_Equip", idle: "FP_Killjoy_S0_Q_StealthDrone_Idle1", cast: "FP_Killjoy_S0_Q_Cast", hand: "R", rel: 0.27 },
+  turret: { eq: "FP_Killjoy_S0_E_Equip", idle: "FP_Killjoy_S0_E_Turret_Idle", cast: "FP_Killjoy_S0_E_Cast", hand: "R", rel: 0.8 },
+  // Raze: Blast Pack is an instant satchel toss with the left hand.
+  satchel: { cast: "FP_Clay_Quickcast_C4", hand: "L", rel: 0.07 },
+  // Skye (fp-rocklan-skye; Guide): Regrowth channel and Seekers (hawk / wolf sets already shipped with her rig).
+  regrowth: { eq: "FP_Guide_S0_4_Heal_Equip", idle: "FP_Guide_S0_4_Heal_Idle", cast: "FP_Guide_S0_4_Heal_Cast_Activate", hand: "L", rel: 0.62 },
+  seekers: { eq: "FP_Guide_S0_X_Ult_Equip", idle: "FP_Guide_S0_X_Ult_Idle", cast: "FP_Guide_S0_X_Ult_Cast", hand: "L", rel: 0.25 },
+  // Breach (fp-rocklan-breach): all four gauntlet casts authored; two-handed slams (orb rides the busier hand).
+  aftershock: { eq: "FP_Breach_S0_4_FusionBlast_Equip", idle: "FP_Breach_S0_4_FusionBlast_Idle", cast: "FP_Breach_S0_4_FusionBlast_Fire", hand: "L", rel: 0.73 },
+  flashpoint: { eq: "FP_Breach_S0_Q_FlashBang_Equip", idle: "FP_Breach_S0_Q_FlashBang_Idle", cast: "FP_Breach_S0_Q_FlashBang_Fire", hand: "L", rel: 0.6 },
+  faultline: { eq: "FP_Breach_S0_E_LineFissure_Equip", idle: "FP_Breach_S0_E_LineFissure_Idle", cast: "FP_Breach_S0_E_LineFissure_Fire", hand: "L", rel: 0.03 },
+  rollingthunder: { eq: "FP_Breach_S0_X_EarthShatter_Equip", idle: "FP_Breach_S0_X_EarthShatter_Idle", cast: "FP_Breach_S0_X_EarthShatter_Fire", hand: "R", rel: 0.7 },
+  // Cypher (fp-rocklan-cypher; Gumshoe): Cyber Cage toss, Spycam (PrivateEye) dart cam, Neural Theft - all left-handed.
+  cybercage: { cast: "FP_Gumshoe_S0_4", hand: "L", rel: 0.02 },
+  spycam: { eq: "FP_Gumshoe_S0_Q_Equip", idle: "FP_Gumshoe_S0_Q_Loop", cast: "FP_Gumshoe_S0_Q_Fire", hand: "L", rel: 0.07 },
+  neuraltheft: { cast: "FP_Gumshoe_S0_X_Activate", hand: "L", rel: 0.18 },
   // Sova's bow: the left arm raises the bow (Owl Drone gauntlet raise, left-side tracks) while the right hand holds the
   // bolt (grenade-ready right-side tracks); HOLD FIRE draws the string back with the charge (xAfBowDraw).
   bow: { eq: "FP_Hunter_S0_E_Equip", idle: "FP_Hunter_S0_E_IdleAdd", cast: "FP_Hunter_S0_E_Deploy", hand: "R", rel: 0.05, rEq: "FP_Killjoy_S0_4_Grenade_Equip", rIdle: "FP_Killjoy_S0_4_Swarm_Idle", rCast: "FP_Core_Grenade_UnderhandThrow" },
@@ -66,11 +83,11 @@ var XAF_K = {
   Sage: { c: { s: "barrier", orb: 0x5fe6c8 }, q: { s: "sloworb", orb: 0x5fe6c8 }, e: { s: "heal", orb: 0x8dffd8 }, x: { s: "resurrect", orb: 0x8dffd8 } },
   Reyna: { c: { s: "leer", orb: 0xb05cff }, q: { s: "devour", orb: 0xb05cff }, e: { s: "dismiss", orb: 0xb05cff }, x: { s: "empress", orb: 0xb05cff } },
   Omen: { c: { s: "shrouded", orb: 0x6a4cff }, q: { s: "paranoia", orb: 0x6a4cff }, e: { s: "darkcover", orb: 0x6a4cff }, x: { s: "shadows", orb: 0x6a4cff } },
-  Killjoy: { c: { s: "nade", prop: "nanoswarm", sz: 0.11 }, q: { s: "place", prop: "alarmbot", sz: 0.16 }, e: { s: "place", prop: "turret", sz: 0.2 }, x: { s: "bomb", prop: "lockdown", sz: 0.24 } },
-  Raze: { c: { s: "boom", prop: "boom-bot", sz: 0.22 }, q: { s: "nade", prop: "blast-pack", sz: 0.12 }, e: { s: "paint", prop: "paintshell", sz: 0.13 }, x: { s: "flick", orb: 0xff8a1f } },
-  Skye: { c: { s: "flick", orb: 0x8aff5a }, q: { s: "wolf", orb: 0x8aff5a }, e: { s: "flick", orb: 0xc8ff8a }, x: { s: "flick", orb: 0x8aff5a } },
-  Breach: { c: { s: "gaunt", orb: 0xff8a3a }, q: { s: "gaunt", orb: 0xffd36a }, e: { s: "gaunt", orb: 0xff8a3a }, x: { s: "gaunt", orb: 0xff8a3a } },
-  Cypher: { c: { s: "place", prop: "trapwire", sz: 0.12 }, q: { s: "nade", orb: 0xe8e8e8 }, e: { s: "place", prop: "spycam", sz: 0.12 }, x: { s: "flick", orb: 0xe8e8e8 } },
+  Killjoy: { c: { s: "nade", prop: "nanoswarm", sz: 0.11 }, q: { s: "alarmbot", prop: "alarmbot", sz: 0.16 }, e: { s: "turret", prop: "turret", sz: 0.2 }, x: { s: "bomb", prop: "lockdown", sz: 0.24 } },
+  Raze: { c: { s: "boom", prop: "boom-bot", sz: 0.22 }, q: { s: "satchel", prop: "blast-pack", sz: 0.12 }, e: { s: "paint", prop: "paintshell", sz: 0.13 }, x: { s: "flick", orb: 0xff8a1f } },
+  Skye: { c: { s: "regrowth", orb: 0x8aff5a }, q: { s: "wolf", orb: 0x8aff5a }, e: { s: "flick", orb: 0xc8ff8a }, x: { s: "seekers", orb: 0x8aff5a } },
+  Breach: { c: { s: "aftershock", orb: 0xff8a3a }, q: { s: "flashpoint", orb: 0xffd36a }, e: { s: "faultline", orb: 0xff8a3a }, x: { s: "rollingthunder", orb: 0xff8a3a } },
+  Cypher: { c: { s: "place", prop: "trapwire", sz: 0.12 }, q: { s: "cybercage", orb: 0xe8e8e8 }, e: { s: "spycam", prop: "spycam", sz: 0.12 }, x: { s: "neuraltheft", orb: 0xe8e8e8 } },
   Chamber: { c: { s: "trade", prop: "trademark", sz: 0.14 }, q: { s: "flick", orb: 0xd8b04a }, e: { s: "rdv", prop: "rendezvous", sz: 0.14 }, x: { s: "flick", orb: 0xd8b04a } },
 };
 var XAF = { rig: {}, cur: null, on: false, t: 0, mode: "", err: null, last: null };

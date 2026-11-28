@@ -51,8 +51,13 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
   sage:['FP_Thorne_S0_E_Wall_Cast','FP_Thorne_S0_4_SlowGrenade_Activate','FP_Thorne_S0_Q_Self_Cast','FP_Thorne_S0_Q_Ally_Cast','FP_Thorne_S0_X_Resurrect_Activate'],
   reyna:['FP_Vampire_S0_4_Cast','FP_Vampire_S0_Q_Activate','FP_Vampire_S0_E_Escape_Activate','FP_Vampire_S0_X_Steroid_Cast'],
   omen:['FP_Wraith_S0_Q_DarkSight_Fire','FP_Wraith_4_SmokeMissile_Activate','FP_Wraith_S0_X_Teleport_Activate','FP_Wraith_S0_E_ShortTeleport_Equip'],
+  killjoy:['FP_Killjoy_S0_Q_Equip','FP_Killjoy_S0_Q_Cast','FP_Killjoy_S0_E_Equip','FP_Killjoy_S0_E_Cast'],
+  raze:['FP_Clay_Quickcast_C4'],
+  skye:['FP_Guide_S0_4_Heal_Equip','FP_Guide_S0_4_Heal_Cast_Activate','FP_Guide_S0_X_Ult_Equip','FP_Guide_S0_X_Ult_Cast'],
+  breach:['FP_Breach_S0_4_FusionBlast_Fire','FP_Breach_S0_Q_FlashBang_Fire','FP_Breach_S0_E_LineFissure_Fire','FP_Breach_S0_X_EarthShatter_Fire'],
+  cypher:['FP_Gumshoe_S0_4','FP_Gumshoe_S0_Q_Equip','FP_Gumshoe_S0_Q_Fire','FP_Gumshoe_S0_X_Activate'],
  };
- const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire'};
+ const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire',killjoy:'FP_Killjoy_S0_E_Cast',raze:'FP_Clay_Quickcast_C4',skye:'FP_Guide_S0_X_Ult_Cast',breach:'FP_Breach_S0_E_LineFissure_Fire',cypher:'FP_Gumshoe_S0_Q_Fire'};
  for(const ag of Object.keys(AG)){
   const dp=path.join(root,'models/valorant/animations/fp-rocklan-'+ag+'.glb');
   ok(fs.existsSync(dp),'donor glb present locally (fp-rocklan-'+ag+'.glb; local-only converted asset)');
@@ -80,7 +85,12 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
  {const WANT={Phoenix:{c:'FP_Phoenix_S0_Q_Wall_Fire',e:'FP_Phoenix_S0_E_FlashBang_ThrowRight'},
   Sage:{c:'FP_Thorne_S0_E_Wall_Cast',q:'FP_Thorne_S0_4_SlowGrenade_Activate',e:'FP_Thorne_S0_Q_Self_Cast',x:'FP_Thorne_S0_X_Resurrect_Activate'},
   Reyna:{c:'FP_Vampire_S0_4_Cast',x:'FP_Vampire_S0_X_Steroid_Cast'}, // Devour / Dismiss need a soul orb in range: the plain audit never fires them (rig-level checks above still cover their clips)
-  Omen:{q:'FP_Wraith_S0_Q_DarkSight_Fire',e:'FP_Wraith_4_SmokeMissile_Activate'}};
+  Omen:{q:'FP_Wraith_S0_Q_DarkSight_Fire',e:'FP_Wraith_4_SmokeMissile_Activate'},
+  Killjoy:{q:'FP_Killjoy_S0_Q_Cast',e:'FP_Killjoy_S0_E_Cast'},
+  Raze:{q:'FP_Clay_Quickcast_C4'},
+  Skye:{c:'FP_Guide_S0_4_Heal_Cast_Activate',x:'FP_Guide_S0_X_Ult_Cast'},
+  Breach:{c:'FP_Breach_S0_4_FusionBlast_Fire',q:'FP_Breach_S0_Q_FlashBang_Fire',e:'FP_Breach_S0_E_LineFissure_Fire',x:'FP_Breach_S0_X_EarthShatter_Fire'},
+  Cypher:{q:'FP_Gumshoe_S0_4',e:'FP_Gumshoe_S0_Q_Fire',x:'FP_Gumshoe_S0_X_Activate'}};
   const r=cp.spawnSync(process.execPath,[path.join(__dirname,'abil_anim_audit.cjs')],{env:{...process.env,AGENTS:Object.keys(WANT).join(',')},encoding:'utf8',timeout:240000});
   ok(r.status===0,'Phoenix/Sage/Reyna/Omen audit runs ('+String(r.stderr||'').slice(-120)+')');
   if(r.status===0){const out=JSON.parse(r.stdout.slice(r.stdout.indexOf('{')));
