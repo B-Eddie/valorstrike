@@ -5,8 +5,10 @@
 // motion runs; the static gun returns after. The character's arms stay procedural (xgReload above does the
 // support-hand magazine work; there are no authored character-arm reload clips in the pack) — this adds the
 // WEAPON's motion only. Reload scrubs by the grip's own progress (G.rp, stashed in xgPose); equip is a one-shot
-// on weapon swap; fire (pump / lever / bolt cycling) plays per shot for the slow action guns only — at SMG fire
-// rates a per-shot rigged stand-in is wasted work for an invisible slide kick.
+// on weapon swap; fire plays the authored action cycle two ways: per shot for the slow pump / lever / bolt guns
+// (the shot interval covers >= 60% of the clip, so each restart reads as a fresh cycle), and as a continuous
+// natural-speed loop while shots keep landing for the fast guns (62-285 ms intervals make a per-shot cycle
+// impossible and 15x rate adaptation would alias to a blur); a released trigger plays out the current cycle.
 // Donor glbs are LOCAL-ONLY converted assets (work/build_rocklan_tp_reload.cjs, models/valorant/animations/
 // tp-rocklan-reload-<gun>.glb); where a donor is absent the procedural gun carries on. 12 of 20 reloadable guns
 // have GNTP data; Ares / Guardian / Odin / Shorty / Spectre (GN_* first-person clips only in the pack) and
@@ -15,13 +17,16 @@ var XRWB = { don: {}, load: {}, state: typeof WeakMap !== 'undefined' ? new Weak
 var XRW_GUNS = {};
 ['Bucky', 'Bulldog', 'Classic', 'Frenzy', 'Ghost', 'Judge', 'Marshal', 'Operator', 'Phantom', 'Sheriff', 'Stinger', 'Vandal'].forEach((w) => { XRW_GUNS[w] = { donor: 'animations/tp-rocklan-reload-' + w.toLowerCase(), src: 'valorant/' + w.toLowerCase() }; });
 var XRW_FIRE = { Bucky: 1, Marshal: 1, Operator: 1 }; // pump / lever / bolt: the action cycling is the visible part, one shot a second or slower
+var XRW_LOOP = { Stinger: 0.062, Ghost: 0.148, Judge: 0.285 }; // fire interval in seconds (server weapons.json): the action loops while shots land inside 1.6x it
 function xrwKick(w) { // start the donor + rigged source load once; undefined = in flight, null = unavailable
   if (XRWB.don[w] !== undefined || XRWB.load[w]) return;
   const D = XRW_GUNS[w];
   XRWB.load[w] = Promise.all([xvLoad(D.donor).catch(() => null), xvLoad(D.src).catch(() => null)]).then(([don, src]) => {
     const A = don && don.animations ? don.animations : [];
     const pick = (re, no) => A.find((c) => re.test(c.name) && !(no && no.test(c.name))) || null;
-    const K = src && src.scene ? { src, reload: pick(/Reload/i), equip: pick(/Equip/i), fire: pick(/Fire/i, /Add|Zoomed/i) } : null;
+    // FireAdd clips bake as absolute poses (per-bone track magnitudes sit at rest scale with motion only on the
+    // moving parts — the 180 deg root offset is in every clip, reloads included), so one is a fine fallback.
+    const K = src && src.scene ? { src, reload: pick(/Reload/i), equip: pick(/Equip/i), fire: pick(/Fire(?!.*Add)/i, /Zoomed/i) || pick(/Fire/i, /Zoomed/i) } : null;
     XRWB.don[w] = K && (K.reload || K.equip || K.fire) ? K : null;
   }, () => { XRWB.don[w] = null; });
 }
@@ -47,8 +52,15 @@ function xrwPose(M, dt) {
   let S = XRWB.state.get(M);
   const D = M && XRW_GUNS[M.w], K = D ? XRWB.don[M.w] : null;
   if (D && K === undefined) xrwKick(M.w);
-  // shots: pump / lever / bolt guns cycle the action (the TP driver bumps X.shots on every server shot event)
-  if (K && K.fire && XRW_FIRE[M.w] && X && X.shots !== S?.shots) { if (S) { S.shots = X.shots; if (S.mode !== 'reload') { S.mode = 'fire'; S.t = 0; } } }
+  // shots: pump / lever / bolt guns cycle the action per shot, fast guns keep it looping (the TP driver bumps
+  // X.shots on every server shot event)
+  if (K && K.fire && (XRW_FIRE[M.w] || XRW_LOOP[M.w]) && X && S && X.shots > S.shots) {
+    S.shots = X.shots;
+    if (S.mode !== 'reload') {
+      if (XRW_FIRE[M.w]) { S.mode = 'fire'; S.t = 0; }
+      else { if (S.mode !== 'fireloop') { S.mode = 'fireloop'; S.t = 0; } S.quiet = 0; S.stopAt = 0; }
+    }
+  }
   const rl = !!(D && K && K.reload && G && G.rl && G.rp >= 0 && !M.dead && M.gun && M.gun.parent);
   if (!S) { S = { rig: null, rigW: null, hid: false, mode: null, t: 0, shots: X ? X.shots : 0, clip: null, act: null, mx: null }; XRWB.state.set(M, S); }
   if (rl) {
@@ -57,6 +69,16 @@ function xrwPose(M, dt) {
   }
   if (S.mode === 'reload') xrwDrop(M, S); // reload over (or cut): the static gun comes back
   if (!D || !K || M.dead || !M.gun || !M.gun.parent) { if (S.rig) xrwDrop(M, S); return; }
+  if (S.mode === 'fireloop') { // fast gun: the action cycles continuously while shots land; release plays out the cycle
+    const clip = K.fire;
+    if (!clip) { S.mode = null; return; }
+    if (!S.rig || S.rigW !== M.w) xrwRig(M, S, K, M.w);
+    const step = Math.min(0.1, dt || 1 / 60);
+    S.t += step; S.quiet = (S.quiet || 0) + step;
+    if (!S.stopAt && S.quiet > XRW_LOOP[M.w] * 1.6) S.stopAt = (Math.floor(S.t / clip.duration) + 1) * clip.duration;
+    if (S.stopAt && S.t >= S.stopAt) { xrwDrop(M, S); return; }
+    xrwPlay(S, clip, S.t % clip.duration); xrwShow(M, S); return;
+  }
   if (S.mode === 'equip' || S.mode === 'fire') {
     const clip = S.mode === 'equip' ? K.equip : K.fire;
     if (!clip) { S.mode = null; return; }

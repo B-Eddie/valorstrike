@@ -37,6 +37,7 @@ let checks=0;const ok=(c,m)=>{assert(c,m);checks++;};
  const src=fs.readFileSync(root+'/work/tp_reload_runtime.js','utf8');
  ok(/'Sheriff'/.test(src)&&/'Vandal'/.test(src)&&/'Bucky'/.test(src)&&/tp-rocklan-reload-' \+ w.toLowerCase\(\)/.test(src),'12-gun donor table');
  ok(!/'Ares'|'Guardian'|'Odin'|'Shorty'|'Spectre'|'Bandit'|'Warden'|'Outlaw'/.test(src.replace(/weapon folders ship[\s\S]*?procedural only\)\./,'')),'no donor entries for the 8 source-gap guns');
+ ok(/Stinger: 0.062/.test(src)&&/Ghost: 0.148/.test(src)&&/Judge: 0.285/.test(src),'loop intervals match server weapons.json fire rates');
  // online row edge -> xAmRn counter (+ elapsed offset for mid-reload joins, cut on cancel)
  {const c={MP:{me:9},bots:[],allies:[{nid:3}],window:{},WEAP:{Vandal:{rld:2.5}}};c.mpCliSnap=function(){};
   vm.createContext(c);const slice=src.slice(src.indexOf('// Online reload clock'));vm.runInContext(slice,c);
@@ -65,8 +66,9 @@ let checks=0;const ok=(c,m)=>{assert(c,m);checks++;};
   const clip=new T.AnimationClip('GNTP_Core_Revolver_S0_Reload',2.5,[new T.NumberKeyframeTrack('Mag_Rotator.userData.spin',[0,1.25,2.5],[0,1,0])]);
   const eq=new T.AnimationClip('GNTP_Core_Revolver_S0_Equip',1.0,[new T.NumberKeyframeTrack('Mag_Rotator.userData.spin',[0,1],[0,1])]);
   const fr=new T.AnimationClip('GNTP_Core_PumpShotgun_S0_Fire',1.2,[new T.NumberKeyframeTrack('Mag_Rotator.userData.spin',[0,1.2],[0,1])]);
+  const fa=new T.AnimationClip('GNTP_Core_Luger_S0_FireAdd',0.97,[new T.NumberKeyframeTrack('Mag_Rotator.userData.spin',[0,0.97],[0,1])]);
   const c={THREE:{SkeletonUtils:{clone:(o)=>{const g=new T.Group();g.add(new T.Object3D());return g;}},AnimationMixer:T.AnimationMixer},
-   XV:{config:{}},xvConstraints:()=>{},xvLoad:(n)=>Promise.resolve(n.indexOf('tp-rocklan')>=0?{animations:[clip,eq,fr]}:{scene:srcScene}),
+   XV:{config:{}},xvConstraints:()=>{},xvLoad:(n)=>Promise.resolve(n.indexOf('tp-rocklan')>=0?(n.indexOf('ghost')>=0?{animations:[clip,eq,fa]}:{animations:[clip,eq,fr]}):{scene:srcScene}),
    window:{},WEAP:{Sheriff:{rld:2.5}}};
   c.xgPose=function(){};c.xUbPost=function(){};c.xgHeldSync=function(M){M.w='Bucky';};vm.createContext(c);vm.runInContext(src,c);
   const parent=new T.Group(),gun=new T.Group();gun.visible=true;parent.add(gun);
@@ -87,11 +89,26 @@ let checks=0;const ok=(c,m)=>{assert(c,m);checks++;};
   ok(parent.children.length===2,'equip: rig stood in');
   for(let i=0;i<80;i++)c.xrwPose(M,1/60);
   ok(parent.children.length===1&&gun.visible===true,'equip clip finished: static gun back');
-  // fire: Bucky (pump) cycles per shot; Stinger (SMG) does not
+  // fire: Bucky (pump) cycles per shot; Stinger (SMG) loops the action while shots land; Ghost falls back to its FireAdd clip
   M.w='Bucky';const S0=c.XRWB.state.get(M);M.sx.shots=1;c.xrwPose(M,1/60);
   ok(S0.mode==='fire','pump shotgun: shot starts the action-cycle clip');
   for(let i=0;i<90;i++)c.xrwPose(M,1/60);ok(S0.mode===null&&!S0.rig,'fire clip done: static back');
-  M.w='Stinger';M.sx.shots=2;c.xrwPose(M,1/60);ok(c.XRWB.state.get(M).mode!=='fire','SMG: no per-shot rigged stand-in');
+  M.w='Stinger';for(let i=0;i<5;i++){c.xrwPose(M,1/60);await new Promise(r=>setImmediate(r));}
+  const S1=c.XRWB.state.get(M);M.sx.shots=2;c.xrwPose(M,1/60);
+  ok(S1.mode==='fireloop','fast gun: shot starts the continuous action loop');
+  ok(parent.children.length===2&&gun.visible===false,'looping: rig stood in, static hidden');
+  for(let i=0;i<3;i++)c.xrwPose(M,1/60); // 0.05s, inside the 0.062*1.6 window
+  M.sx.shots=3;c.xrwPose(M,1/60);
+  ok(S1.mode==='fireloop'&&!S1.stopAt,'another shot inside the window: loop continues');
+  for(let i=0;i<120;i++)c.xrwPose(M,1/60);
+  ok(S1.mode===null&&!S1.rig&&gun.visible===true,'trigger released: the current cycle played out, static gun back');
+  M.sx.shots=4;for(let i=0;i<5;i++){c.xrwPose(M,1/60);await new Promise(r=>setImmediate(r));}
+  ok(S1.mode==='fireloop','a fresh burst restarts the loop');
+  for(let i=0;i<120;i++)c.xrwPose(M,1/60);ok(S1.mode===null,'burst over: loop wound down again');
+  M.w='Ghost';for(let i=0;i<5;i++){c.xrwPose(M,1/60);await new Promise(r=>setImmediate(r));}
+  ok(c.XRWB.don.Ghost&&c.XRWB.don.Ghost.fire&&c.XRWB.don.Ghost.fire.name==='GNTP_Core_Luger_S0_FireAdd','fire pick falls back to the (absolute-baked) FireAdd clip when no plain Fire exists');
+  const S2=c.XRWB.state.get(M);M.sx.shots=5;c.xrwPose(M,1/60);
+  ok(S2.mode==='fireloop','FireAdd gun loops the same way');
   // death mid-reload: the xUbPost wrapper drops the stand-in even though the grip skips dead units
   M.w='Sheriff';M.sx.grip.rl=1;M.sx.grip.rp=0.3;for(let i=0;i<10;i++){c.xrwPose(M,1/60);await new Promise(r=>setImmediate(r));}
   ok(parent.children.length===2,'reloading again: rig stood in');
