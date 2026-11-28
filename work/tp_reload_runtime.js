@@ -15,7 +15,7 @@
 // Bandit / Warden / Outlaw (not in the pack) stay procedural.
 var XRWB = { don: {}, load: {}, state: typeof WeakMap !== 'undefined' ? new WeakMap() : new Map() };
 var XRW_GUNS = {};
-['Bucky', 'Bulldog', 'Classic', 'Frenzy', 'Ghost', 'Judge', 'Marshal', 'Operator', 'Phantom', 'Sheriff', 'Stinger', 'Vandal'].forEach((w) => { XRW_GUNS[w] = { donor: 'animations/tp-rocklan-reload-' + w.toLowerCase(), src: 'valorant/' + w.toLowerCase() }; });
+['Bucky', 'Bulldog', 'Classic', 'Frenzy', 'Ghost', 'Judge', 'Marshal', 'Operator', 'Phantom', 'Sheriff', 'Stinger', 'Vandal'].forEach((w) => { XRW_GUNS[w] = { donor: 'animations/tp-rocklan-reload-' + w.toLowerCase(), src: w.toLowerCase() }; });
 var XRW_FIRE = { Bucky: 1, Marshal: 1, Operator: 1 }; // pump / lever / bolt: the action cycling is the visible part, one shot a second or slower
 var XRW_LOOP = { Stinger: 0.062, Ghost: 0.148, Judge: 0.285 }; // fire interval in seconds (server weapons.json): the action loops while shots land inside 1.6x it
 function xrwKick(w) { // start the donor + rigged source load once; undefined = in flight, null = unavailable

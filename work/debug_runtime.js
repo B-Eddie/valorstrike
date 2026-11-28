@@ -45,7 +45,15 @@ try {
           botsPos: bots.map((b) => [b.name, +b.g.position.x.toFixed(1), +b.g.position.y.toFixed(1), +b.g.position.z.toFixed(1), !!b.alive]),
           player: player && [player.x, player.y, player.z, player.hp] };
       },
-      get bots() { return bots; }, get allies() { return allies; }, get player() { return player; },
+      get bots() { return bots; }, get allies() { return allies; }, get player() { return player; }, get duelBot() { return duelBot; },
+      xrw() { try { return { don: Object.fromEntries(Object.entries(XRWB.don).map(([k, v]) => [k, v ? { rl: !!v.reload, eq: !!v.equip, fi: !!v.fire } : (v === null ? 'null' : 'pending')])), gripErr: (typeof XGRIP !== 'undefined' && XGRIP.err) || 0, failures: (typeof XV !== 'undefined' && XV.failures) ? Object.assign({}, XV.failures) : {} }; } catch (e) { return { err: String(e) }; } },
+      xrwState(M) { try { const S = XRWB.state.get(M); return S ? { mode: S.mode, hid: S.hid, rig: !!S.rig, rigW: S.rigW, clip: !!S.clip, t: +(S.t || 0).toFixed(2) } : null; } catch (e) { return String(e); } },
+      vmState() { try { return { gunParent: !!gun.parent, gunVisible: gun.visible, knifeVisible: knife.visible, fpRoot: !!(typeof XV !== 'undefined' && XV.fp && XV.fp.root && XV.fp.root.visible) }; } catch (e) { return String(e); } },
+      vmHide(v) { try { if (v) { if (gun.parent) { window.__vsGunParent = gun.parent; gun.parent.remove(gun); } knife.visible = false; if (typeof XV !== 'undefined' && XV.fp && XV.fp.root) XV.fp.root.visible = false; } else if (window.__vsGunParent) { window.__vsGunParent.add(gun); window.__vsGunParent = null; } return true; } catch (e) { return String(e); } },
+      gunPrep(w) { try { const k = XGM.F[w]; if (!k) return Promise.resolve('no-map'); return Promise.resolve(xvLoad(k.split('/').pop())).then((g) => { XV.guns[k] = g; XGM.src[k] = xvStatic(g, XV.config[k.split('/').pop()]); const T = xGmTpl(w); if (T) XGM.T[w] = T; for (const [gg, kk] of XGM.live) { if (kk === w) try { xGmSwap(gg, kk); } catch (e) {} } return { ok: !!T, grip: !!(T && T.userData.grip) }; }).catch((e) => String(e)); } catch (e) { return String(e); } },
+      xrwWhy(M) { try { const X = M && M.sx; if (!X) return { noSx: 1 }; const kids = []; M.gun.traverse((o) => { if (o.userData && (o.userData.grip || o.userData.sock)) kids.push((o.name || o.type) + (o.userData.grip ? ':grip' : ':sock')); });
+        return { want: (function () { try { return xgTarget(M); } catch (e) { return 'e:' + e; } })(), gripFound: (function () { try { return !!xgGrip(M); } catch (e) { return 'e:' + e; } })(), w: M.w, dd: !!X.dd, dead: !!M.dead, uo: X.uo, plantW: X.w && X.w.plant, gunRootGrip: !!M.gun.userData.grip, kids: kids.slice(0, 6), tplGrip: !!(typeof XGM !== 'undefined' && XGM.T[M.w] && XGM.T[M.w].userData.grip), tplKeys: typeof XGM !== 'undefined' ? Object.keys(XGM.T).length : -1, xvWait: !!M.xvWait }; } catch (e) { return String(e); } },
+      xrwGrip(M) { try { const G = M && M.sx && M.sx.grip; return G ? { ok: G.ok, rl: G.rl || 0, rp: G.rp != null ? +(+G.rp).toFixed(2) : null, w: +(+G.w).toFixed(3) } : null; } catch (e) { return String(e); } },
       FV, DM, J, scene, renderer, camera };
   }
 } catch (e) { try { console.warn("__vs hooks failed", e); } catch (_) {} }
