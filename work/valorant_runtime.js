@@ -392,7 +392,7 @@ function xvFPLoad(ag,w) {
     sc.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=o.receiveShadow=false;o.raycast=XNR;o.renderOrder=10;let weaponMesh=false;for(let p=o;p;p=p.parent)if(p===ws)weaponMesh=true;const conv=m=>weaponMesh?m.clone():new THREE.MeshLambertMaterial({name:m.name,color:m.color,map:m.map,side:THREE.DoubleSide});o.material=Array.isArray(o.material)?o.material.map(conv):conv(o.material);}});
     const am=new THREE.AnimationMixer(sc),gm=new THREE.AnimationMixer(ws),ac={},gc={};const fclips=anims.filter((g,i)=>/^FP_/.test(files[i])).flatMap(g=>g.animations),gclips=weapon.animations.concat(anims.filter((g,i)=>/^GN_/.test(files[i])).flatMap(g=>g.animations));
     fclips.forEach(c=>ac[c.name]=am.clipAction(c));gclips.forEach(c=>gc[c.name]=gm.clipAction(c));
-    const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,skin,kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);
+    const F={root,sc,ws,am,gm,ac,gc,entries,ag,w,skin,ov:xvFPArmsOv(ag),kind:null,age:0};xvFPPlay(F,'idle');am.update(0);gm.update(0);sc.updateMatrixWorld(true);
     const cam=sc.getObjectByName('Camera');const pos=cam?cam.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(0,1.67,0);root.position.copy(pos).negate();F.origin=root.position.clone();xvFPPlay(F,'equip');return F;
   });
 }
@@ -400,9 +400,9 @@ function xvFPClear(F){if(!F)return;if(F.root.parent)F.root.parent.remove(F.root)
 // Built viewmodels are kept per agent|weapon (a few, most recent last) so swapping back is instant and replays the
 // authored equip; the agent's knife, Classic and current weapon are warmed as soon as a match is running.
 var XVFP={max:6,c:new Map(),warm:''};
-function xvFPGet(ag,w){const key=xvFPKey(ag,w),F=XVFP.c.get(key);if(F){XVFP.c.delete(key);XVFP.c.set(key,F);return Promise.resolve(F);}
+function xvFPGet(ag,w){const key=xvFPKey(ag,w),ov=xvFPArmsOv(ag),F=XVFP.c.get(key);if(F){XVFP.c.delete(key);XVFP.c.set(key,F);return Promise.resolve(F);}
   if(XVFP.c.has(key+'#'))return XVFP.c.get(key+'#');
-  const P=xvFPLoad(ag,w).then(F=>{XVFP.c.delete(key+'#');for(const k of XVFP.c.keys())if(!k.endsWith('#')&&k.split('|')[0]!==ag&&XVFP.c.get(k)!==XV.fp){xvFPClear(XVFP.c.get(k));XVFP.c.delete(k);}
+  const P=xvFPLoad(ag,w).then(F=>{XVFP.c.delete(key+'#');if(xvFPArmsOv(ag)!==ov){xvFPClear(F);return F;}for(const k of XVFP.c.keys())if(!k.endsWith('#')&&k.split('|')[0]!==ag&&XVFP.c.get(k)!==XV.fp){xvFPClear(XVFP.c.get(k));XVFP.c.delete(k);}
     XVFP.c.set(key,F);const done=[...XVFP.c.keys()].filter(k=>!k.endsWith('#'));while(done.length>XVFP.max){const k=done.shift(),o=XVFP.c.get(k);if(o===XV.fp)continue;xvFPClear(o);XVFP.c.delete(k);}return F;},e=>{XVFP.c.delete(key+'#');throw e;});
   XVFP.c.set(key+'#',P);return P;}
 // A rig already built for agent|weapon (this cache, or the feel pass's prefetch cache VF_RIGS), else null: usable this tick.

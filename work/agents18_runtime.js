@@ -603,7 +603,9 @@ if(XV.failures)for(const k of Object.keys(XV.failures))if(k.startsWith('Veto|'))
 if(XV.fp&&XV.fp.ag==='Veto'){xvFPClear(XV.fp);XV.fp=null;}}
 
 function a18EvoSync(st) { const t = st && Number.isFinite(st.evo) ? Math.max(0, Math.min(60, st.evo)) : 0;
-  if (!(NET.socket && J.pick === "Veto" && player.hp > 0 && t > 0)) { if (a18EvoVeil) { a18EvoVeil.end(); a18EvoVeil = null; } return; }
+  const a18EvoValid = !!(NET.socket && J.pick === "Veto" && player.hp > 0 && t > 0);
+  try { if (typeof XV !== "undefined" && !!XV.fpUlt !== a18EvoValid) a18EvoFPRefresh(a18EvoValid); } catch (er) {}
+  if (!a18EvoValid) { if (a18EvoVeil) { a18EvoVeil.end(); a18EvoVeil = null; } return; }
   if (a18EvoVeil && vtxLive.indexOf(a18EvoVeil.fx) < 0) a18EvoVeil = null;
   if (!a18EvoVeil) a18EvoVeil = vtxVeil("Evo", t);
   if (a18EvoVeil && a18EvoVeil.fx) { a18EvoVeil.fx.age = Math.max(0, a18EvoVeil.fx.ttl - t); }
