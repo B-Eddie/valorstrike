@@ -121,6 +121,11 @@ block+='\n'+(root/'work/death_runtime.js').read_text().rstrip('\n')
 kca='// ---- KINGDOM ARCHIVES CONTENT ----';kcb='// ---- END KINGDOM ARCHIVES CONTENT ----'
 if kca in s:s=s[:s.index(kca)]+s[s.index(kcb)+len(kcb):]
 block+='\n'+(root/'work/ka_content_runtime.js').read_text().rstrip('\n')
+# Kingdom Archives device models (work/ka_devices_runtime.js), after KA content: wraps the
+# gkx*/dlx*/vyx* fx spawn functions so newer-agent creatures/devices use the real glb models.
+kda='// ---- KINGDOM ARCHIVES DEVICE MODELS ----';kdb='// ---- END KINGDOM ARCHIVES DEVICE MODELS ----'
+if kda in s:s=s[:s.index(kda)]+s[s.index(kdb)+len(kdb):]
+block+='\n'+(root/'work/ka_devices_runtime.js').read_text().rstrip('\n')
 mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
