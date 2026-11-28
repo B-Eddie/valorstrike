@@ -116,7 +116,12 @@ if da2 in s:s=s[:s.index(da2)]+s[s.index(db2)+len(db2):]
 g18a='// ---- AGENTS 18 ----';g18b='// ---- END AGENTS 18 ----'
 if g18a in s:s=s[:s.index(g18a)]+s[s.index(g18b)+len(g18b):]
 block+='\n'+(root/'work/agents18_runtime.js').read_text().rstrip('\n')
-block+='\n'+(root/'work/death_runtime.js').read_text().rstrip('\n');mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
+block+='\n'+(root/'work/death_runtime.js').read_text().rstrip('\n')
+# Kingdom Archives content (work/ka_content_runtime.js), outermost: wraps xHitKillSfx / kfeed / SFX.roundStart / agentSelect / goProf.
+kca='// ---- KINGDOM ARCHIVES CONTENT ----';kcb='// ---- END KINGDOM ARCHIVES CONTENT ----'
+if kca in s:s=s[:s.index(kca)]+s[s.index(kcb)+len(kcb):]
+block+='\n'+(root/'work/ka_content_runtime.js').read_text().rstrip('\n')
+mark='xReady = true; // every mode is initialised; lobby launches may now start them';s=s.replace(mark,block+'\n'+mark)
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>')
 # Find the actual three script tag, which may use an onerror handler.
 if '<script src="models/valorant/manifest.js"></script>' not in s:s=s.replace('<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>','<script src="models/valorant/manifest.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>')
@@ -167,7 +172,7 @@ s=s.replace(ga3,ga3+'<script>'+(root/'work/loader_retry_runtime.js').read_text()
 import subprocess
 av3='<script>// ---- ASSET VERSIONS ----'
 if av3 in s:i3=s.index(av3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]
-_ls=subprocess.run(['git','-C',str(root),'ls-files','-s','-z','--','models','audio','vendor','lobby-bg.png','favicon.ico'],check=True,capture_output=True).stdout.decode('utf-8').split('\0')
+_ls=subprocess.run(['git','-C',str(root),'ls-files','-s','-z','--','models','audio','vendor','assets','lobby-bg.png','favicon.ico'],check=True,capture_output=True).stdout.decode('utf-8').split('\0')
 _vt={};_vf={}
 for _e in _ls:
  if not _e:continue
@@ -179,7 +184,7 @@ assert len(_vf)>1000,'asset version table too small'
 s=s.replace(va3,va3+'<script>'+(root/'work/asset_version_runtime.js').read_text().rstrip('\n').replace('/*ASSET_VERSIONS*/null',json.dumps(_vt,separators=(',',':'),sort_keys=True),1)+'</script>\n',1)
 def _av(m):
  f=m.group(2);return m.group(1)+f+('?v='+_vf[f] if f in _vf else '')
-s=re.sub(r'(<script src=")((?:models|vendor|audio)/[^"?]+)(?=")',_av,s)
+s=re.sub(r'(<script src=")((?:models|vendor|audio|assets)/[^"?]+)(?=")',_av,s)
 s=re.sub(r'(url\()(lobby-bg\.png)(?=\))',_av,s)
 ca3='<script>// ---- CRASH REPORT ----'
 if ca3 in s:i3=s.index(ca3);s=s[:i3]+s[s.index('</script>\n',i3)+len('</script>\n'):]

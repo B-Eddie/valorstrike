@@ -8,7 +8,7 @@
   ],
   "headers": [
     {
-      "source": "/(models|audio|vendor)/(.*)",
+      "source": "/(models|audio|vendor|assets)/(.*)",
       "has": [
         {
           "type": "query",
