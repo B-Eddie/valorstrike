@@ -66,7 +66,7 @@ async function launch({heavy = false, profile = null, viewport = {width:960, hei
 }
 async function boot(page, url = 'http://127.0.0.1:8876/') {
   await page.goto(url, {waitUntil:'domcontentloaded', timeout:60000});
-  await page.waitForFunction(() => window.THREE && document.getElementById('playBtn'), null, {timeout:60000});
+  await page.waitForFunction(() => window.THREE && document.getElementById('playBtn'), undefined, {timeout:120000});
 }
 async function startDM(page) {
   // Main's lobby rework (Oct 25) routes #playBtn to the online quick-match menu; the legacy

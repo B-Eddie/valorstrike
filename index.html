@@ -26319,7 +26319,7 @@ try {
           botsPos: bots.map((b) => [b.name, +b.g.position.x.toFixed(1), +b.g.position.y.toFixed(1), +b.g.position.z.toFixed(1), !!b.alive]),
           player: player && [player.x, player.y, player.z, player.hp] };
       },
-      get bots() { return bots; }, get allies() { return allies; }, get player() { return player; },
+      get bots() { return bots; }, get allies() { return allies; }, get player() { return player; }, get duelBot() { return duelBot; },
       FV, DM, J, scene, renderer, camera };
   }
 } catch (e) { try { console.warn("__vs hooks failed", e); } catch (_) {} }
