@@ -44,7 +44,7 @@ async function offline(){
    out[agent][k]={equip,press:summarise(fr1),all:summarise(fr),relay,tp:[...new Set(tp.map(x=>x.k))]};
    await tap('Digit1',40);await adv(300);}
   xe('if(running){FV.sp.st="carry";fCheck(true,"QA")}true');await adv(7600);H.dispatch(H.win,H.mkEvent('keydown',{key:'Escape',code:'Escape'}));await adv(100);H.$('xHome').click();await adv(1500);}
- out.__err=xe('window.__aa.err||null');out.__pageErrors=H.errors.slice(0,5).map(String);return out;
+ out.__err=xe('window.__aa.err||null');out.__pageErrors=H.errors.slice(0,5).map(e=>String(e&&(e.stack||e.message)||JSON.stringify(e)));return out;
 }
 (async()=>{const out=ONLINE?await require('./abil_anim_audit_online.cjs').online(REC,summarise,ONLY):await offline();
  const s=JSON.stringify(out,null,1);if(process.env.OUT)fs.writeFileSync(process.env.OUT,s);else console.log(s);process.exit(0);})().catch(e=>{console.error(e);process.exit(1);});

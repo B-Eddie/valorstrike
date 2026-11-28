@@ -66,6 +66,24 @@ var XAF_SET = {
   cybercage: { cast: "FP_Gumshoe_S0_4", hand: "L", rel: 0.02 },
   spycam: { eq: "FP_Gumshoe_S0_Q_Equip", idle: "FP_Gumshoe_S0_Q_Loop", cast: "FP_Gumshoe_S0_Q_Fire", hand: "L", rel: 0.07 },
   neuraltheft: { cast: "FP_Gumshoe_S0_X_Activate", hand: "L", rel: 0.18 },
+  // Astra (fp-rocklan-astra; Rift): star casts (Gravity Well / Nova Pulse / Nebula are quick pulls from the
+  // astral plane) and the Cosmic Divide wall draw. BlackHole / Nebula releases sit at the end of the clip.
+  gravwell: { cast: "FP_Rift_S0_4_BlackHole_Cast", hand: "R", rel: 0.95 },
+  novapulse: { cast: "FP_Rift_S0_Q_Concuss_Cast", hand: "L", rel: 0.15 },
+  nebula: { cast: "FP_Rift_S0_E_Smoke_Cast", hand: "L", rel: 0.95 },
+  cosmicdivide: { eq: "FP_Rift_S0_X_Wall_Equip", idle: "FP_Rift_S0_X_Wall_Idle", cast: "FP_Rift_S0_X_Wall_Cast", hand: "R", rel: 0.88 },
+  // Brimstone (fp-rocklan-brimstone; Sarge): Stim Beacon quick throw, Incendiary launcher, Sky Smoke, Orbital Strike.
+  stimbeacon: { cast: "FP_Sarge_S0_E_Throw", hand: "R", rel: 0.15 },
+  incendiary: { eq: "FP_Sarge_S0_Q_Equip", idle: "FP_Sarge_S0_Q_Idle", cast: "FP_Sarge_S0_Q_Fire", hand: "R", rel: 0.07 },
+  skysmoke: { eq: "FP_Sarge_S0_4_Smoke_Equip", idle: "FP_Sarge_S0_4_Smoke_Idle", cast: "FP_Sarge_S0_4_Smoke_Fire", hand: "R", rel: 0.72 },
+  orbitalstrike: { eq: "FP_Sarge_S0_X_StarCannon_Equip", idle: "FP_Sarge_S0_X_StarCannon_Idle", cast: "FP_Sarge_S0_X_StarCannon_Fire", hand: "R", rel: 0.17 },
+  // Gekko (fp-rocklan-gekko; AggroBot): Mosh Pit over/under throws, Wingman, Dizzy, Thrash - his creatures ride the right hand.
+  moshpit: { eq: "FP_AggroBot_S0_4_Bubbletov_Equip", idle: "FP_AggroBot_S0_4_Bubbletov_Idle", cast: "FP_AggroBot_S0_4_Bubbletov_ThrowOver", alt: "FP_AggroBot_S0_4_Bubbletov_ThrowUnder", hand: "R", rel: 0.07, arel: 0.12 },
+  wingman: { eq: "FP_AggroBot_S0_Q_BabySpikebot_Equip", idle: "FP_AggroBot_S0_Q_BabySpikebot_Idle", cast: "FP_AggroBot_S0_Q_BabySpikebot_Cast", hand: "R", rel: 0.12 },
+  dizzy: { eq: "FP_AggroBot_S0_E_BabyZamboni_Equip", idle: "FP_AggroBot_S0_E_BabyZamboni_Idle", cast: "FP_AggroBot_S0_E_BabyZamboni_Cast", hand: "R", rel: 0.62 },
+  thrash: { eq: "FP_AggroBot_S0_X_BabyShark_Equip", idle: "FP_AggroBot_S0_X_BabyShark_Idle", cast: "FP_AggroBot_S0_X_BabyShark_Cast", hand: "L", rel: 0.02 },
+  // Yoru (fp-rocklan-yoru; Stealth): the pack ships only his Gatecrash pull as a castable clip.
+  gatecrash: { cast: "FP_Stealth_S0_E_DimensionalPull_Teleport", hand: "L", rel: 0.37 },
   // Sova's bow: the left arm raises the bow (Owl Drone gauntlet raise, left-side tracks) while the right hand holds the
   // bolt (grenade-ready right-side tracks); HOLD FIRE draws the string back with the charge (xAfBowDraw).
   bow: { eq: "FP_Hunter_S0_E_Equip", idle: "FP_Hunter_S0_E_IdleAdd", cast: "FP_Hunter_S0_E_Deploy", hand: "R", rel: 0.05, rEq: "FP_Killjoy_S0_4_Grenade_Equip", rIdle: "FP_Killjoy_S0_4_Swarm_Idle", rCast: "FP_Core_Grenade_UnderhandThrow" },
@@ -89,6 +107,18 @@ var XAF_K = {
   Breach: { c: { s: "aftershock", orb: 0xff8a3a }, q: { s: "flashpoint", orb: 0xffd36a }, e: { s: "faultline", orb: 0xff8a3a }, x: { s: "rollingthunder", orb: 0xff8a3a } },
   Cypher: { c: { s: "place", prop: "trapwire", sz: 0.12 }, q: { s: "cybercage", orb: 0xe8e8e8 }, e: { s: "spycam", prop: "spycam", sz: 0.12 }, x: { s: "neuraltheft", orb: 0xe8e8e8 } },
   Chamber: { c: { s: "trade", prop: "trademark", sz: 0.14 }, q: { s: "flick", orb: 0xd8b04a }, e: { s: "rdv", prop: "rendezvous", sz: 0.14 }, x: { s: "flick", orb: 0xd8b04a } },
+  Astra: { c: { s: "gravwell", orb: 0xb26bff }, q: { s: "novapulse", orb: 0xb26bff }, e: { s: "nebula", orb: 0xb26bff }, x: { s: "cosmicdivide", orb: 0xb26bff } },
+  Brimstone: { c: { s: "stimbeacon", orb: 0xff8c42 }, q: { s: "incendiary", orb: 0xff5a1f }, e: { s: "skysmoke", orb: 0xff8c42 }, x: { s: "orbitalstrike", orb: 0xff5a1f } },
+  Gekko: { c: { s: "moshpit", orb: 0xb8f53d }, q: { s: "wingman", orb: 0xb8f53d }, e: { s: "dizzy", orb: 0xd4ff6a }, x: { s: "thrash", orb: 0xb8f53d } },
+  Yoru: { c: { s: "flick", orb: 0x4f7cff }, q: { s: "nade", orb: 0x4f7cff }, e: { s: "gatecrash", orb: 0x4f7cff }, x: { s: "flick", orb: 0x4f7cff } },
+  // No FP donor exists for these agents in the Rocklan pack (KayO's folder ships only revive / downed clips; Fade,
+  // Harbor, Neon and Viper have no First Person folder at all) - explicit archetype entries so they never fall back
+  // to another agent's authored clips.
+  "KAY/O": { c: { s: "nade", orb: 0x6ad4ff }, q: { s: "flick", orb: 0x6ad4ff }, e: { s: "nade", orb: 0x6ad4ff }, x: { s: "flick", orb: 0x6ad4ff } },
+  Fade: { c: { s: "place", orb: 0x7fe0d4 }, q: { s: "nade", orb: 0x7fe0d4 }, e: { s: "nade", orb: 0x7fe0d4 }, x: { s: "flick", orb: 0x7fe0d4 } },
+  Harbor: { c: { s: "nade", orb: 0x4fc3ff }, q: { s: "flick", orb: 0x4fc3ff }, e: { s: "flick", orb: 0x4fc3ff }, x: { s: "flick", orb: 0x4fc3ff } },
+  Neon: { c: { s: "flick", orb: 0x7df9ff }, q: { s: "nade", orb: 0x7df9ff }, e: { s: "flick", orb: 0x7df9ff }, x: { s: "flick", orb: 0x7df9ff } },
+  Viper: { c: { s: "nade", orb: 0x86e04f }, q: { s: "nade", orb: 0x86e04f }, e: { s: "flick", orb: 0x86e04f }, x: { s: "flick", orb: 0x86e04f } },
 };
 var XAF = { rig: {}, cur: null, on: false, t: 0, mode: "", err: null, last: null };
 function xAfSpec(ag, k) { const a = XAF_K[ag] || XAF_K.Jett, s = a[k] || a.c; return s; }

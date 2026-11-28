@@ -370,6 +370,16 @@ const a18Kill0 = jKill; jKill = function () { a18Kill0(); if (!A18SET.has(J.pick
 // hook the key dispatch and the frame tick (same wrapper pattern as the other runtime blocks)
 const a18KeyJ = jKey; jKey = function (code) { if (J.pick === "Deadlock" && code === "KeyC" && !XABT.casting) return a18KeyJ(code); if (A18SET.has(J.pick) && typeof code === "string" && /^Key[CQEX]$/.test(code)) { /* only the ability keys reach the 18-agent kit: slot keys (1/2/3), reload and the rest fall through (a18Key read any other code as the ult) */ if (mode === "five" && FV.buy > 0 && FV.menu) return true; /* buy menu open: its keys buy, never cast (= main jKey / xEqKey); the buy phase itself allows abilities (VALORANT; user 2026-11-06) */ if (NET.socket && MP.st === "game" && (MP.m5 || NET.tab)) { if (["KeyC", "KeyQ", "KeyE", "KeyX"].includes(code)) { const k0 = code[3].toLowerCase(); if ((J.pick === "Astra" || J.pick === "Tejo") && a18Tac(k0)) return; if (running && player.hp > 0) netSend({ t: "ab", k: k0 }); } return; } if (!J.a18) a18Reset(); return a18Key(code), true; } return a18KeyJ(code); };
 { const bpK0 = jKey; jKey = function (code) { if (typeof code === "string" && /^Key[CQEX]$/.test(code) && typeof xBpBlock === "function" && xBpBlock(code[3].toLowerCase())) return true; return bpK0.apply(this, arguments); }; } // outermost: the buy phase casts only the VALORANT setup abilities (XBPA, base page; = server BUY_PHASE), placement only where listed
+// FP ability anims for the 18 agents (work/ability_fp_runtime.js XAF): the a18 wrapper above returns
+// before the core cast-signature hook can run, so C/Q/E/X casts of these agents never reached the
+// first-person layer. Same signature check as the core hook, offline only (online casts return at the
+// netSend branch before any local state changes; buy-menu keys are swallowed by the wrapper above).
+{ const a18FpJ = jKey; jKey = function (code) {
+    if (typeof XAF !== "undefined" && typeof code === "string" && /^Key[CQEX]$/.test(code)) XAF.nk = code[3].toLowerCase(); // the nk wrapper in the FP block sits under the a18 wrapper: a18 keys never reach it
+    const on = A18SET.has(J.pick) && typeof code === "string" && /^Key[CQEX]$/.test(code) && typeof jOn === "function" && jOn() && player.hp > 0 && !(mode === "five" && FV.buy > 0 && FV.menu) && !(NET.socket && MP.st === "game" && (MP.m5 || NET.tab));
+    const s0 = on ? xCaSig() : 0, r = a18FpJ.apply(this, arguments);
+    if (on) { try { if (xCaSig() !== s0) xCaStart(XCA_T[(ABI_M[J.pick] || ABI_M.Jett)["CQEX".indexOf(code[3])]] || "cast"); } catch (e) {} }
+    return r; }; }
 // Equip release must reach this final dispatch, not the pre-A18 captured jKey. Other kits retain their prior release path.
 const a18CastKey0 = XABT.castKey; XABT.castKey = code => J.pick === "Deadlock" && code === "KeyC" ? jKey(code) : (a18CastKey0 || xEqKey0)(code);
 // USE fakes Gatecrash (wiki: the same audio cue, no teleport, a 30 s decal); online the server decides whether an anchor is up

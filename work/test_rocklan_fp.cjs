@@ -56,8 +56,12 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
   skye:['FP_Guide_S0_4_Heal_Equip','FP_Guide_S0_4_Heal_Cast_Activate','FP_Guide_S0_X_Ult_Equip','FP_Guide_S0_X_Ult_Cast'],
   breach:['FP_Breach_S0_4_FusionBlast_Fire','FP_Breach_S0_Q_FlashBang_Fire','FP_Breach_S0_E_LineFissure_Fire','FP_Breach_S0_X_EarthShatter_Fire'],
   cypher:['FP_Gumshoe_S0_4','FP_Gumshoe_S0_Q_Equip','FP_Gumshoe_S0_Q_Fire','FP_Gumshoe_S0_X_Activate'],
+  astra:['FP_Rift_S0_4_BlackHole_Cast','FP_Rift_S0_Q_Concuss_Cast','FP_Rift_S0_E_Smoke_Cast','FP_Rift_S0_X_Wall_Cast','FP_Rift_S0_X_Wall_Equip'],
+  brimstone:['FP_Sarge_S0_E_Throw','FP_Sarge_S0_Q_Fire','FP_Sarge_S0_4_Smoke_Fire','FP_Sarge_S0_X_StarCannon_Fire'],
+  gekko:['FP_AggroBot_S0_4_Bubbletov_ThrowOver','FP_AggroBot_S0_4_Bubbletov_ThrowUnder','FP_AggroBot_S0_Q_BabySpikebot_Cast','FP_AggroBot_S0_E_BabyZamboni_Cast','FP_AggroBot_S0_X_BabyShark_Cast'],
+  yoru:['FP_Stealth_S0_E_DimensionalPull_Teleport'],
  };
- const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire',killjoy:'FP_Killjoy_S0_E_Cast',raze:'FP_Clay_Quickcast_C4',skye:'FP_Guide_S0_X_Ult_Cast',breach:'FP_Breach_S0_E_LineFissure_Fire',cypher:'FP_Gumshoe_S0_Q_Fire'};
+ const PLAY1={phoenix:'FP_Phoenix_S0_Q_Wall_Fire',sage:'FP_Thorne_S0_E_Wall_Cast',reyna:'FP_Vampire_S0_4_Cast',omen:'FP_Wraith_S0_Q_DarkSight_Fire',killjoy:'FP_Killjoy_S0_E_Cast',raze:'FP_Clay_Quickcast_C4',skye:'FP_Guide_S0_X_Ult_Cast',breach:'FP_Breach_S0_E_LineFissure_Fire',cypher:'FP_Gumshoe_S0_Q_Fire',astra:'FP_Rift_S0_X_Wall_Cast',brimstone:'FP_Sarge_S0_X_StarCannon_Fire',gekko:'FP_AggroBot_S0_4_Bubbletov_ThrowOver',yoru:'FP_Stealth_S0_E_DimensionalPull_Teleport'};
  for(const ag of Object.keys(AG)){
   const dp=path.join(root,'models/valorant/animations/fp-rocklan-'+ag+'.glb');
   ok(fs.existsSync(dp),'donor glb present locally (fp-rocklan-'+ag+'.glb; local-only converted asset)');
@@ -90,7 +94,11 @@ let n=0;const fails=[];const ok=(c,m)=>{if(c)n++;else{fails.push(m);console.log(
   Raze:{q:'FP_Clay_Quickcast_C4'},
   Skye:{c:'FP_Guide_S0_4_Heal_Cast_Activate',x:'FP_Guide_S0_X_Ult_Cast'},
   Breach:{c:'FP_Breach_S0_4_FusionBlast_Fire',q:'FP_Breach_S0_Q_FlashBang_Fire',e:'FP_Breach_S0_E_LineFissure_Fire',x:'FP_Breach_S0_X_EarthShatter_Fire'},
-  Cypher:{q:'FP_Gumshoe_S0_4',e:'FP_Gumshoe_S0_Q_Fire',x:'FP_Gumshoe_S0_X_Activate'}};
+  Cypher:{q:'FP_Gumshoe_S0_4',e:'FP_Gumshoe_S0_Q_Fire',x:'FP_Gumshoe_S0_X_Activate'},
+  Astra:{x:'FP_Rift_S0_X_Wall_Cast'}, // C/Q/E activate a placed Star: the plain audit never fires them (rig-level checks above still cover their clips)
+  Brimstone:{c:'FP_Sarge_S0_E_Throw',e:'FP_Sarge_S0_4_Smoke_Fire',x:'FP_Sarge_S0_X_StarCannon_Fire'},
+  Gekko:{c:'FP_AggroBot_S0_4_Bubbletov_ThrowOver',q:'FP_AggroBot_S0_Q_BabySpikebot_Cast',e:'FP_AggroBot_S0_E_BabyZamboni_Cast',x:'FP_AggroBot_S0_X_BabyShark_Cast'},
+  Yoru:{e:'FP_Stealth_S0_E_DimensionalPull_Teleport'}};
   const r=cp.spawnSync(process.execPath,[path.join(__dirname,'abil_anim_audit.cjs')],{env:{...process.env,AGENTS:Object.keys(WANT).join(',')},encoding:'utf8',timeout:240000});
   ok(r.status===0,'Phoenix/Sage/Reyna/Omen audit runs ('+String(r.stderr||'').slice(-120)+')');
   if(r.status===0){const out=JSON.parse(r.stdout.slice(r.stdout.indexOf('{')));
