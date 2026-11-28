@@ -42,9 +42,17 @@ grounded list of gameplay gaps that remain. Assets (c) Riot Games, sourced via t
 4. Mosh pit: CLOSED (this branch): gkxMoshThrow rides the arc as mosh-pit.glb; the landed pool
    keeps the procedural goo (zone readability) with the model in the middle.
 5. Homescreen videos: see Downloads table. Stills are shipped and presented as stills.
-6. Remaining newer-agent device kinds without imported geometry (tejo sdrone/xcut, vyse mesh,
-   waylay, etc.): audited in the KA models catalog; no matching glb was published by KA at
-   download time, so procedural approximations remain the correct implementation there.
+6. Newer-agent device coverage, per ability (corrected 2026-11-28: the earlier wording wrongly
+   said no matching glbs existed; several DO exist locally from the earlier import pass):
+   - Downloaded but NOT WIRED (glb present in models/valorant/, spawn path still procedural):
+     Tejo C stealth-drone.glb (cast at agents18_runtime a18Orb sdrone), Vyse C arc-rose.glb
+     (vyxArcRose), Deadlock C barrier-mesh.glb (dlxBarrierMesh), Deadlock X annihilation.glb
+     (dlxAnnihilation).
+   - No model exists anywhere (procedural is the correct implementation): Tejo Q Special
+     Delivery / E Guided Salvo / X Armageddon, Vyse Q Shear, Waylay (all four abilities are
+     light effects, no device geometry), Veto C Crosscut.
+   - Wired on this branch: Gekko wingman/dizzy/thrash/mosh-pit/baby-*, Deadlock sonic-sensor /
+     gravnet, Vyse razorvine, Veto veto-fp-ult (FP arms).
 
 ## Verification state
 
