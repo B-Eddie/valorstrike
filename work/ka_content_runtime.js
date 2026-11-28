@@ -267,14 +267,16 @@ function kbGrid() {
     });
   });
 }
+// The profile modal opens through a block-scoped local open() path that cannot be wrapped
+// from this block, so watch #mProf and inject the picker tabs whenever it gains "on".
+function profInject() { try { profTabs(); cardArt(); } catch (e) {} }
 try {
-  var gp0 = goProf;
-  goProf = function () {
-    const r = gp0.apply(this, arguments);
-    try { profTabs(); cardArt(); } catch (e) {}
-    return r;
-  };
-  if (document.querySelector("#mProf")) { profTabs(); cardArt(); }
+  var mp0 = document.querySelector("#mProf");
+  if (mp0) {
+    new MutationObserver(function () { if (mp0.classList.contains("on")) profInject(); })
+      .observe(mp0, { attributes: true, attributeFilter: ["class"] });
+    if (mp0.classList.contains("on")) profInject();
+  }
 } catch (e) {}
 
 // ---------- lobby homescreen ----------
