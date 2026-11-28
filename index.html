@@ -31577,6 +31577,9 @@ function profTabs() {
     };
   });
 }
+// The full catalog is 1,037 cards; mounting every button + thumbnail at once is what crashed
+// the tab renderer, so the grid mounts in batches behind a Show-more row instead.
+var PC_BATCH = 120;
 function pcGrid() {
   var g = $("kaPcG");
   if (!g || g.dataset.done) return;
@@ -31584,23 +31587,40 @@ function pcGrid() {
   KAC.cards().then(function (idx) {
     g.textContent = "";
     if (!idx) { g.textContent = "Playercards unavailable."; return; }
-    Object.keys(idx).forEach(function (name) {
-      var c = idx[name], b = document.createElement("button");
-      b.style.cssText = "padding:0;border:1px solid rgba(236,232,225,.12);background:none;cursor:pointer";
-      if (name === state.card) b.style.borderColor = "#ff4655";
-      b.title = name;
-      var im = document.createElement("img");
-      im.loading = "lazy"; im.src = c.small; im.alt = name; im.style.cssText = "width:100%;display:block";
-      b.appendChild(im);
-      b.onclick = function () { state.card = name; save(); KAC.cardShow(); pcGridRefresh(); };
-      g.appendChild(b);
-    });
+    var names = Object.keys(idx);
+    var more = document.createElement("button");
+    more.dataset.more = "1";
+    more.style.cssText = "grid-column:1/-1;padding:10px;border:1px solid rgba(236,232,225,.12);background:#16212b;color:#ece8e1;cursor:pointer;font-size:11px;letter-spacing:.06em";
+    more.onclick = function () { pcBatch(g, idx, names); };
+    g._pc = { shown: 0, more: more };
+    pcBatch(g, idx, names);
   });
+}
+function pcBatch(g, idx, names) {
+  var st = g._pc;
+  if (!st) return;
+  var end = Math.min(st.shown + PC_BATCH, names.length);
+  for (var i = st.shown; i < end; i++) {
+    var name = names[i], c = idx[name], b = document.createElement("button");
+    b.style.cssText = "padding:0;border:1px solid rgba(236,232,225,.12);background:none;cursor:pointer";
+    if (name === state.card) b.style.borderColor = "#ff4655";
+    b.title = name;
+    var im = document.createElement("img");
+    im.loading = "lazy"; im.src = c.small; im.alt = name; im.style.cssText = "width:100%;display:block";
+    b.appendChild(im);
+    b.onclick = function () { state.card = this.title; save(); KAC.cardShow(); pcGridRefresh(); };
+    g.insertBefore(b, st.more.parentElement === g ? st.more : null);
+  }
+  st.shown = end;
+  if (end < names.length) {
+    st.more.textContent = "SHOW MORE · " + (names.length - end) + " LEFT";
+    if (st.more.parentElement !== g) g.appendChild(st.more);
+  } else if (st.more.parentElement === g) st.more.remove();
 }
 function pcGridRefresh() {
   var g = $("kaPcG");
   if (!g) return;
-  Array.prototype.forEach.call(g.children, function (b) { b.style.borderColor = b.title === state.card ? "#ff4655" : "rgba(236,232,225,.12)"; });
+  Array.prototype.forEach.call(g.children, function (b) { if (b.dataset && b.dataset.more) return; b.style.borderColor = b.title === state.card ? "#ff4655" : "rgba(236,232,225,.12)"; });
 }
 function kbGrid() {
   var g = $("kaKbG");
