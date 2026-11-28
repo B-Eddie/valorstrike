@@ -201,14 +201,30 @@ function profTabs() {
   if (!tabs || $("kaPcT")) return;
   tabs.insertAdjacentHTML("beforeend", '<button data-pt="pc" id="kaPcT">Playercard</button><button data-pt="kb" id="kaKbT">Kill banner</button>');
   var host = tabs.parentElement;
-  host.insertAdjacentHTML("beforeend",
-    '<div class="x-pp" data-pp="pc" hidden><div id="kaPcG" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:55vh;overflow:auto"></div></div>' +
-    '<div class="x-pp" data-pp="kb" hidden><div id="kaKbG" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;max-height:55vh;overflow:auto"></div></div>');
+  // Panels go right after the tab row (not at the end of the modal, which buried them under the
+  // Missions/Close controls), and while a picker tab is active the modal's own scroll is
+  // suspended so the grid is the only scrollbar; Missions/Close hide until a stat tab returns.
+  tabs.insertAdjacentHTML("afterend", '<div class="x-pp" data-pp="kb" hidden><div id="kaKbG" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;max-height:60vh;overflow:auto"></div></div>');
+  tabs.insertAdjacentHTML("afterend", '<div class="x-pp" data-pp="pc" hidden><div id="kaPcG" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:60vh;overflow:auto"></div></div>');
+  if (!document.getElementById("kaPickCss")) {
+    var st = document.createElement("style");
+    st.id = "kaPickCss";
+    st.textContent = "#mProf.kaPick{overflow:hidden}#mProf.kaPick .x-mission-btn,#mProf.kaPick .x-close-btn{display:none}";
+    document.head.appendChild(st);
+  }
   var all = host.querySelectorAll("[data-pt]");
   all.forEach(function (t) {
     t.onclick = function () {
       all.forEach(function (x) { x.classList.toggle("on", x === t); });
       host.querySelectorAll("[data-pp]").forEach(function (p) { p.hidden = p.dataset.pp !== t.dataset.pt; });
+      var picking = t.dataset.pt === "pc" || t.dataset.pt === "kb";
+      host.classList.toggle("kaPick", picking);
+      Array.prototype.forEach.call(host.children, function (el) {
+        if (el.tagName === "BUTTON" && /^(MISSIONS|CLOSE)$/.test(el.textContent.trim())) {
+          if (picking) { el.dataset.kaWas = el.style.display || ""; el.style.display = "none"; }
+          else if (el.dataset.kaWas !== undefined) { el.style.display = el.dataset.kaWas; delete el.dataset.kaWas; }
+        }
+      });
       if (t.dataset.pt === "pc") pcGrid();
       if (t.dataset.pt === "kb") kbGrid();
     };
@@ -269,7 +285,7 @@ function kbGrid() {
     Object.keys(sets).sort().forEach(function (slug) {
       var s = sets[slug], img = s.imgs && (s.imgs.emblemV1 || s.imgs.emblem || s.imgs.frame);
       var b = document.createElement("button");
-      b.style.cssText = "padding:8px;border:1px solid rgba(236,232,225,.12);background:#16212b;color:#ece8e1;cursor:pointer;font-size:11px;letter-spacing:.06em";
+      b.style.cssText = "padding:8px;border:1px solid rgba(236,232,225,.12);background:#16212b;color:#ece8e1;cursor:pointer;font-size:11px;letter-spacing:.06em;white-space:normal;word-break:break-word;line-height:1.35;min-height:98px";
       if (slug === state.banner) b.style.borderColor = "#ff4655";
       b.title = slug;
       if (img) {
