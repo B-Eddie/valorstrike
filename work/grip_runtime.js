@@ -132,9 +132,9 @@ function xgPose(M, dt) {
   // reload: the native set only has a pistol reload clip, which (with the grip faded out) flipped every gun 44 deg up out of the
   // hand. Now the gun stays gripped and the reload is posed here: rw blends in / out, rp runs 0..1 over the reload (X.ut left).
   const pdt = Number.isFinite(X.poseDt) && X.poseDt > 0 ? X.poseDt : dt || 1 / 60, rl = X.uo === 'reload';
-  if (rl) { if (!G.rl) { G.rl = 1; G.re = 0; } G.re += pdt; } else G.rl = 0;
+  if (rl) { if (!G.rl) { G.rl = 1; G.re = X.rlEl || 0; X.rlEl = 0; /* a reload joined mid-run starts at the elapsed offset, not from zero (TP ROCKLAN RELOAD) */ } G.re += pdt; } else G.rl = 0;
   G.rw = (G.rw || 0) + ((rl ? 1 : 0) - (G.rw || 0)) * Math.min(1, pdt * 10); if (G.rw < 1e-3) G.rw = 0;
-  const rw = G.rw, rp = rl ? Math.min(1, G.re / Math.max(0.3, G.re + (X.ut > 0 ? X.ut : Math.max(0, XGRIP.rld - G.re)))) : 1;
+  const rw = G.rw, rp = rl ? Math.min(1, G.re / Math.max(0.3, G.re + (X.ut > 0 ? X.ut : Math.max(0, XGRIP.rld - G.re)))) : 1; G.rp = rl ? rp : -1; // reload progress 0..1 while reloading (the Rocklan TP weapon-part clips scrub on it: work/tp_reload_runtime.js)
   for (const bn of G.R.bones.concat(G.L.bones)) { let s = G.saved.get(bn); if (!s) G.saved.set(bn, (s = new THREE.Quaternion())); s.copy(bn.quaternion); }
   const V = G.v, root = M.m; if (!XGRIP.cur) root.updateWorldMatrix(true, false); const rq = xgWorldQ(root, G.q[2]);
   const axis = (x, y, z, out) => out.set(x, y, z).applyQuaternion(rq); // agent frame (+Z forward, +X the agent's left) to world

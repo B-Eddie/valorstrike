@@ -26,7 +26,11 @@ block+='\n'+(root/'work/repair_runtime.js').read_text();sa='// ---- TRUSTED ONLI
 if sa in s:s=s[:s.index(sa)]+s[s.index(sb)+len(sb):]
 block+='\n'+(root/'work/server_runtime.js').read_text();ga='// ---- WEAPON GRIP ----';gb='// ---- END WEAPON GRIP ----'
 if ga in s:s=s[:s.index(ga)]+s[s.index(gb)+len(gb):]
-block+='\n'+(root/'work/grip_runtime.js').read_text().rstrip('\n');ta='// ---- FOOT PLANTING ----';tb='// ---- END FOOT PLANTING ----'
+block+='\n'+(root/'work/grip_runtime.js').read_text().rstrip('\n')
+# TP Rocklan reload (work/tp_reload_runtime.js): rigged-gun stand-in for authored weapon-part reload clips, right after the grip it reads G.rp from; also the online reload-clock row reader (mpCliSnap).
+xa='// ---- TP ROCKLAN RELOAD ----';xb='// ---- END TP ROCKLAN RELOAD ----'
+if xa in s:s=s[:s.index(xa)]+s[s.index(xb)+len(xb):]
+block+='\n'+(root/'work/tp_reload_runtime.js').read_text().rstrip('\n');ta='// ---- FOOT PLANTING ----';tb='// ---- END FOOT PLANTING ----'
 if ta in s:s=s[:s.index(ta)]+s[s.index(tb)+len(tb):]
 block+='\n'+(root/'work/feet_runtime.js').read_text().rstrip('\n');ha='// ---- LOCALIZED HIT FEEDBACK ----';hb='// ---- END LOCALIZED HIT FEEDBACK ----'
 if ha in s:s=s[:s.index(ha)]+s[s.index(hb)+len(hb):]
